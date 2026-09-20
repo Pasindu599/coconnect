@@ -29,11 +29,13 @@ import {
 interface OwnerDashboardProps {
   state: AppState;
   currentLang: Language;
+  onNavigate?: (view: any) => void;
 }
 
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   state,
   currentLang,
+  onNavigate,
 }) => {
   const t = translations[currentLang];
   const user = state.currentUser;
@@ -358,6 +360,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             setEstateId(eId);
             setIsPostJobOpen(true);
           }}
+          onViewMap={() => onNavigate && onNavigate('map')}
         />
       )}
 

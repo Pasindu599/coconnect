@@ -1,6 +1,10 @@
 {
   "name": "Coconnect Labour Hiring",
-  "description": "Agricultural labour hiring platform with unified role routing, worker and supervisor portals, land management, escrow awards, dual confirmation, and an isolated admin panel.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "description": "Agricultural labour hiring platform with unified role routing, worker and supervisor portals, land management with Google Maps, escrow awards, Google Drive Backup, dual confirmation, and an isolated admin panel.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

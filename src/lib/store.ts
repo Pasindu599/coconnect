@@ -15,8 +15,11 @@ import {
   VerificationDoc,
   ExceptionIssue,
   AuditLogEntry,
-  ScoringRuleVersion
+  ScoringRuleVersion,
+  NicSubmission
 } from '../types';
+import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
+import { saveNicSubmissionToFirestore, updateNicSubmissionInFirestore } from './firebase';
 
 const STORAGE_KEY = 'coconnect_app_state_v1';
 
@@ -103,6 +106,8 @@ const initialEstates: Estate[] = [
     location: 'Narammala, Kurunegala',
     tree_count: 940,
     notes: 'Well-spaced mature tall palms. Good tractor access road.',
+    lat: 7.4344,
+    lng: 80.2181,
     created_at: '2025-11-12T10:00:00Z'
   },
   {
@@ -113,7 +118,21 @@ const initialEstates: Estate[] = [
     location: 'Madampe, Chilaw',
     tree_count: 530,
     notes: 'Sandy soil grove, young and mature mixed cultivars.',
+    lat: 7.4988,
+    lng: 79.8458,
     created_at: '2025-12-01T09:00:00Z'
+  },
+  {
+    id: 'est-3',
+    owner_id: 'user-owner-1',
+    name: 'Kuliyapitiya Model Plantation',
+    area_acres: 11.2,
+    location: 'Kuliyapitiya, Wayamba',
+    tree_count: 720,
+    notes: 'Drip irrigated hybrid dwarf-tall coconut plantation.',
+    lat: 7.4689,
+    lng: 80.0436,
+    created_at: '2026-01-15T09:00:00Z'
   }
 ];
 
@@ -587,6 +606,29 @@ const initialScoringRules: ScoringRuleVersion = {
   frozen_until: '2026-10-31T00:00:00Z' // 90+ day stability guarantee
 };
 
+const initialNicSubmissions: NicSubmission[] = [
+  {
+    id: 'nic-sub-101',
+    user_id: 'user-worker-2',
+    user_name: 'Ruwan Kumara',
+    user_phone: '+94784449876',
+    role: 'worker',
+    nic_number: '199581029384',
+    nic_format: 'NEW_12',
+    dob: '1995-10-21',
+    gender: 'MALE',
+    front_image_url: getSampleSriLankaNicCard('FRONT', 'Ruwan Kumara', '199581029384'),
+    back_image_url: getSampleSriLankaNicCard('BACK', 'Ruwan Kumara', '199581029384'),
+    front_file_name: 'ruwan_nic_front.jpg',
+    back_file_name: 'ruwan_nic_back.jpg',
+    front_file_size_kb: 245,
+    back_file_size_kb: 218,
+    notes: 'Submitted for coconut plucking & nut husking verified badge',
+    status: 'pending',
+    submitted_at: '2026-02-12T14:20:00Z'
+  }
+];
+
 export interface AppState {
   currentUser: User | null;
   users: User[];
@@ -600,6 +642,7 @@ export interface AppState {
   completions: Completion[];
   ratings: RatingSubmission[];
   verificationDocs: VerificationDoc[];
+  nicSubmissions: NicSubmission[];
   exceptions: ExceptionIssue[];
   auditLogs: AuditLogEntry[];
   scoringRule: ScoringRuleVersion;
@@ -621,6 +664,9 @@ function loadInitialState(): AppState {
       if (!parsed.currentUser && parsed.users?.length) {
         parsed.currentUser = parsed.users[0];
       }
+      if (!parsed.nicSubmissions) {
+        parsed.nicSubmissions = initialNicSubmissions;
+      }
       return parsed;
     } catch {
       // ignore
@@ -640,6 +686,7 @@ function loadInitialState(): AppState {
     completions: initialCompletions,
     ratings: initialRatings,
     verificationDocs: initialVerificationDocs,
+    nicSubmissions: initialNicSubmissions,
     exceptions: initialExceptions,
     auditLogs: initialAuditLogs,
     scoringRule: initialScoringRules,
@@ -754,7 +801,15 @@ class StoreService {
   }
 
   // --- Estates (Lands) ---
-  public addEstate(data: { name: string; area_acres: number; location: string; tree_count: number; notes?: string }): Estate {
+  public addEstate(data: { 
+    name: string; 
+    area_acres: number; 
+    location: string; 
+    tree_count: number; 
+    notes?: string;
+    lat?: number;
+    lng?: number;
+  }): Estate {
     if (!this.state.currentUser) throw new Error('Unauthorized');
     const newEstate: Estate = {
       id: `est-${Date.now()}`,
@@ -764,6 +819,8 @@ class StoreService {
       location: data.location,
       tree_count: Number(data.tree_count),
       notes: data.notes,
+      lat: data.lat || 7.4344,
+      lng: data.lng || 80.2181,
       created_at: new Date().toISOString()
     };
     this.state.estates.unshift(newEstate);
@@ -834,7 +891,9 @@ class StoreService {
       wage_budget: Number(data.wage_budget),
       status: 'OPEN',
       created_at: new Date().toISOString(),
-      description: data.description
+      description: data.description,
+      lat: estate.lat || 7.4344,
+      lng: estate.lng || 80.2181
     };
 
     this.state.jobs.unshift(newJob);
@@ -1289,6 +1348,116 @@ class StoreService {
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'verification.submitted', 'verification_doc', newDoc.id, `Uploaded ${docType} for identity verification`);
     this.notify();
     return newDoc;
+  }
+
+  public submitNic(data: {
+    nic_number: string;
+    front_image_url: string;
+    back_image_url: string;
+    front_file_name?: string;
+    back_file_name?: string;
+    front_file_size_kb?: number;
+    back_file_size_kb?: number;
+    notes?: string;
+  }): NicSubmission {
+    if (!this.state.currentUser) throw new Error('Unauthorized');
+    const user = this.state.currentUser;
+    const parsed = validateAndParseSriLankanNic(data.nic_number);
+
+    const newSub: NicSubmission = {
+      id: `nic-sub-${Date.now()}`,
+      user_id: user.id,
+      user_name: user.name,
+      user_phone: user.phone,
+      role: user.active_role,
+      nic_number: parsed.isValid ? parsed.formattedNumber : data.nic_number.trim(),
+      nic_format: parsed.format === 'INVALID' ? 'UNKNOWN' : parsed.format,
+      dob: parsed.approxDob,
+      gender: parsed.gender,
+      front_image_url: data.front_image_url,
+      back_image_url: data.back_image_url,
+      front_file_name: data.front_file_name || 'nic_front.jpg',
+      back_file_name: data.back_file_name || 'nic_back.jpg',
+      front_file_size_kb: data.front_file_size_kb || 250,
+      back_file_size_kb: data.back_file_size_kb || 230,
+      notes: data.notes,
+      status: 'pending',
+      submitted_at: new Date().toISOString()
+    };
+
+    this.state.nicSubmissions.unshift(newSub);
+    user.nic_status = 'pending';
+    user.nic_number = newSub.nic_number;
+    user.nic_front_url = newSub.front_image_url;
+    user.nic_back_url = newSub.back_image_url;
+    user.nic_submitted_at = newSub.submitted_at;
+
+    // Create verification docs for historical audit
+    this.uploadVerificationDoc('NIC_FRONT', newSub.front_file_name);
+    this.uploadVerificationDoc('NIC_BACK', newSub.back_file_name);
+
+    // Save to Firestore for durable cloud persistence
+    saveNicSubmissionToFirestore(newSub);
+
+    this.logAudit(
+      user.id,
+      user.name,
+      'kyc.nic_submitted',
+      'nic_submission',
+      newSub.id,
+      `Submitted NIC Front & Back attachments (${newSub.nic_number}, format: ${newSub.nic_format})`
+    );
+
+    this.notify();
+    return newSub;
+  }
+
+  public adminDecideNicSubmission(submissionId: string, decision: 'approved' | 'rejected', reviewNotes?: string): boolean {
+    if (!this.state.currentUser || this.state.currentUser.active_role !== 'admin') {
+      throw new Error('403 Forbidden: Admin role required');
+    }
+
+    const sub = this.state.nicSubmissions.find(s => s.id === submissionId);
+    if (!sub) return false;
+
+    sub.status = decision;
+    sub.reviewed_at = new Date().toISOString();
+    sub.reviewed_by = this.state.currentUser.name;
+    if (decision === 'rejected') {
+      sub.rejection_reason = reviewNotes || 'Unclear card photo or mismatched identity details';
+    }
+
+    const targetUser = this.state.users.find(u => u.id === sub.user_id);
+    if (targetUser) {
+      targetUser.nic_status = decision === 'approved' ? 'verified' : 'rejected';
+      if (decision === 'approved') {
+        targetUser.nic_number = sub.nic_number;
+        targetUser.nic_rejection_reason = undefined;
+      } else {
+        targetUser.nic_rejection_reason = sub.rejection_reason;
+      }
+      this.recomputeTrustScore(targetUser.id, 'nic_status_changed');
+    }
+
+    // Persist to Firestore
+    updateNicSubmissionInFirestore(sub.id, {
+      status: sub.status,
+      reviewed_at: sub.reviewed_at,
+      reviewed_by: sub.reviewed_by,
+      rejection_reason: sub.rejection_reason
+    });
+
+    this.logAudit(
+      this.state.currentUser.id,
+      this.state.currentUser.name,
+      `admin.nic.${decision}`,
+      'nic_submission',
+      submissionId,
+      `Admin ${decision} NIC verification for ${sub.user_name} (${sub.nic_number}): ${reviewNotes || 'Standard verification'}`
+    );
+
+    this.notify();
+    return true;
   }
 
   // --- Admin Endpoints (/admin/*) ---

@@ -11,14 +11,18 @@ import {
   CheckCircle2, 
   Clock, 
   AlertCircle, 
-  ArrowRightLeft,
-  Lock,
-  Phone,
-  Building,
-  HardHat,
-  Trees,
-  UserCheck
+  ArrowRightLeft, 
+  Lock, 
+  Phone, 
+  Building, 
+  HardHat, 
+  Trees, 
+  UserCheck,
+  Eye,
+  Camera,
+  Sparkles
 } from 'lucide-react';
+import { NicSubmissionModal } from '../verification/NicSubmissionModal';
 
 interface UserProfilePageProps {
   state: AppState;
@@ -33,6 +37,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   const user = state.currentUser;
   
   // Verification upload state
+  const [isNicModalOpen, setIsNicModalOpen] = useState(false);
   const [docType, setDocType] = useState<'NIC_FRONT' | 'NIC_BACK' | 'LAND_DEED' | 'BUSINESS_REG'>('NIC_FRONT');
   const [fileName, setFileName] = useState<string>('nic_scan_photo.jpg');
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
@@ -44,6 +49,8 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
       </div>
     );
   }
+
+  const userSubmission = state.nicSubmissions?.find(s => s.user_id === user.id);
 
   const userDocs = state.verificationDocs.filter(d => d.user_id === user.id);
   const userRatings = state.ratings.filter(r => r.to_user_id === user.id);
@@ -209,6 +216,132 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
 
       </div>
 
+      {/* Dedicated National Identity Card (NIC) Submission & Attachments Card */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                National Identity Card (NIC) Verification
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border ${nicBadge.color}`}>
+                  {user.nic_status}
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400">
+                Front and Back image submission for platform KYC authentication & trust score boost (+0.25)
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setIsNicModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition flex items-center space-x-2 shrink-0 self-start sm:self-auto"
+          >
+            <Camera className="w-4 h-4" />
+            <span>{userSubmission || user.nic_front_url ? 'Update NIC Attachments' : 'Submit NIC Front & Back'}</span>
+          </button>
+        </div>
+
+        {/* Display Card Preview if submitted or verified */}
+        {userSubmission || user.nic_front_url || user.nic_back_url ? (
+          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-slate-800/80 pb-3">
+              <div className="flex items-center space-x-2 text-slate-300">
+                <span className="text-slate-400">Registered NIC:</span>
+                <span className="font-mono font-bold text-white text-sm bg-slate-900 px-2.5 py-0.5 rounded border border-slate-700">
+                  {userSubmission?.nic_number || user.nic_number || 'Pending Entry'}
+                </span>
+                {userSubmission?.nic_format && (
+                  <span className="text-[11px] text-emerald-400 font-medium">
+                    ({userSubmission.nic_format === 'OLD_9V' ? '9-Digit V/X Format' : '12-Digit Smart Format'})
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-slate-500">
+                Submitted: {new Date(userSubmission?.submitted_at || user.nic_submitted_at || Date.now()).toLocaleDateString()}
+              </div>
+            </div>
+
+            {/* Front and Back Image Thumbnails */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Front Side */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
+                  <span className="text-emerald-400">NIC FRONT SIDE (Photo & Number)</span>
+                  <span>{userSubmission?.front_file_name || 'nic_front.jpg'}</span>
+                </div>
+                <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 aspect-[1.58/1] flex items-center justify-center group">
+                  <img
+                    src={userSubmission?.front_image_url || user.nic_front_url}
+                    alt="NIC Front Side"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setIsNicModalOpen(true)}
+                      className="px-3 py-1 bg-white text-slate-900 rounded-lg text-xs font-semibold shadow"
+                    >
+                      Inspect / Replace
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Back Side */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400">
+                  <span className="text-blue-400">NIC BACK SIDE (Address & Issue Seal)</span>
+                  <span>{userSubmission?.back_file_name || 'nic_back.jpg'}</span>
+                </div>
+                <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-900 aspect-[1.58/1] flex items-center justify-center group">
+                  <img
+                    src={userSubmission?.back_image_url || user.nic_back_url}
+                    alt="NIC Back Side"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setIsNicModalOpen(true)}
+                      className="px-3 py-1 bg-white text-slate-900 rounded-lg text-xs font-semibold shadow"
+                    >
+                      Inspect / Replace
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {user.nic_rejection_reason && (
+              <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-xs text-rose-300 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>Rejection Reason: {user.nic_rejection_reason}. Click "Update NIC Attachments" above to resubmit.</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-slate-950/60 p-5 rounded-xl border border-dashed border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1 text-center sm:text-left">
+              <p className="text-xs font-semibold text-slate-200">No National Identity Card currently attached</p>
+              <p className="text-[11px] text-slate-400">
+                To accept coconut labour assignments, bid on contracts, and withdraw escrow funds, upload sharp photos of both your NIC Front and Back sides.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsNicModalOpen(true)}
+              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md transition flex items-center space-x-2 shrink-0"
+            >
+              <Upload className="w-4 h-4" />
+              <span>Attach NIC Front & Back</span>
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Identity Verification Document Upload Form (POST /users/me/verification) */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -328,6 +461,12 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
         )}
       </div>
 
+      {/* NIC Front and Back Submission Modal */}
+      <NicSubmissionModal
+        isOpen={isNicModalOpen}
+        onClose={() => setIsNicModalOpen(false)}
+        state={state}
+      />
     </div>
   );
 };

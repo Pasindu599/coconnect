@@ -28,12 +28,40 @@ export interface User {
   active_role: Role;
   nic_status: NicStatus;
   nic_number?: string;
+  nic_front_url?: string;
+  nic_back_url?: string;
+  nic_submitted_at?: string;
+  nic_rejection_reason?: string;
   preferred_language: 'en' | 'si';
   trust_score: number;
   pin_hash?: string;
   created_at: string;
   avatar_url?: string;
   location?: string;
+}
+
+export interface NicSubmission {
+  id: string;
+  user_id: string;
+  user_name: string;
+  user_phone: string;
+  role: Role;
+  nic_number: string;
+  nic_format: 'OLD_9V' | 'NEW_12' | 'UNKNOWN';
+  dob?: string;
+  gender?: 'MALE' | 'FEMALE';
+  front_image_url: string;
+  back_image_url: string;
+  front_file_name: string;
+  back_file_name: string;
+  front_file_size_kb?: number;
+  back_file_size_kb?: number;
+  notes?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submitted_at: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
+  rejection_reason?: string;
 }
 
 export interface Estate {
@@ -44,6 +72,8 @@ export interface Estate {
   location: string;
   tree_count: number;
   notes?: string;
+  lat?: number;
+  lng?: number;
   created_at: string;
 }
 
@@ -79,6 +109,8 @@ export interface LabourJob {
   status: JobStatus;
   created_at: string;
   description?: string;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Bid {

@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "estate": {
+      "title": "Estate",
+      "description": "Coconut plantation or agricultural land parcel",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "owner_id": { "type": "string" },
+        "name": { "type": "string" },
+        "area_acres": { "type": "number" },
+        "location": { "type": "string" },
+        "tree_count": { "type": "number" },
+        "notes": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["id", "owner_id", "name", "location"]
+    },
+    "labourJob": {
+      "title": "Labour Job",
+      "description": "Labour hiring request with escrow status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "owner_id": { "type": "string" },
+        "owner_name": { "type": "string" },
+        "estate_id": { "type": "string" },
+        "estate_name": { "type": "string" },
+        "estate_location": { "type": "string" },
+        "task_type": { "type": "string" },
+        "starts_at": { "type": "string" },
+        "ends_at": { "type": "string" },
+        "worker_count": { "type": "number" },
+        "duration_days": { "type": "number" },
+        "wage_budget": { "type": "number" },
+        "status": { "type": "string" },
+        "created_at": { "type": "string" }
+      },
+      "required": ["id", "owner_id", "estate_id", "task_type", "status"]
+    },
+    "nicSubmission": {
+      "title": "NIC Submission",
+      "description": "National Identity Card front and back image submission for KYC",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "user_name": { "type": "string" },
+        "user_phone": { "type": "string" },
+        "role": { "type": "string" },
+        "nic_number": { "type": "string" },
+        "nic_format": { "type": "string" },
+        "dob": { "type": "string" },
+        "gender": { "type": "string" },
+        "front_image_url": { "type": "string" },
+        "back_image_url": { "type": "string" },
+        "front_file_name": { "type": "string" },
+        "back_file_name": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": { "type": "string" },
+        "submitted_at": { "type": "string" },
+        "reviewed_at": { "type": "string" },
+        "reviewed_by": { "type": "string" }
+      },
+      "required": ["id", "user_id", "nic_number", "front_image_url", "back_image_url", "status"]
+    }
+  },
+  "firestore": {
+    "rules": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}"
+  }
+}

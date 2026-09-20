@@ -3,12 +3,48 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Coconnect — Labour Hiring Platform</title>
-    <meta name="description" content="Agricultural labour hiring platform with unified role routing, land management, escrow awards, dual confirmation, and isolated admin panel." />
-    <meta property="og:title" content="Coconnect — Labour Hiring Platform" />
-    <meta property="og:description" content="Agricultural labour hiring platform with unified role routing, land management, escrow awards, dual confirmation, and isolated admin panel." />
+    <title>Coconnect Labour Hiring</title>
+    <meta name="description" content="Agricultural labour hiring platform with unified role routing, worker and supervisor portals, land management with Google Maps, escrow awards, Google Drive Backup, dual confirmation, and an isolated admin panel." />
+    <meta property="og:title" content="Coconnect Labour Hiring" />
+    <meta property="og:description" content="Agricultural labour hiring platform with unified role routing, worker and supervisor portals, land management with Google Maps, escrow awards, Google Drive Backup, dual confirmation, and an isolated admin panel." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      (function() {
+        try {
+          var nativeFetch = window.fetch ? window.fetch.bind(window) : null;
+          var currentFetch = nativeFetch;
+          
+          Object.defineProperty(window, 'fetch', {
+            get: function() {
+              return currentFetch;
+            },
+            set: function(fn) {
+              currentFetch = typeof fn === 'function' ? fn : nativeFetch;
+            },
+            configurable: true,
+            enumerable: true
+          });
+
+          if (typeof Window !== 'undefined' && Window.prototype) {
+            try {
+              Object.defineProperty(Window.prototype, 'fetch', {
+                get: function() {
+                  return currentFetch;
+                },
+                set: function(fn) {
+                  currentFetch = typeof fn === 'function' ? fn : nativeFetch;
+                },
+                configurable: true,
+                enumerable: true
+              });
+            } catch (eProto) {}
+          }
+        } catch (e) {
+          console.warn('Window.fetch property initialization fallback applied:', e);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

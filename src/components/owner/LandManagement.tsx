@@ -17,12 +17,14 @@ interface LandManagementProps {
   state: AppState;
   currentLang: Language;
   onSelectEstateForJob?: (estateId: string) => void;
+  onViewMap?: () => void;
 }
 
 export const LandManagement: React.FC<LandManagementProps> = ({
   state,
   currentLang,
   onSelectEstateForJob,
+  onViewMap,
 }) => {
   const t = translations[currentLang];
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,6 +32,8 @@ export const LandManagement: React.FC<LandManagementProps> = ({
   const [areaAcres, setAreaAcres] = useState('10.0');
   const [location, setLocation] = useState('Kurunegala District');
   const [treeCount, setTreeCount] = useState('650');
+  const [lat, setLat] = useState('7.4344');
+  const [lng, setLng] = useState('80.2181');
   const [notes, setNotes] = useState('');
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
@@ -45,13 +49,15 @@ export const LandManagement: React.FC<LandManagementProps> = ({
       area_acres: parseFloat(areaAcres),
       location,
       tree_count: parseInt(treeCount, 10),
-      notes
+      notes,
+      lat: parseFloat(lat) || 7.4344,
+      lng: parseFloat(lng) || 80.2181,
     });
 
     setIsModalOpen(false);
     setName('');
     setNotes('');
-    setSuccessBanner(`Coconut land "${name}" successfully registered into the estates registry.`);
+    setSuccessBanner(`Coconut land "${name}" successfully registered into the estates registry with GPS coordinates.`);
     setTimeout(() => setSuccessBanner(null), 5000);
   };
 
@@ -72,13 +78,25 @@ export const LandManagement: React.FC<LandManagementProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{t.add_land}</span>
-        </button>
+        <div className="flex items-center space-x-2 self-start sm:self-auto">
+          {onViewMap && (
+            <button
+              onClick={onViewMap}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-semibold shadow-md transition"
+            >
+              <MapPin className="w-4 h-4" />
+              <span>View Lands on Map</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t.add_land}</span>
+          </button>
+        </div>
       </div>
 
       {successBanner && (
@@ -154,6 +172,21 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                     {estate.notes}
                   </p>
                 )}
+
+                <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 bg-slate-950/40 px-3 py-1.5 rounded-lg border border-slate-800">
+                  <span className="flex items-center space-x-1">
+                    <MapPin className="w-3 h-3 text-emerald-400" />
+                    <span>GPS: {estate.lat || 7.4344}, {estate.lng || 80.2181}</span>
+                  </span>
+                  {onViewMap && (
+                    <button
+                      onClick={onViewMap}
+                      className="text-emerald-400 hover:text-emerald-300 font-semibold"
+                    >
+                      Locate on Map ↗
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs">
@@ -248,6 +281,79 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                   placeholder="e.g. Kuliyapitiya, Kurunegala"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
+              </div>
+
+              {/* GPS Coordinates & Presets */}
+              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-200 flex items-center space-x-1">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>GPS Coordinates (Google Maps Pin)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400">Coconut Triangle</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Latitude</label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      required
+                      value={lat}
+                      onChange={(e) => setLat(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block mb-0.5">Longitude</label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      required
+                      value={lng}
+                      onChange={(e) => setLng(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <span className="text-[10px] text-slate-500 self-center">Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLat('7.4344');
+                      setLng('80.2181');
+                      setLocation('Narammala, Kurunegala');
+                    }}
+                    className="px-2 py-0.5 text-[10px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  >
+                    Narammala
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLat('7.4988');
+                      setLng('79.8458');
+                      setLocation('Madampe, Chilaw');
+                    }}
+                    className="px-2 py-0.5 text-[10px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  >
+                    Madampe
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLat('7.4689');
+                      setLng('80.0436');
+                      setLocation('Kuliyapitiya, Wayamba');
+                    }}
+                    className="px-2 py-0.5 text-[10px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  >
+                    Kuliyapitiya
+                  </button>
+                </div>
               </div>
 
               <div>
