@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { store, AppState } from '../../lib/store';
+import { store } from '../../lib/store';
 import { Role } from '../../types';
 import { Language, translations } from '../../lib/i18n';
 import { 
@@ -9,31 +9,23 @@ import {
   Trees, 
   HardHat, 
   UserCheck, 
-  ShieldCheck, 
   CheckCircle2, 
   AlertCircle,
-  Clock,
-  Sparkles,
-  ArrowLeft,
-  Lock
+  ArrowLeft
 } from 'lucide-react';
 
 interface UnifiedLoginProps {
-  state: AppState;
   currentLang: Language;
   initialRole?: Role;
   onLoginSuccess: (role: Role) => void;
   onBackToHome?: () => void;
-  onGoToAdmin?: () => void;
 }
 
 export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
-  state,
   currentLang,
   initialRole = 'owner',
   onLoginSuccess,
   onBackToHome,
-  onGoToAdmin,
 }) => {
   const t = translations[currentLang] || translations.en;
   const [selectedRole, setSelectedRole] = useState<Role>(initialRole === 'admin' ? 'owner' : initialRole);
@@ -83,14 +75,6 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
       onLoginSuccess(res.user.active_role);
     } else {
       setError(res.error || 'Verification failed. Please check the code.');
-    }
-  };
-
-  const handleQuickLogin = (userId: string) => {
-    const user = state.users.find(u => u.id === userId);
-    if (user) {
-      store.switchActiveUser(user.id);
-      onLoginSuccess(user.active_role);
     }
   };
 
@@ -262,76 +246,6 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
               </div>
             </form>
           )}
-
-          {/* Quick Demo Accounts */}
-          <div className="pt-2 border-t border-slate-800 space-y-2">
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-              {t.demo_accounts}
-            </div>
-
-            <div className="space-y-1.5">
-              <button
-                onClick={() => handleQuickLogin('user-owner-1')}
-                className="w-full text-left p-2 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs flex items-center justify-between transition group"
-              >
-                <div className="flex items-center space-x-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-950 border border-emerald-800 text-emerald-300 flex items-center justify-center">
-                    <Trees className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-white group-hover:text-emerald-300">Rohan De Silva</div>
-                    <div className="text-[10px] text-slate-400">Landowner • Kurunegala Coconut Estate</div>
-                  </div>
-                </div>
-                <span className="text-[10px] text-emerald-400 font-mono">Owner →</span>
-              </button>
-
-              <button
-                onClick={() => handleQuickLogin('user-sup-1')}
-                className="w-full text-left p-2 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs flex items-center justify-between transition group"
-              >
-                <div className="flex items-center space-x-2">
-                  <div className="w-7 h-7 rounded-lg bg-amber-950 border border-amber-800 text-amber-300 flex items-center justify-center">
-                    <HardHat className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-white group-hover:text-amber-300">Kamal Wickramasinghe</div>
-                    <div className="text-[10px] text-slate-400">Supervisor / Broker • Puttalam District Crew</div>
-                  </div>
-                </div>
-                <span className="text-[10px] text-amber-400 font-mono">Supervisor →</span>
-              </button>
-
-              <button
-                onClick={() => handleQuickLogin('user-worker-1')}
-                className="w-full text-left p-2 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-xs flex items-center justify-between transition group"
-              >
-                <div className="flex items-center space-x-2">
-                  <div className="w-7 h-7 rounded-lg bg-teal-950 border border-teal-800 text-teal-300 flex items-center justify-center">
-                    <UserCheck className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-white group-hover:text-teal-300">Chaminda Silva</div>
-                    <div className="text-[10px] text-slate-400">Harvester & Climber • Giriulla Zone</div>
-                  </div>
-                </div>
-                <span className="text-[10px] text-teal-400 font-mono">Worker →</span>
-              </button>
-            </div>
-
-            {/* Separate Admin Portal Link */}
-            {onGoToAdmin && (
-              <div className="pt-2 text-center">
-                <button
-                  onClick={onGoToAdmin}
-                  className="text-xs text-purple-400 hover:text-purple-300 inline-flex items-center space-x-1.5 transition font-medium"
-                >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Are you a Coconnect staff member? Access /admin Login →</span>
-                </button>
-              </div>
-            )}
-          </div>
 
         </div>
       </div>

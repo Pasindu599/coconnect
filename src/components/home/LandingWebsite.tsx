@@ -1,6 +1,6 @@
 import React from 'react';
 import { Language, translations } from '../../lib/i18n';
-import { AppState, store } from '../../lib/store';
+import { AppState } from '../../lib/store';
 import { Role } from '../../types';
 import { 
   Trees, 
@@ -10,13 +10,9 @@ import {
   UserCheck, 
   HardHat, 
   ArrowRight, 
-  Lock, 
   CheckCircle2, 
-  Layers, 
   Smartphone, 
-  Globe, 
   Sparkles,
-  ExternalLink,
   Users,
   Briefcase
 } from 'lucide-react';
@@ -25,7 +21,6 @@ interface LandingWebsiteProps {
   state: AppState;
   currentLang: Language;
   onOpenLogin: (preselectedRole?: Role) => void;
-  onOpenAdmin: () => void;
   onExploreMap: () => void;
   onLanguageChange: (lang: Language) => void;
 }
@@ -34,7 +29,6 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
   state,
   currentLang,
   onOpenLogin,
-  onOpenAdmin,
   onExploreMap,
   onLanguageChange,
 }) => {
@@ -76,13 +70,6 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
             <span>{t.login}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={onOpenAdmin}
-            className="px-3.5 py-2 rounded-xl bg-purple-950/60 hover:bg-purple-900/60 border border-purple-800 text-purple-300 text-xs font-semibold transition flex items-center space-x-1.5"
-          >
-            <Lock className="w-3.5 h-3.5 text-purple-400" />
-            <span>/admin</span>
-          </button>
         </div>
       </div>
 
@@ -119,13 +106,6 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
             <span>{t.hero_cta_secondary}</span>
           </button>
 
-          <button
-            onClick={onOpenAdmin}
-            className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-slate-900 hover:bg-purple-950/40 border border-purple-900/60 text-purple-300 font-semibold text-sm transition flex items-center justify-center space-x-2"
-          >
-            <Lock className="w-4 h-4 text-purple-400" />
-            <span>{t.hero_cta_admin}</span>
-          </button>
         </div>
 
         {/* Language Quick Switcher on Hero */}
@@ -362,28 +342,6 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
         </div>
       </section>
 
-      {/* Dedicated Admin Portal Banner */}
-      <section className="bg-gradient-to-r from-purple-950/40 via-slate-900 to-purple-950/40 border border-purple-900/60 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-purple-950 border border-purple-800 text-purple-300 flex items-center justify-center flex-shrink-0">
-            <Lock className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-white">{t.admin_login_title}</h3>
-            <p className="text-xs text-slate-400 max-w-xl mt-0.5">
-              {t.admin_login_subtitle} Access via route <code className="text-purple-300 font-mono">/admin</code> with official staff credentials.
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={onOpenAdmin}
-          className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md transition flex items-center space-x-2 flex-shrink-0"
-        >
-          <span>Open Staff Admin Login</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </section>
     </div>
   );
 };

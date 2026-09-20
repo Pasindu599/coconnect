@@ -167,7 +167,6 @@ export default function App() {
             if (role) setPreselectedRole(role);
             handleNavigate('login');
           }}
-          onOpenAdmin={() => handleNavigate('admin_login')}
           onExploreMap={() => handleNavigate('map')}
           onLanguageChange={handleLanguageChange}
         />
@@ -178,12 +177,10 @@ export default function App() {
     if (activeView === 'login') {
       return (
         <UnifiedLogin
-          state={state}
           currentLang={currentLang}
           initialRole={preselectedRole}
           onLoginSuccess={handleLoginSuccess}
           onBackToHome={() => handleNavigate('home')}
-          onGoToAdmin={() => handleNavigate('admin_login')}
         />
       );
     }
@@ -218,12 +215,10 @@ export default function App() {
     if (!state.currentUser) {
       return (
         <UnifiedLogin
-          state={state}
           currentLang={currentLang}
           initialRole={preselectedRole}
           onLoginSuccess={handleLoginSuccess}
           onBackToHome={() => handleNavigate('home')}
-          onGoToAdmin={() => handleNavigate('admin_login')}
         />
       );
     }
@@ -305,7 +300,6 @@ export default function App() {
         state={state}
         currentLang={currentLang}
         onLanguageChange={handleLanguageChange}
-        activeView={activeView}
         onNavigate={handleNavigate}
       />
 
@@ -318,13 +312,6 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center space-x-2">
             <span>Coconnect Labour Hiring & Escrow Platform • Sri Lanka</span>
-            <span>•</span>
-            <button
-              onClick={() => handleNavigate('admin_login')}
-              className="text-purple-400 hover:text-purple-300 font-mono transition"
-            >
-              /admin
-            </button>
           </div>
           <div className="flex items-center space-x-3 font-mono text-[11px]">
             <span>Escrow Contact Gate</span>

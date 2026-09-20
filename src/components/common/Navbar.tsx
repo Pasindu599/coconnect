@@ -1,32 +1,18 @@
 import React, { useState } from 'react';
 import { store, AppState } from '../../lib/store';
-import { Role } from '../../types';
 import { Language, translations } from '../../lib/i18n';
 import { 
   Trees, 
-  ShieldCheck, 
-  UserCheck, 
-  Briefcase, 
-  HardHat, 
   LogOut, 
-  Wifi, 
-  WifiOff, 
-  Layers, 
   Globe, 
   ChevronDown, 
-  User as UserIcon,
-  Lock,
-  ArrowRightLeft,
-  MapPin,
-  FolderSync,
-  Home
+  User as UserIcon
 } from 'lucide-react';
 
 interface NavbarProps {
   state: AppState;
   currentLang: Language;
   onLanguageChange: (lang: Language) => void;
-  activeView: string;
   onNavigate: (view: string) => void;
 }
 
@@ -34,29 +20,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   state,
   currentLang,
   onLanguageChange,
-  activeView,
   onNavigate,
 }) => {
-  const [showPersonaMenu, setShowPersonaMenu] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const t = translations[currentLang] || translations.en;
   const user = state.currentUser;
-
-  const getRoleBadge = (role: Role) => {
-    switch (role) {
-      case 'owner':
-        return { label: t.landowner, icon: Trees, color: 'bg-emerald-800 text-emerald-100 border-emerald-700' };
-      case 'supervisor':
-        return { label: t.supervisor, icon: HardHat, color: 'bg-amber-800 text-amber-100 border-amber-700' };
-      case 'worker':
-        return { label: t.worker, icon: UserCheck, color: 'bg-teal-800 text-teal-100 border-teal-700' };
-      case 'admin':
-        return { label: t.admin, icon: ShieldCheck, color: 'bg-slate-800 text-purple-200 border-purple-600' };
-    }
-  };
-
-  const currentRoleInfo = user ? getRoleBadge(user.active_role) : null;
 
   const langNames: Record<Language, { label: string; code: string }> = {
     en: { label: 'English', code: 'EN' },
@@ -85,116 +54,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-1">
-            <button
-              onClick={() => onNavigate('home')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 ${
-                activeView === 'home' ? 'bg-emerald-900/60 text-emerald-200 border border-emerald-700/60' : 'text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              <Home className="w-3.5 h-3.5" />
-              <span>{t.nav_home}</span>
-            </button>
-
-            {user && (
-              <button
-                onClick={() => onNavigate('dashboard')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                  activeView === 'dashboard' ? 'bg-emerald-900/60 text-emerald-200 border border-emerald-700/60' : 'text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                {t.nav_dashboard}
-              </button>
-            )}
-
-            <button
-              onClick={() => onNavigate('map')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 ${
-                activeView === 'map' ? 'bg-emerald-900/60 text-emerald-200 border border-emerald-700/60' : 'text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              <span>{t.nav_map}</span>
-            </button>
-
-            {user && (
-              <button
-                onClick={() => onNavigate('workspace')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 ${
-                  activeView === 'workspace' ? 'bg-blue-900/60 text-blue-200 border border-blue-700/60' : 'text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                <FolderSync className="w-3.5 h-3.5" />
-                <span>{t.nav_drive}</span>
-              </button>
-            )}
-
-            {user && (
-              <button
-                onClick={() => onNavigate('profile')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 ${
-                  activeView === 'profile' ? 'bg-emerald-900/60 text-emerald-200 border border-emerald-700/60' : 'text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>{t.nav_profile}</span>
-              </button>
-            )}
-
-            {user && user.roles.includes('admin') && (
-              <button
-                onClick={() => onNavigate('admin')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 ${
-                  activeView === 'admin' ? 'bg-purple-900/60 text-purple-200 border border-purple-700/60' : 'text-purple-300 hover:bg-slate-800'
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>{t.nav_admin}</span>
-              </button>
-            )}
-
-            {/* If not logged in, show direct Admin Login route button */}
-            {!user && (
-              <button
-                onClick={() => onNavigate('admin_login')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center space-x-1 ${
-                  activeView === 'admin_login' ? 'bg-purple-900/60 text-purple-200 border border-purple-700/60' : 'text-purple-300 hover:bg-purple-950/40'
-                }`}
-              >
-                <Lock className="w-3.5 h-3.5 text-purple-400" />
-                <span>/admin</span>
-              </button>
-            )}
-          </nav>
-
           {/* Right Action Controls */}
-          <div className="flex items-center space-x-2.5">
-            
-            {/* Offline Simulator Toggle Button */}
-            <button
-              onClick={() => store.toggleOfflineMode()}
-              title="Toggle rural offline outbox simulation"
-              className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
-                state.isOfflineSimulated
-                  ? 'bg-rose-950/80 text-rose-300 border-rose-800 animate-pulse'
-                  : 'bg-slate-800/60 text-slate-300 border-slate-700 hover:bg-slate-800'
-              }`}
-            >
-              {state.isOfflineSimulated ? (
-                <>
-                  <WifiOff className="w-3.5 h-3.5 text-rose-400" />
-                  <span className="hidden sm:inline">Offline Mode</span>
-                  <span className="sm:hidden">Offline</span>
-                </>
-              ) : (
-                <>
-                  <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="hidden sm:inline">Online</span>
-                </>
-              )}
-            </button>
-
+          <div className="flex items-center space-x-2">
             {/* Trilingual Language Selector */}
             <div className="relative">
               <button
@@ -203,8 +64,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Change Language / භාෂාව තෝරන්න / மொழியை மாற்றுக"
               >
                 <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="font-semibold">{langNames[currentLang].code}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+                <span className="sr-only">{langNames[currentLang].label}</span>
               </button>
 
               {showLangMenu && (
@@ -254,72 +114,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Quick Demo Persona Switcher */}
-            <div className="relative">
-              <button
-                onClick={() => setShowPersonaMenu(!showPersonaMenu)}
-                className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-900/60 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/60 text-xs font-medium transition"
-                title="Switch Demo Persona"
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span className="hidden lg:inline">Roles</span>
-                <ChevronDown className="w-3 h-3" />
-              </button>
-
-              {showPersonaMenu && (
-                <div 
-                  className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 z-50"
-                  onMouseLeave={() => setShowPersonaMenu(false)}
-                >
-                  <div className="px-2 py-1 text-xs font-semibold text-slate-400 border-b border-slate-800 mb-1">
-                    Quick Role Sign-in
-                  </div>
-                  {state.users.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => {
-                        store.switchActiveUser(u.id);
-                        setShowPersonaMenu(false);
-                        if (u.active_role === 'admin') {
-                          onNavigate('admin');
-                        } else {
-                          onNavigate('dashboard');
-                        }
-                      }}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-xs flex items-center justify-between transition ${
-                        state.currentUser?.id === u.id ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800' : 'hover:bg-slate-800 text-slate-300'
-                      }`}
-                    >
-                      <div>
-                        <div className="font-semibold text-white">{u.name}</div>
-                        <div className="text-[11px] text-slate-400 capitalize">{u.active_role} • {u.phone}</div>
-                      </div>
-                      <div className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400">
-                        ⭐ {u.trust_score.toFixed(2)}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Current User & Active Role Dropdown */}
             {user ? (
               <div className="relative">
                 <button
                   onClick={() => setShowRoleMenu(!showRoleMenu)}
                   className="flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-750 text-xs transition"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-slate-700 flex items-center justify-center text-slate-200 font-bold text-xs">
-                    {user.name.charAt(0)}
-                  </div>
-                  <div className="text-left hidden lg:block">
-                    <div className="font-semibold text-white leading-tight">{user.name}</div>
-                    <div className="text-[10px] text-emerald-400 flex items-center space-x-1">
-                      <span>{currentRoleInfo?.label}</span>
-                    </div>
-                  </div>
-                  <ChevronDown className="w-3 h-3 text-slate-400" />
+                  <UserIcon className="w-4 h-4" />
+                  <span className="sr-only">{user.name}</span>
                 </button>
 
                 {showRoleMenu && (
@@ -327,57 +129,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 z-50 text-xs"
                     onMouseLeave={() => setShowRoleMenu(false)}
                   >
-                    <div className="px-3 py-2 border-b border-slate-800">
-                      <div className="font-semibold text-white">{user.name}</div>
-                      <div className="text-slate-400 text-[11px]">{user.phone}</div>
-                      <div className="mt-1 flex items-center space-x-1.5">
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] border border-emerald-800">
-                          Trust: {user.trust_score.toFixed(2)} / 5.0
-                        </span>
-                        <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] capitalize">
-                          NIC: {user.nic_status}
-                        </span>
-                      </div>
+                    <div className="px-3 py-2 border-b border-slate-800 text-xs text-slate-300">
+                      {user.name}
                     </div>
-
-                    {/* Role Switcher if multi-role */}
-                    <div className="py-2 border-b border-slate-800">
-                      <div className="px-2 pb-1 text-[11px] font-medium text-slate-400 flex items-center justify-between">
-                        <span>{t.switch_role}</span>
-                        <ArrowRightLeft className="w-3 h-3 text-slate-500" />
-                      </div>
-                      {(['owner', 'supervisor', 'worker'] as Role[]).map((r) => {
-                        const isCurrent = user.active_role === r;
-                        return (
-                          <button
-                            key={r}
-                            onClick={() => {
-                              store.switchRole(r);
-                              setShowRoleMenu(false);
-                              onNavigate('dashboard');
-                            }}
-                            className={`w-full text-left px-3 py-1.5 rounded-lg text-xs capitalize flex items-center justify-between ${
-                              isCurrent ? 'bg-emerald-950 text-emerald-300 font-bold' : 'text-slate-300 hover:bg-slate-800'
-                            }`}
-                          >
-                            <span>{r === 'owner' ? t.landowner : r === 'supervisor' ? t.supervisor : t.worker}</span>
-                            {isCurrent && <span className="text-[10px] text-emerald-400 font-normal">Active</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-
                     <div className="pt-1">
-                      <button
-                        onClick={() => {
-                          onNavigate('profile');
-                          setShowRoleMenu(false);
-                        }}
-                        className="w-full text-left px-3 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 flex items-center space-x-2"
-                      >
-                        <UserIcon className="w-3.5 h-3.5" />
-                        <span>{t.nav_profile}</span>
-                      </button>
                       <button
                         onClick={() => {
                           store.logout();
@@ -396,9 +151,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <button
                 onClick={() => onNavigate('login')}
-                className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition"
+                className="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition"
+                title={t.login}
               >
-                {t.login}
+                <UserIcon className="w-4 h-4" />
+                <span className="sr-only">{t.login}</span>
               </button>
             )}
 
