@@ -14,6 +14,7 @@ interface NavbarProps {
   currentLang: Language;
   onLanguageChange: (lang: Language) => void;
   onNavigate: (view: string) => void;
+  showAccount?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -21,6 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentLang,
   onLanguageChange,
   onNavigate,
+  showAccount = true,
 }) => {
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -114,7 +116,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {user ? (
+            {showAccount && (user ? (
               <div className="relative">
                 <button
                   onClick={() => setShowRoleMenu(!showRoleMenu)}
@@ -157,7 +159,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <UserIcon className="w-4 h-4" />
                 <span className="sr-only">{t.login}</span>
               </button>
-            )}
+            ))}
 
           </div>
 

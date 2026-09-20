@@ -660,10 +660,8 @@ function loadInitialState(): AppState {
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      // Ensure currentUser is restored or fallback to Sunil Perera
-      if (!parsed.currentUser && parsed.users?.length) {
-        parsed.currentUser = parsed.users[0];
-      }
+      // Sessions are intentionally not persisted across site loads.
+      parsed.currentUser = null;
       if (!parsed.nicSubmissions) {
         parsed.nicSubmissions = initialNicSubmissions;
       }
@@ -674,7 +672,7 @@ function loadInitialState(): AppState {
   }
 
   return {
-    currentUser: initialUsers[0],
+    currentUser: null,
     users: initialUsers,
     estates: initialEstates,
     workers: initialWorkers,
