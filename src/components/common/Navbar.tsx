@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { store, AppState } from '../../lib/store';
-import { Language, translations } from '../../lib/i18n';
+import { Language, getT } from '../../lib/i18n';
 import { 
   Trees, 
   LogOut, 
@@ -26,7 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
-  const t = translations[currentLang] || translations.en;
+  const t = getT(currentLang);
   const user = state.currentUser;
 
   const langNames: Record<Language, { label: string; code: string }> = {
@@ -49,7 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="flex items-center space-x-2">
                 <span className="text-xl font-bold tracking-tight text-white">{t.app_title}</span>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 font-medium border border-emerald-800/80">
-                  Escrow & Labour
+                  {t.nav_badge}
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">{t.tagline}</p>
@@ -63,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
                 className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-800 text-xs text-slate-200 hover:text-white border border-slate-700"
-                title="Change Language / භාෂාව තෝරන්න / மொழியை மாற்றுக"
+                title={t.nav_lang_tooltip}
               >
                 <Globe className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="sr-only">{langNames[currentLang].label}</span>

@@ -1,7 +1,21 @@
 import React, { useState } from 'react';
 import { store, AppState } from '../../lib/store';
 import { LabourJob, Bid, Award, AttendanceDay, WageRecord } from '../../types';
-import { Language, translations } from '../../lib/i18n';
+import {
+  Language,
+  getT,
+  fmt,
+  tJobStatus,
+  tEscrowStatus,
+  tReviewStatus,
+  tSkill,
+  tTaskType,
+  tPaymentSchedule,
+  tReviewTag,
+  TASK_TYPE_KEYS,
+  SKILL_KEYS,
+  REVIEW_TAG_KEYS,
+} from '../../lib/i18n';
 import { LandManagement } from './LandManagement';
 import { 
   Trees, 
@@ -37,7 +51,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   currentLang,
   onNavigate,
 }) => {
-  const t = translations[currentLang];
+  const t = getT(currentLang);
   const user = state.currentUser;
   const [activeTab, setActiveTab] = useState<'jobs' | 'lands' | 'attendance' | 'escrow'>('jobs');
   
@@ -63,7 +77,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   // Dual-Confirmation PIN & Rating State
   const [pinInput, setPinInput] = useState('1234');
   const [ratingScore, setRatingScore] = useState(5);
-  const [ratingComment, setRatingComment] = useState('Outstanding punctuality and zero broken bunches.');
+  const [ratingComment, setRatingComment] = useState(t.rating_comment_default);
   const [selectedTags, setSelectedTags] = useState<string[]>(['Punctual Crew', 'Safe Tree Climbing', 'Clean Estate']);
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
@@ -73,16 +87,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     return job?.owner_id === user?.id;
   });
 
-  const availableSkills = [
-    'Tree Climbing',
-    'Coconut Plucking',
-    'Nut Gathering',
-    'Nut Husking',
-    'Fertilizer Trenching',
-    'Organic Mulching',
-    'Crown Cleaning',
-    'Copra Bagging'
-  ];
+  const availableSkills = SKILL_KEYS;
 
   const handleCreateJob = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +140,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     if (res.success) {
       setSelectedJobForCompletion(null);
     } else {
-      setConfirmError(res.error || 'Failed to confirm completion.');
+      setConfirmError(res.error || t.err_confirm_failed);
     }
   };
 
@@ -146,13 +151,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Landowner Operations Hub</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">{t.owner_hub_title}</h1>
             <span className="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 text-xs font-semibold border border-emerald-800">
-              Verified Landowner
+              {t.owner_verified_badge}
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Logged in as <strong className="text-white">{user?.name}</strong> • Kurunegala Coconut Belt • Escrow Protection Active
+            {t.owner_logged_in_as} <strong className="text-white">{user?.name}</strong> • {t.owner_belt_note}
           </p>
         </div>
 
@@ -178,7 +183,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           }`}
         >
           <Briefcase className="w-4 h-4" />
-          <span>Posted Jobs ({ownerJobs.length})</span>
+          <span>{t.tab_posted_jobs} ({ownerJobs.length})</span>
         </button>
 
         <button
@@ -202,7 +207,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           }`}
         >
           <ShieldCheck className="w-4 h-4 text-amber-400" />
-          <span>Escrow Accounts & Awards ({ownerAwards.length})</span>
+          <span>{t.tab_escrow_awards} ({ownerAwards.length})</span>
         </button>
 
         <button
@@ -214,7 +219,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           }`}
         >
           <CheckCircle2 className="w-4 h-4 text-teal-400" />
-          <span>Dual Attendance Check</span>
+          <span>{t.tab_dual_attendance}</span>
         </button>
       </div>
 
@@ -240,9 +245,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                           job.status === 'PENDING_COMPLETION' ? 'bg-yellow-950 text-yellow-300 border border-yellow-800 font-bold' :
                           'bg-slate-800 text-slate-300'
                         }`}>
-                          {job.status.replace(/_/g, ' ')}
+                          {tJobStatus(job.status, currentLang)}
                         </span>
-                        <h3 className="text-base font-bold text-white mt-2">{job.task_type}</h3>
+                        <h3 className="text-base font-bold text-white mt-2">{tTaskType(job.task_type, currentLang)}</h3>
                         <p className="text-xs text-slate-400 flex items-center mt-1">
                           <Trees className="w-3.5 h-3.5 text-emerald-400 mr-1" />
                           <span>{job.estate_name} ({job.estate_location})</span>
@@ -250,26 +255,26 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       </div>
 
                       <div className="text-right">
-                        <div className="text-xs text-slate-400">Budget</div>
+                        <div className="text-xs text-slate-400">{t.job_budget}</div>
                         <div className="text-sm font-bold text-emerald-400">LKR {job.wage_budget.toLocaleString()}</div>
                       </div>
                     </div>
 
                     <p className="mt-3 text-xs text-slate-300 line-clamp-2">
-                      {job.description || 'No additional description provided.'}
+                      {job.description || t.job_no_description}
                     </p>
 
                     <div className="mt-4 flex flex-wrap gap-1.5">
                       {job.required_skills.map((s, i) => (
                         <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                          {s}
+                          {tSkill(s, currentLang)}
                         </span>
                       ))}
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-xs text-slate-400">
-                      <div>Dates: <span className="text-slate-200">{job.starts_at} → {job.ends_at}</span></div>
-                      <div>Crew Size: <span className="text-slate-200">{job.worker_count} Workers</span></div>
+                      <div>{t.job_dates}: <span className="text-slate-200">{job.starts_at} → {job.ends_at}</span></div>
+                      <div>{t.job_crew_size}: <span className="text-slate-200">{job.worker_count} {t.common_workers}</span></div>
                     </div>
                   </div>
 
@@ -278,13 +283,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     {job.status === 'OPEN' && (
                       <>
                         <span className="text-xs text-slate-400">
-                          <strong>{bids.length}</strong> Bids Received
+                          <strong>{bids.length}</strong> {t.bids_received_label}
                         </span>
                         <button
                           onClick={() => setSelectedJobForBids(job)}
                           className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition"
                         >
-                          Review Bids ({bids.length}) →
+                          {t.review_bids} ({bids.length}) →
                         </button>
                       </>
                     )}
@@ -293,13 +298,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       <div className="w-full flex items-center justify-between">
                         <span className="text-xs text-amber-300 font-medium flex items-center space-x-1">
                           <Lock className="w-3.5 h-3.5" />
-                          <span>Escrow Deposit Required</span>
+                          <span>{t.escrow_deposit_required}</span>
                         </span>
                         <button
                           onClick={() => setSelectedAwardForEscrow(award)}
                           className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md animate-pulse"
                         >
-                          Pay into Escrow (LKR {award.escrow_amount.toLocaleString()}) →
+                          {t.pay_into_escrow} (LKR {award.escrow_amount.toLocaleString()}) →
                         </button>
                       </div>
                     )}
@@ -308,14 +313,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       <div className="w-full flex items-center justify-between">
                         <span className="text-xs text-emerald-400 font-medium flex items-center space-x-1">
                           <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>Escrow Held (Secured)</span>
+                          <span>{t.escrow_held_secured}</span>
                         </span>
                         <button
                           onClick={() => setViewContactsAwardId(award.id)}
                           className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-300 border border-emerald-800 text-xs font-medium flex items-center space-x-1.5"
                         >
                           <Phone className="w-3.5 h-3.5" />
-                          <span>View Direct Contacts</span>
+                          <span>{t.view_direct_contacts}</span>
                         </button>
                       </div>
                     )}
@@ -323,13 +328,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     {job.status === 'PENDING_COMPLETION' && (
                       <div className="w-full flex items-center justify-between bg-yellow-950/40 p-2 rounded-xl border border-yellow-800/80">
                         <span className="text-xs text-yellow-300 font-medium">
-                          Supervisor submitted completion & wages
+                          {t.sup_submitted_completion}
                         </span>
                         <button
                           onClick={() => setSelectedJobForCompletion(job)}
                           className="px-3 py-1.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-bold shadow-md"
                         >
-                          Verify & Release Escrow →
+                          {t.verify_release_escrow}
                         </button>
                       </div>
                     )}
@@ -338,9 +343,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       <div className="w-full flex items-center justify-between text-xs text-emerald-400">
                         <span className="flex items-center space-x-1">
                           <CheckCircle2 className="w-4 h-4" />
-                          <span>Job Completed & Escrow Released</span>
+                          <span>{t.job_completed_released}</span>
                         </span>
-                        <span className="font-mono text-slate-400">Archived</span>
+                        <span className="font-mono text-slate-400">{t.archived}</span>
                       </div>
                     )}
                   </div>
@@ -370,10 +375,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
             <div className="flex items-center space-x-2 text-amber-400 font-bold text-base mb-1">
               <ShieldCheck className="w-5 h-5" />
-              <span>Coconnect Escrow & Contact Gating Engine</span>
+              <span>{t.escrow_engine_title}</span>
             </div>
             <p className="text-xs text-slate-300 max-w-3xl">
-              Strict Escrow Rule: Telephone numbers and contact details are completely encrypted and withheld until the landowner funds the verified holding escrow account. Funds are released to workers and supervisors only upon dual-confirmation PIN verification at job completion.
+              {t.escrow_engine_desc}
             </p>
           </div>
 
@@ -392,21 +397,21 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         isReleased ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
                         'bg-rose-950 text-rose-300 border border-rose-800'
                       }`}>
-                        Escrow: {award.escrow_status.toUpperCase()}
+                        {t.escrow_label}: {tEscrowStatus(award.escrow_status, currentLang)}
                       </span>
-                      <span className="text-xs text-slate-400">Award #{award.id}</span>
+                      <span className="text-xs text-slate-400">{t.award_label} #{award.id}</span>
                     </div>
 
-                    <h4 className="text-sm font-bold text-white mt-2">{job?.task_type}</h4>
-                    <p className="text-xs text-slate-400">Supervisor: <strong className="text-slate-200">{award.supervisor_name}</strong></p>
+                    <h4 className="text-sm font-bold text-white mt-2">{tTaskType(job?.task_type, currentLang)}</h4>
+                    <p className="text-xs text-slate-400">{t.supervisor_label}: <strong className="text-slate-200">{award.supervisor_name}</strong></p>
                     {award.fee_payment_ref && (
-                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">Ref: {award.fee_payment_ref}</p>
+                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">{t.ref_label}: {award.fee_payment_ref}</p>
                     )}
                   </div>
 
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
-                      <div className="text-xs text-slate-400">Secured Amount</div>
+                      <div className="text-xs text-slate-400">{t.secured_amount}</div>
                       <div className="text-base font-bold text-emerald-400">LKR {award.escrow_amount.toLocaleString()}</div>
                     </div>
 
@@ -416,14 +421,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         className="px-3.5 py-2 rounded-xl bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-800 text-xs font-semibold flex items-center space-x-1.5"
                       >
                         <Unlock className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>View Released Contacts</span>
+                        <span>{t.view_released_contacts}</span>
                       </button>
                     ) : (
                       <button
                         onClick={() => setSelectedAwardForEscrow(award)}
                         className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md"
                       >
-                        Pay into Escrow →
+                        {t.pay_into_escrow} →
                       </button>
                     )}
                   </div>
@@ -440,10 +445,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
             <h3 className="text-base font-bold text-white flex items-center space-x-2">
               <CheckCircle2 className="w-5 h-5 text-teal-400" />
-              <span>Daily Attendance Dual-Confirmation</span>
+              <span>{t.attendance_dual_title}</span>
             </h3>
             <p className="text-xs text-slate-400 mt-1">
-              Neither party can finalize attendance alone. Supervisor records field check-in, owner verifies on estate gate. Mismatches automatically open an exception record.
+              {t.attendance_dual_desc}
             </p>
           </div>
 
@@ -457,15 +462,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <div key={day.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div>
-                      <span className="text-xs font-mono text-emerald-400">Date: {day.work_date}</span>
-                      <h4 className="text-sm font-bold text-white mt-0.5">{job?.task_type}</h4>
+                      <span className="text-xs font-mono text-emerald-400">{t.work_date}: {day.work_date}</span>
+                      <h4 className="text-sm font-bold text-white mt-0.5">{tTaskType(job?.task_type, currentLang)}</h4>
                     </div>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
                       day.status === 'reconciled' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
                       day.status === 'disputed' ? 'bg-rose-950 text-rose-300 border border-rose-800' :
                       'bg-amber-950 text-amber-300 border border-amber-800'
                     }`}>
-                      {day.status.toUpperCase()}
+                      {tReviewStatus(day.status, currentLang)}
                     </span>
                   </div>
 
@@ -478,14 +483,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                           <div>
                             <div className="font-semibold text-white">{supEntry.worker_name}</div>
                             <div className="text-[11px] text-slate-400">
-                              Supervisor logged: <strong className="text-emerald-400">{supEntry.present ? 'Present' : 'Absent'}</strong>
+                              {t.supervisor_logged}: <strong className="text-emerald-400">{supEntry.present ? t.common_present : t.common_absent}</strong>
                             </div>
                           </div>
 
                           <div className="flex items-center space-x-3">
                             {ownerEntry ? (
                               <span className="px-2 py-1 rounded bg-slate-800 text-slate-300 text-[11px]">
-                                Owner verified: {ownerEntry.present ? '✅ Present' : '❌ Absent'}
+                                {t.owner_verified_label}: {ownerEntry.present ? `✅ ${t.common_present}` : `❌ ${t.common_absent}`}
                               </span>
                             ) : (
                               <div className="flex items-center space-x-1.5">
@@ -500,7 +505,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                                   }}
                                   className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
                                 >
-                                  Confirm Present
+                                  {t.confirm_present}
                                 </button>
                                 <button
                                   onClick={() => {
@@ -513,7 +518,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                                   }}
                                   className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium"
                                 >
-                                  Mark Absent
+                                  {t.mark_absent}
                                 </button>
                               </div>
                             )}
@@ -549,7 +554,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <form onSubmit={handleCreateJob} className="p-6 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Select Coconut Estate
+                  {t.select_estate}
                 </label>
                 <select
                   required
@@ -557,10 +562,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   onChange={(e) => setEstateId(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500"
                 >
-                  <option value="" disabled>Choose land...</option>
+                  <option value="" disabled>{t.choose_land}</option>
                   {ownerEstates.map(e => (
                     <option key={e.id} value={e.id}>
-                      {e.name} ({e.area_acres} acres • {e.tree_count} trees) - {e.location}
+                      {e.name} ({e.area_acres} {t.acres_word} • {e.tree_count} {t.trees_word}) - {e.location}
                     </option>
                   ))}
                 </select>
@@ -568,25 +573,23 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Task Type
+                  {t.task_type_label}
                 </label>
                 <select
                   value={taskType}
                   onChange={(e) => setTaskType(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500"
                 >
-                  <option value="Coconut Harvesting & Bunch Lowering">Coconut Harvesting & Bunch Lowering</option>
-                  <option value="Fertilizer Ring Application & Mulching">Fertilizer Ring Application & Mulching</option>
-                  <option value="Dry Frond Trimming & Crown Cleaning">Dry Frond Trimming & Crown Cleaning</option>
-                  <option value="Nut Husking & Copra Drying Batch">Nut Husking & Copra Drying Batch</option>
-                  <option value="Undergrowth Tractor Clearing">Undergrowth Tractor Clearing</option>
+                  {TASK_TYPE_KEYS.map((key) => (
+                    <option key={key} value={key}>{tTaskType(key, currentLang)}</option>
+                  ))}
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Start Date
+                    {t.start_date}
                   </label>
                   <input
                     type="date"
@@ -598,7 +601,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    End Date
+                    {t.end_date}
                   </label>
                   <input
                     type="date"
@@ -613,7 +616,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Crew Size
+                    {t.job_crew_size}
                   </label>
                   <input
                     type="number"
@@ -626,7 +629,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Duration (Days)
+                    {t.duration_days_label}
                   </label>
                   <input
                     type="number"
@@ -639,7 +642,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Budget (LKR)
+                    {t.budget_lkr}
                   </label>
                   <input
                     type="number"
@@ -654,7 +657,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                  Required Agricultural Skills
+                  {t.required_skills_label}
                 </label>
                 <div className="flex flex-wrap gap-1.5">
                   {availableSkills.map((sk) => {
@@ -676,7 +679,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                             : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
                         }`}
                       >
-                        {sk} {selected && '✓'}
+                        {tSkill(sk, currentLang)} {selected && '✓'}
                       </button>
                     );
                   })}
@@ -685,13 +688,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Estate Work Instructions
+                  {t.estate_instructions}
                 </label>
                 <textarea
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Specific requirements, palm height, equipment provided..."
+                  placeholder={t.estate_instructions_ph}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -702,13 +705,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   onClick={() => setIsPostJobOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800"
                 >
-                  Cancel
+                  {t.common_cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md"
                 >
-                  Publish Job to Supervisors
+                  {t.publish_job}
                 </button>
               </div>
             </form>
@@ -722,8 +725,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-white">Bids Received for {selectedJobForBids.task_type}</h3>
-                <p className="text-xs text-slate-400">Budget: LKR {selectedJobForBids.wage_budget.toLocaleString()}</p>
+                <h3 className="text-base font-bold text-white">{t.bids_for} {tTaskType(selectedJobForBids.task_type, currentLang)}</h3>
+                <p className="text-xs text-slate-400">{t.job_budget}: LKR {selectedJobForBids.wage_budget.toLocaleString()}</p>
               </div>
               <button 
                 onClick={() => setSelectedJobForBids(null)}
@@ -754,20 +757,20 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         </div>
                         <div className="text-xs text-slate-400 mt-0.5 flex items-center space-x-1">
                           <Lock className="w-3 h-3 text-slate-500" />
-                          <span>Phone: +94 71 ••• •••• (Protected by Escrow)</span>
+                          <span>{t.phone_protected}</span>
                         </div>
                       </div>
 
                       <div className="text-right">
-                        <div className="text-xs text-slate-400">Bid Total</div>
+                        <div className="text-xs text-slate-400">{t.bid_total}</div>
                         <div className="text-base font-bold text-emerald-400">LKR {bid.price.toLocaleString()}</div>
-                        <div className="text-[10px] text-slate-500">Includes LKR {bid.supervisor_fee.toLocaleString()} commission</div>
+                        <div className="text-[10px] text-slate-500">{fmt(t.includes_commission, { amount: bid.supervisor_fee.toLocaleString() })}</div>
                       </div>
                     </div>
 
                     <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300">
                       <div className="font-semibold text-slate-400 text-[11px] mb-1">
-                        Crew Plan ({crewMembers.length} Workers):
+                        {t.crew_plan} ({crewMembers.length} {t.common_workers}):
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         {crewMembers.map(w => (
@@ -781,7 +784,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
                     <div className="flex items-center justify-between pt-2">
                       <span className="text-xs text-slate-400 capitalize">
-                        Payment: <strong>{bid.payment_schedule.replace('_', ' ')}</strong>
+                        {t.payment_label}: <strong>{tPaymentSchedule(bid.payment_schedule, currentLang)}</strong>
                       </span>
                       <button
                         onClick={() => handleAwardBid(bid.id)}
@@ -804,24 +807,24 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
             <div className="flex items-center space-x-2 text-amber-400 font-bold text-base">
               <CreditCard className="w-5 h-5" />
-              <span>Deposit into Escrow Holding Account</span>
+              <span>{t.escrow_deposit_title}</span>
             </div>
 
             <p className="text-xs text-slate-300">
-              You are funding the labour holding escrow for award #{selectedAwardForEscrow.id}. Your payment is held safely until you verify completion with your PIN.
+              {fmt(t.escrow_deposit_desc, { id: selectedAwardForEscrow.id })}
             </p>
 
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
               <div className="flex justify-between text-slate-400">
-                <span>Supervisor:</span>
+                <span>{t.supervisor_label}:</span>
                 <strong className="text-white">{selectedAwardForEscrow.supervisor_name}</strong>
               </div>
               <div className="flex justify-between text-slate-400">
-                <span>Payment Gate:</span>
-                <strong className="text-emerald-400">PayHere Sri Lanka / Direct Bank</strong>
+                <span>{t.payment_gate}:</span>
+                <strong className="text-emerald-400">{t.payment_gate_value}</strong>
               </div>
               <div className="flex justify-between text-slate-200 font-bold text-sm pt-2 border-t border-slate-800">
-                <span>Total Escrow Deposit:</span>
+                <span>{t.total_escrow_deposit}:</span>
                 <span className="text-emerald-400">LKR {selectedAwardForEscrow.escrow_amount.toLocaleString()}</span>
               </div>
             </div>
@@ -832,7 +835,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 onClick={() => setSelectedAwardForEscrow(null)}
                 className="w-1/2 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium"
               >
-                Cancel
+                {t.common_cancel}
               </button>
               <button
                 type="button"
@@ -840,7 +843,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 className="w-1/2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md flex items-center justify-center space-x-1"
               >
                 <ShieldCheck className="w-4 h-4" />
-                <span>Confirm Deposit</span>
+                <span>{t.confirm_deposit}</span>
               </button>
             </div>
           </div>
@@ -854,7 +857,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center space-x-2 text-emerald-400 font-bold text-base">
                 <Unlock className="w-5 h-5" />
-                <span>Contacts Released (Escrow Verified)</span>
+                <span>{t.contacts_released_title}</span>
               </div>
               <button onClick={() => setViewContactsAwardId(null)} className="text-slate-400 hover:text-white">
                 <X className="w-4 h-4" />
@@ -866,7 +869,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               if (!res.success || !res.contacts) {
                 return (
                   <div className="p-3 bg-rose-950/60 border border-rose-800 text-rose-200 text-xs rounded-xl">
-                    {res.error || 'Contacts locked'}
+                    {res.error || t.contacts_locked}
                   </div>
                 );
               }
@@ -875,7 +878,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               return (
                 <div className="space-y-3">
                   <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <div className="text-[11px] text-slate-400 uppercase tracking-wider">Supervisor Contact</div>
+                    <div className="text-[11px] text-slate-400 uppercase tracking-wider">{t.supervisor_contact}</div>
                     <div className="text-sm font-bold text-white mt-1">{supervisor_name}</div>
                     <div className="text-emerald-400 font-mono text-sm mt-0.5 flex items-center space-x-1">
                       <Phone className="w-3.5 h-3.5" />
@@ -884,13 +887,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   </div>
 
                   <div>
-                    <div className="text-xs font-semibold text-slate-400 mb-2">Confirmed Crew Members:</div>
+                    <div className="text-xs font-semibold text-slate-400 mb-2">{t.confirmed_crew}</div>
                     <div className="space-y-1.5 max-h-48 overflow-y-auto">
                       {crew.map((w, idx) => (
                         <div key={idx} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
                           <div>
                             <div className="font-semibold text-white">{w.name}</div>
-                            <div className="text-[11px] text-slate-500">{w.skills.join(', ')}</div>
+                            <div className="text-[11px] text-slate-500">{w.skills.map((sk) => tSkill(sk, currentLang)).join(', ')}</div>
                           </div>
                           <div className="font-mono text-emerald-400 text-[11px]">{w.phone}</div>
                         </div>
@@ -905,7 +908,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               onClick={() => setViewContactsAwardId(null)}
               className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
             >
-              Close
+              {t.common_close}
             </button>
           </div>
         </div>
@@ -930,7 +933,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
             <form onSubmit={handleConfirmCompletion} className="p-6 space-y-4 overflow-y-auto">
               <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800 text-emerald-200 text-xs">
-                Signing with your security PIN releases the funds held in escrow to the supervisor and worker accounts.
+                {t.completion_pin_note}
               </div>
 
               {confirmError && (
@@ -946,19 +949,19 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
                 return (
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
-                    <div className="font-semibold text-slate-300">Wages Distribution Summary:</div>
+                    <div className="font-semibold text-slate-300">{t.wages_distribution}</div>
                     {comp.wage_records.map(r => (
                       <div key={r.worker_id} className="flex justify-between text-slate-400">
-                        <span>{r.worker_name} ({r.days_worked} days)</span>
+                        <span>{r.worker_name} ({r.days_worked} {t.common_days})</span>
                         <span className="font-mono text-white">LKR {r.amount.toLocaleString()}</span>
                       </div>
                     ))}
                     <div className="flex justify-between text-slate-400">
-                      <span>Supervisor Commission</span>
+                      <span>{t.supervisor_commission}</span>
                       <span className="font-mono text-white">LKR {comp.supervisor_fee.toLocaleString()}</span>
                     </div>
                     <div className="pt-1.5 border-t border-slate-800 flex justify-between font-bold text-emerald-400">
-                      <span>Total Escrow Release</span>
+                      <span>{t.total_escrow_release}</span>
                       <span>LKR {(comp.total_wages + comp.supervisor_fee).toLocaleString()}</span>
                     </div>
                   </div>
@@ -984,13 +987,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                     className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono text-center tracking-widest text-lg focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1">Default demo PIN: 1234</p>
+                <p className="text-[11px] text-slate-500 mt-1">{t.demo_pin_note}</p>
               </div>
 
               {/* Rating System (Requirement 7) */}
               <div className="pt-2 border-t border-slate-800">
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                  Performance Rating (1 - 5 Stars)
+                  {t.performance_rating_label}
                 </label>
                 <div className="flex items-center space-x-2">
                   {[1, 2, 3, 4, 5].map((s) => (
@@ -1005,13 +1008,13 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                       <Star className="w-6 h-6 fill-current" />
                     </button>
                   ))}
-                  <span className="text-sm font-bold text-amber-400 ml-2">{ratingScore} / 5 Stars</span>
+                  <span className="text-sm font-bold text-amber-400 ml-2">{ratingScore} / 5 {t.common_stars}</span>
                 </div>
 
                 <div className="mt-3">
-                  <label className="block text-[11px] text-slate-400 mb-1">Review Tags</label>
+                  <label className="block text-[11px] text-slate-400 mb-1">{t.review_tags_label}</label>
                   <div className="flex flex-wrap gap-1.5">
-                    {['Punctual Crew', 'Zero Nut Damage', 'Safe Tree Climbing', 'Clean Estate', 'Fast Harvest'].map(tag => {
+                    {REVIEW_TAG_KEYS.map(tag => {
                       const active = selectedTags.includes(tag);
                       return (
                         <button
@@ -1025,7 +1028,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                             active ? 'bg-amber-950 text-amber-300 border-amber-700' : 'bg-slate-850 text-slate-400 border-slate-800'
                           }`}
                         >
-                          {tag}
+                          {tReviewTag(tag, currentLang)}
                         </button>
                       );
                     })}
@@ -1033,7 +1036,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 </div>
 
                 <div className="mt-3">
-                  <label className="block text-[11px] text-slate-400 mb-1">Review Feedback</label>
+                  <label className="block text-[11px] text-slate-400 mb-1">{t.review_feedback_label}</label>
                   <textarea
                     rows={2}
                     value={ratingComment}
@@ -1049,14 +1052,14 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   onClick={() => setSelectedJobForCompletion(null)}
                   className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800"
                 >
-                  Cancel
+                  {t.common_cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md flex items-center space-x-2"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Release Escrow & Submit Rating</span>
+                  <span>{t.release_submit_rating}</span>
                 </button>
               </div>
             </form>

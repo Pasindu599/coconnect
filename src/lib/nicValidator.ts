@@ -14,11 +14,17 @@ export interface NicValidationResult {
   dayOfYear?: number;
   approxDob?: string;
   errorMessage?: string;
+  /**
+   * Language-independent key for `errorMessage`. Consumers should translate
+   * this via the matching `nicv_*` entry in the i18n dictionary rather than
+   * rendering `errorMessage`, which is English-only.
+   */
+  errorCode?: 'nicv_required' | 'nicv_bad_day_9' | 'nicv_bad_year_12' | 'nicv_bad_day_12' | 'nicv_format';
 }
 
 export function validateAndParseSriLankanNic(rawNic: string): NicValidationResult {
   if (!rawNic) {
-    return { isValid: false, format: 'INVALID', formattedNumber: '', errorMessage: 'NIC number is required.' };
+    return { isValid: false, format: 'INVALID', formattedNumber: '', errorMessage: 'NIC number is required.', errorCode: 'nicv_required' };
   }
 
   const clean = rawNic.trim().toUpperCase().replace(/\s+/g, '');
@@ -47,6 +53,7 @@ export function validateAndParseSriLankanNic(rawNic: string): NicValidationResul
         format: 'OLD_9V',
         formattedNumber: clean,
         errorMessage: 'Invalid birth day sequence in 9-digit NIC.',
+        errorCode: 'nicv_bad_day_9',
       };
     }
 
@@ -79,6 +86,7 @@ export function validateAndParseSriLankanNic(rawNic: string): NicValidationResul
         format: 'NEW_12',
         formattedNumber: clean,
         errorMessage: 'Invalid birth year in 12-digit NIC.',
+        errorCode: 'nicv_bad_year_12',
       };
     }
 
@@ -96,6 +104,7 @@ export function validateAndParseSriLankanNic(rawNic: string): NicValidationResul
         format: 'NEW_12',
         formattedNumber: clean,
         errorMessage: 'Invalid birth day sequence in 12-digit NIC.',
+        errorCode: 'nicv_bad_day_12',
       };
     }
 
@@ -118,6 +127,7 @@ export function validateAndParseSriLankanNic(rawNic: string): NicValidationResul
     format: 'INVALID',
     formattedNumber: clean,
     errorMessage: 'NIC must be either 9 digits followed by V/X (e.g. 852341829V) or 12 digits (e.g. 198523401829).',
+    errorCode: 'nicv_format',
   };
 }
 

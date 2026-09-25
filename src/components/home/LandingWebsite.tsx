@@ -1,5 +1,5 @@
 import React from 'react';
-import { Language, translations } from '../../lib/i18n';
+import { Language, getT } from '../../lib/i18n';
 import { AppState } from '../../lib/store';
 import { Role } from '../../types';
 import { 
@@ -32,7 +32,7 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
   onExploreMap,
   onLanguageChange,
 }) => {
-  const t = translations[currentLang] || translations.en;
+  const t = getT(currentLang);
 
   const handleRoleClick = (role: Role) => {
     // If demo user exists, quick switch or open login for that role
@@ -53,11 +53,11 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
                 {t.hero_badge}
               </span>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-900 text-emerald-300 border border-emerald-700">
-                100% Escrow Secured
+                {t.landing_escrow_badge}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-0.5">
-              Coconut Triangle Coverage: Kurunegala, Puttalam, Gampaha, Chilaw, Kuliyapitiya & Beyond
+              {t.landing_coverage}
             </p>
           </div>
         </div>
@@ -110,7 +110,7 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
 
         {/* Language Quick Switcher on Hero */}
         <div className="pt-2 flex items-center justify-center space-x-2 text-xs">
-          <span className="text-slate-500">Language / භාෂාව / மொழி:</span>
+          <span className="text-slate-500">{t.landing_lang_label}</span>
           {(['en', 'si', 'ta'] as Language[]).map((lang) => (
             <button
               key={lang}
@@ -145,7 +145,7 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
 
         <div className="bg-slate-900 border border-slate-800/90 p-5 rounded-2xl text-center space-y-1 shadow-sm">
           <div className="text-xl sm:text-2xl font-bold font-mono text-teal-400">
-            {state.workers.length}+ Active
+            {state.workers.length}+ {t.landing_active_suffix}
           </div>
           <div className="text-xs text-slate-400 font-medium">{t.stat_climbers}</div>
         </div>
@@ -165,7 +165,7 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
             {t.roles_heading}
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
-            Choose your role to access customized dashboards, tools, and escrow workflows.
+            {t.roles_subheading}
           </p>
         </div>
 
@@ -185,15 +185,15 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
               <ul className="text-[11px] text-slate-300 space-y-1.5 pt-1">
                 <li className="flex items-center space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Google Maps boundary registration</span>
+                  <span>{t.role_owner_b1}</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Deposit escrow to unlock crew contacts</span>
+                  <span>{t.role_owner_b2}</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Dual 4-digit PIN completion release</span>
+                  <span>{t.role_owner_b3}</span>
                 </li>
               </ul>
             </div>
@@ -221,15 +221,15 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
               <ul className="text-[11px] text-slate-300 space-y-1.5 pt-1">
                 <li className="flex items-center space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Manage climber crew roster</span>
+                  <span>{t.role_sup_b1}</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Bid on coconut plucking contracts</span>
+                  <span>{t.role_sup_b2}</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Offline field attendance & wage tracking</span>
+                  <span>{t.role_sup_b3}</span>
                 </li>
               </ul>
             </div>
@@ -257,15 +257,15 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
               <ul className="text-[11px] text-slate-300 space-y-1.5 pt-1">
                 <li className="flex items-center space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Fair per-palm plucking wages</span>
+                  <span>{t.role_worker_b1}</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Verified attendance & wage ledger</span>
+                  <span>{t.role_worker_b2}</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Build national climber trust rating</span>
+                  <span>{t.role_worker_b3}</span>
                 </li>
               </ul>
             </div>

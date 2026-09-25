@@ -31,12 +31,15 @@ import {
   Lock
 } from 'lucide-react';
 import { User } from 'firebase/auth';
+import { Language, getT, fmt } from '../../lib/i18n';
 
 interface WorkspaceHubProps {
   state: AppState;
+  currentLang: Language;
 }
 
-export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
+export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state, currentLang }) => {
+  const t = getT(currentLang);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
@@ -58,7 +61,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
     isOpen: false,
     title: '',
     description: '',
-    actionLabel: 'Confirm',
+    actionLabel: '',
     onConfirm: async () => {},
   });
 
@@ -98,7 +101,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
       }
     } catch (err: any) {
       console.error('Sign-in error:', err);
-      setAuthError(err.message || 'Google authentication failed.');
+      setAuthError(err.message || t.ws_err_auth);
     } finally {
       setIsLoadingAuth(false);
     }
@@ -158,11 +161,11 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
       const filename = `Coconnect_Labour_Agreements_${new Date().toISOString().split('T')[0]}.json`;
       await uploadFileToDrive(accessToken, filename, content, 'application/json');
       await loadDriveFiles(accessToken);
-      setBackupSuccessMessage(`Successfully uploaded ${filename} to your Google Drive!`);
+      setBackupSuccessMessage(fmt(t.ws_backup_success, { file: filename }));
       setTimeout(() => setBackupSuccessMessage(null), 5000);
     } catch (err: any) {
       console.error('Export error:', err);
-      setAuthError(err.message || 'Failed to export contracts to Google Drive.');
+      setAuthError(err.message || t.ws_err_contracts);
     } finally {
       setIsLoadingDrive(false);
     }
@@ -196,11 +199,11 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
       const filename = `Coconnect_Estate_Registry_${new Date().toISOString().split('T')[0]}.json`;
       await uploadFileToDrive(accessToken, filename, content, 'application/json');
       await loadDriveFiles(accessToken);
-      setBackupSuccessMessage(`Successfully uploaded ${filename} to your Google Drive!`);
+      setBackupSuccessMessage(fmt(t.ws_backup_success, { file: filename }));
       setTimeout(() => setBackupSuccessMessage(null), 5000);
     } catch (err: any) {
       console.error('Export error:', err);
-      setAuthError(err.message || 'Failed to export estates to Google Drive.');
+      setAuthError(err.message || t.ws_err_estates);
     } finally {
       setIsLoadingDrive(false);
     }
@@ -238,11 +241,11 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
       const filename = `Coconnect_NIC_KYC_Records_${new Date().toISOString().split('T')[0]}.json`;
       await uploadFileToDrive(accessToken, filename, content, 'application/json');
       await loadDriveFiles(accessToken);
-      setBackupSuccessMessage(`Successfully uploaded ${filename} to your Google Drive!`);
+      setBackupSuccessMessage(fmt(t.ws_backup_success, { file: filename }));
       setTimeout(() => setBackupSuccessMessage(null), 5000);
     } catch (err: any) {
       console.error('Export error:', err);
-      setAuthError(err.message || 'Failed to export NIC records to Google Drive.');
+      setAuthError(err.message || t.ws_err_nic);
     } finally {
       setIsLoadingDrive(false);
     }
@@ -251,9 +254,9 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
   const handleDeleteDriveFilePrompt = (file: DriveFileItem) => {
     setConfirmDialog({
       isOpen: true,
-      title: 'Delete Google Drive File?',
-      description: `Are you sure you want to delete "${file.name}" from your Google Drive storage? This action cannot be undone.`,
-      actionLabel: 'Delete File',
+      title: t.ws_delete_title,
+      description: fmt(t.ws_delete_desc, { name: file.name }),
+      actionLabel: t.ws_delete_action,
       onConfirm: async () => {
         if (!accessToken) return;
         await deleteDriveFile(accessToken, file.id);
@@ -273,13 +276,13 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-xl font-bold text-white">Google Drive Cloud Backup Hub</h1>
+              <h1 className="text-xl font-bold text-white">{t.ws_title}</h1>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-950 text-blue-300 font-medium border border-blue-800">
-                Workspace Storage
+                {t.ws_badge}
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Synchronize coconut estate registries, escrow agreements, and NIC KYC records with Google Drive
+              {t.ws_sub}
             </p>
           </div>
         </div>
@@ -293,7 +296,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
               </div>
               <div className="text-left hidden sm:block">
                 <div className="text-xs font-semibold text-white leading-tight">
-                  {currentUser.displayName || 'Google Account'}
+                  {currentUser.displayName || t.ws_google_account}
                 </div>
                 <div className="text-[10px] text-slate-400 leading-tight">
                   {currentUser.email}
@@ -303,7 +306,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
                 onClick={handleSignOut}
                 className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition"
               >
-                Disconnect
+                {t.ws_disconnect}
               </button>
             </div>
           ) : (
@@ -313,7 +316,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
               className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition flex items-center space-x-2 disabled:opacity-50"
             >
               <HardDrive className="w-4 h-4" />
-              <span>{isLoadingAuth ? 'Connecting Google...' : 'Connect Google Drive'}</span>
+              <span>{isLoadingAuth ? t.ws_connecting : t.ws_connect}</span>
             </button>
           )}
         </div>
@@ -337,42 +340,42 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Cloud Database (Firestore)</span>
+            <span>{t.ws_card_firestore}</span>
             <Database className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-base font-bold text-white flex items-center space-x-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Firestore Active</span>
+            <span>{t.ws_firestore_active}</span>
           </div>
           <p className="text-[11px] text-slate-400">
-            NIC submissions, estate boundaries, and labour jobs persist directly in Firebase Firestore.
+            {t.ws_firestore_desc}
           </p>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Google Drive Storage</span>
+            <span>{t.ws_card_drive}</span>
             <HardDrive className="w-4 h-4 text-blue-400" />
           </div>
           <div className="text-base font-bold text-white flex items-center space-x-2">
             <span className={`w-2.5 h-2.5 rounded-full ${currentUser ? 'bg-blue-500' : 'bg-slate-600'}`}></span>
-            <span>{currentUser ? `${driveFiles.length} Synced Files` : 'Requires Connection'}</span>
+            <span>{currentUser ? fmt(t.ws_synced_files, { n: driveFiles.length }) : t.ws_requires_connection}</span>
           </div>
           <p className="text-[11px] text-slate-400">
-            Automated export of labour agreements and KYC identity audit archives.
+            {t.ws_drive_desc}
           </p>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>NIC Verification Sync</span>
+            <span>{t.ws_card_nic}</span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-base font-bold text-white">
-            {state.nicSubmissions?.length || 0} Submissions
+            {state.nicSubmissions?.length || 0} {t.ws_submissions}
           </div>
           <p className="text-[11px] text-slate-400">
-            Front & Back identity attachments queued and backed up for compliance.
+            {t.ws_nic_desc}
           </p>
         </div>
       </div>
@@ -383,10 +386,10 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
           <div>
             <h2 className="text-base font-bold text-white flex items-center space-x-2">
               <HardDrive className="w-5 h-5 text-blue-400" />
-              <span>Google Drive Automated Backup & File Explorer</span>
+              <span>{t.ws_console_title}</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Export system records to your personal or organization Google Drive repository
+              {t.ws_console_sub}
             </p>
           </div>
 
@@ -398,7 +401,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition border border-slate-700 disabled:opacity-50"
               >
                 <Download className="w-3.5 h-3.5 text-blue-400" />
-                <span>Export Agreements ({state.awards.length})</span>
+                <span>{t.ws_export_agreements} ({state.awards.length})</span>
               </button>
               <button
                 onClick={handleBackupEstates}
@@ -406,7 +409,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition border border-slate-700 disabled:opacity-50"
               >
                 <Download className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Export Estates ({state.estates.length})</span>
+                <span>{t.ws_export_estates} ({state.estates.length})</span>
               </button>
               <button
                 onClick={handleBackupNicRecords}
@@ -414,13 +417,13 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition border border-slate-700 disabled:opacity-50"
               >
                 <Download className="w-3.5 h-3.5 text-purple-400" />
-                <span>Export NIC Records ({state.nicSubmissions?.length || 0})</span>
+                <span>{t.ws_export_nic} ({state.nicSubmissions?.length || 0})</span>
               </button>
               <button
                 onClick={() => accessToken && loadDriveFiles(accessToken)}
                 disabled={isLoadingDrive}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-                title="Refresh Drive File List"
+                title={t.ws_refresh_title}
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingDrive ? 'animate-spin' : ''}`} />
               </button>
@@ -433,9 +436,9 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
             <div className="w-16 h-16 rounded-2xl bg-blue-950/60 border border-blue-800/80 text-blue-400 flex items-center justify-center mx-auto">
               <HardDrive className="w-8 h-8" />
             </div>
-            <h3 className="text-base font-bold text-white">Connect Google Drive</h3>
+            <h3 className="text-base font-bold text-white">{t.ws_connect}</h3>
             <p className="text-xs text-slate-400">
-              Sign in with your Google Workspace or Personal account to unlock automatic export of coconut hiring contracts, escrow certificates, and KYC identity verification records.
+              {t.ws_connect_desc}
             </p>
             <button
               onClick={handleSignIn}
@@ -443,24 +446,24 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
               className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-500/20 transition inline-flex items-center space-x-2"
             >
               <HardDrive className="w-4 h-4" />
-              <span>{isLoadingAuth ? 'Opening Google Auth...' : 'Connect with Google Drive'}</span>
+              <span>{isLoadingAuth ? t.ws_opening_auth : t.ws_connect_with}</span>
             </button>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Files in your Google Drive (showing recent files):</span>
-              <span>{driveFiles.length} files found</span>
+              <span>{t.ws_files_label}</span>
+              <span>{fmt(t.ws_files_found, { n: driveFiles.length })}</span>
             </div>
 
             {isLoadingDrive ? (
               <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center space-x-2">
                 <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
-                <span>Loading Google Drive files...</span>
+                <span>{t.ws_loading_files}</span>
               </div>
             ) : driveFiles.length === 0 ? (
               <div className="p-8 text-center bg-slate-950/40 rounded-xl border border-slate-800/80 text-xs text-slate-500">
-                No files found in this Drive folder. Click "Export Agreements", "Export Estates", or "Export NIC Records" above to create your first backup!
+                {t.ws_no_files}
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -496,7 +499,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
                           target="_blank"
                           rel="noreferrer"
                           className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition"
-                          title="Open in Google Drive"
+                          title={t.ws_open_in_drive}
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
@@ -504,7 +507,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
                       <button
                         onClick={() => handleDeleteDriveFilePrompt(file)}
                         className="p-1.5 rounded-lg bg-slate-800 text-rose-400 hover:text-rose-300 hover:bg-rose-950/50 transition"
-                        title="Delete file from Google Drive"
+                        title={t.ws_delete_file}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -533,7 +536,7 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state }) => {
                 onClick={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
                 className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition"
               >
-                Cancel
+                {t.common_cancel}
               </button>
               <button
                 onClick={confirmDialog.onConfirm}

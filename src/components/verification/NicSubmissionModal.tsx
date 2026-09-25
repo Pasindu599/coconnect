@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { AppState, store } from '../../lib/store';
+import { Language, getT, fmt, tGender } from '../../lib/i18n';
 import { 
   validateAndParseSriLankanNic, 
   getSampleSriLankaNicCard, 
@@ -25,13 +26,16 @@ interface NicSubmissionModalProps {
   isOpen: boolean;
   onClose: () => void;
   state: AppState;
+  currentLang: Language;
 }
 
 export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
   isOpen,
   onClose,
-  state
+  state,
+  currentLang
 }) => {
+  const t = getT(currentLang);
   const currentUser = state.currentUser;
   const userSubmission = state.nicSubmissions?.find(s => s.user_id === currentUser?.id);
 
@@ -63,7 +67,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      setErrorMessage('Front image exceeds 10MB limit. Please upload a smaller file.');
+      setErrorMessage(t.nic_err_front_size);
       return;
     }
 
@@ -84,7 +88,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      setErrorMessage('Back image exceeds 10MB limit. Please upload a smaller file.');
+      setErrorMessage(t.nic_err_back_size);
       return;
     }
 
@@ -118,22 +122,22 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
     setErrorMessage(null);
 
     if (!nicNumber.trim()) {
-      setErrorMessage('Please enter your National Identity Card (NIC) number.');
+      setErrorMessage(t.nic_err_number_required);
       return;
     }
 
     if (!validation.isValid) {
-      setErrorMessage(validation.errorMessage || 'Invalid Sri Lankan NIC number format.');
+      setErrorMessage(validation.errorCode ? t[validation.errorCode] : t.nic_err_invalid);
       return;
     }
 
     if (!frontImage) {
-      setErrorMessage('Please attach the NIC Front End image.');
+      setErrorMessage(t.nic_err_front_required);
       return;
     }
 
     if (!backImage) {
-      setErrorMessage('Please attach the NIC Back End image.');
+      setErrorMessage(t.nic_err_back_required);
       return;
     }
 
@@ -158,7 +162,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
       }, 1600);
     } catch (err: any) {
       setIsSubmitting(false);
-      setErrorMessage(err.message || 'Failed to submit NIC documents');
+      setErrorMessage(err.message || t.nic_err_submit_failed);
     }
   };
 
@@ -174,13 +178,13 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                Submit National Identity Card (NIC)
+                {t.nic_modal_title}
                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/30">
-                  KYC Verified Level 2
+                  {t.nic_kyc_badge}
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
-                Attach Front & Back sides for Sri Lankan identity authentication & escrow trust score
+                {t.nic_modal_sub}
               </p>
             </div>
           </div>
@@ -198,10 +202,10 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-emerald-900">
-                NIC Identity Verified (Approved)
+                {t.nic_status_verified_title}
               </p>
               <p className="text-xs text-emerald-700 mt-0.5">
-                Your NIC ({currentUser.nic_number}) has been officially verified by the platform administrators. You can update your attachments below if your physical card was re-issued.
+                {fmt(t.nic_status_verified_desc, { nic: currentUser.nic_number || '—' })}
               </p>
             </div>
           </div>
@@ -212,10 +216,10 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
             <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-amber-900">
-                NIC Submission Under Review
+                {t.nic_status_pending_title}
               </p>
               <p className="text-xs text-amber-700 mt-0.5">
-                Your card attachments are queued for verification by Coconnect operations. You can re-upload fresh attachments if you need to correct details.
+                {t.nic_status_pending_desc}
               </p>
             </div>
           </div>
@@ -226,10 +230,10 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
             <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-rose-900">
-                Previous Submission Rejected
+                {t.nic_status_rejected_title}
               </p>
               <p className="text-xs text-rose-700 mt-0.5">
-                Reason: {currentUser.nic_rejection_reason || userSubmission?.rejection_reason || 'Unclear card edges or numbers'}. Please provide sharp, high-contrast photos below.
+                {t.nic_reason_label}: {currentUser.nic_rejection_reason || userSubmission?.rejection_reason || t.nic_default_reason}. {t.nic_rejected_hint}
               </p>
             </div>
           </div>
@@ -242,7 +246,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
           <div className="flex items-center justify-between bg-slate-50 border border-slate-200/80 rounded-xl p-3">
             <div className="flex items-center space-x-2 text-xs text-slate-600">
               <Sparkles className="w-4 h-4 text-emerald-600" />
-              <span>Testing without physical card? Auto-generate verified specimen cards.</span>
+              <span>{t.nic_demo_hint}</span>
             </div>
             <button
               type="button"
@@ -250,7 +254,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
               className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-colors flex items-center space-x-1.5"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Quick-Fill Sample Cards</span>
+              <span>{t.nic_quick_fill}</span>
             </button>
           </div>
 
@@ -258,10 +262,10 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                Sri Lankan NIC Number *
+                {t.nic_number_input_label}
               </label>
               <span className="text-[11px] text-slate-500">
-                Old (9 digits + V/X) or New (12 digits)
+                {t.nic_number_hint}
               </span>
             </div>
             <div className="relative">
@@ -272,7 +276,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                   setNicNumber(e.target.value.toUpperCase());
                   setErrorMessage(null);
                 }}
-                placeholder="e.g. 852341829V or 199012345678"
+                placeholder={t.nic_number_ph}
                 className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-mono transition-colors focus:outline-none focus:ring-2 ${
                   nicNumber && validation.isValid 
                     ? 'border-emerald-500 bg-emerald-50/20 text-emerald-950 focus:ring-emerald-500/20'
@@ -291,16 +295,16 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
             {/* Live Parsing Feedback */}
             {nicNumber && validation.isValid && (
               <div className="mt-2 text-xs bg-emerald-50 text-emerald-800 p-2.5 rounded-lg border border-emerald-200 flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span className="font-semibold">Format: {validation.format === 'OLD_9V' ? 'Old 9-Digit (V/X)' : 'New 12-Digit (2016+)'}</span>
-                {validation.birthYear && <span>Year of Birth: <strong>{validation.birthYear}</strong></span>}
-                {validation.gender && <span>Gender: <strong>{validation.gender}</strong></span>}
-                {validation.approxDob && <span>Estimated DOB: <strong>{validation.approxDob}</strong></span>}
+                <span className="font-semibold">{t.nic_format_word}: {validation.format === 'OLD_9V' ? t.nic_format_old : t.nic_format_new}</span>
+                {validation.birthYear && <span>{t.nic_year_of_birth}: <strong>{validation.birthYear}</strong></span>}
+                {validation.gender && <span>{t.gender_label}: <strong>{tGender(validation.gender, currentLang)}</strong></span>}
+                {validation.approxDob && <span>{t.nic_est_dob}: <strong>{validation.approxDob}</strong></span>}
               </div>
             )}
             {nicNumber && !validation.isValid && (
               <p className="mt-1.5 text-xs text-rose-600 flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                {validation.errorMessage}
+                {validation.errorCode ? t[validation.errorCode] : validation.errorMessage}
               </p>
             )}
           </div>
@@ -315,19 +319,19 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                   <div className="flex items-center space-x-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                      NIC Front End *
+                      {t.nic_front_title}
                     </h3>
                   </div>
                   {frontImage ? (
                     <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      Attached ✓
+                      {t.nic_attached}
                     </span>
                   ) : (
-                    <span className="text-[11px] text-rose-600 font-medium">Required</span>
+                    <span className="text-[11px] text-rose-600 font-medium">{t.common_required}</span>
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500 mb-3">
-                  Must clearly show your face photo, NIC number, and official seal.
+                  {t.nic_front_hint}
                 </p>
 
                 {/* Front Image Preview or Drop Area */}
@@ -335,15 +339,15 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                   <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-white group mb-3 aspect-[1.58/1] flex items-center justify-center">
                     <img 
                       src={frontImage} 
-                      alt="NIC Front" 
+                      alt={t.nic_front_alt} 
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
                       <button
                         type="button"
-                        onClick={() => setPreviewZoomImage({ url: frontImage, title: 'NIC Front End Preview' })}
+                        onClick={() => setPreviewZoomImage({ url: frontImage, title: t.nic_front_preview })}
                         className="p-1.5 bg-white text-slate-700 rounded-lg hover:bg-slate-100 shadow"
-                        title="Zoom preview"
+                        title={t.nic_zoom_title}
                       >
                         <ZoomIn className="w-4 h-4" />
                       </button>
@@ -354,7 +358,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                           setFrontFileName('');
                         }}
                         className="p-1.5 bg-rose-600 text-white rounded-lg hover:bg-rose-700 shadow"
-                        title="Remove attachment"
+                        title={t.nic_remove_title}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -369,10 +373,10 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                       <Upload className="w-5 h-5" />
                     </div>
                     <span className="text-xs font-semibold text-slate-700 group-hover:text-emerald-700">
-                      Upload NIC Front Side
+                      {t.nic_upload_front}
                     </span>
                     <span className="text-[10px] text-slate-400 mt-0.5">
-                      PNG, JPG, WEBP (Max 10MB)
+                      {t.nic_file_types}
                     </span>
                   </div>
                 )}
@@ -393,7 +397,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                   className="text-xs text-emerald-700 font-semibold hover:underline flex items-center gap-1"
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  <span>{frontImage ? 'Change Front Photo' : 'Browse File / Camera'}</span>
+                  <span>{frontImage ? t.nic_change_front : t.nic_browse}</span>
                 </button>
                 {frontFileName && (
                   <span className="text-[11px] text-slate-500 truncate max-w-[120px]" title={frontFileName}>
@@ -410,19 +414,19 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                   <div className="flex items-center space-x-1.5">
                     <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                     <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                      NIC Back End *
+                      {t.nic_back_title}
                     </h3>
                   </div>
                   {backImage ? (
                     <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                      Attached ✓
+                      {t.nic_attached}
                     </span>
                   ) : (
-                    <span className="text-[11px] text-rose-600 font-medium">Required</span>
+                    <span className="text-[11px] text-rose-600 font-medium">{t.common_required}</span>
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500 mb-3">
-                  Must clearly show your permanent address, date of issue, and barcode.
+                  {t.nic_back_hint}
                 </p>
 
                 {/* Back Image Preview or Drop Area */}
@@ -430,15 +434,15 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                   <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-white group mb-3 aspect-[1.58/1] flex items-center justify-center">
                     <img 
                       src={backImage} 
-                      alt="NIC Back" 
+                      alt={t.nic_back_alt} 
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
                       <button
                         type="button"
-                        onClick={() => setPreviewZoomImage({ url: backImage, title: 'NIC Back End Preview' })}
+                        onClick={() => setPreviewZoomImage({ url: backImage, title: t.nic_back_preview })}
                         className="p-1.5 bg-white text-slate-700 rounded-lg hover:bg-slate-100 shadow"
-                        title="Zoom preview"
+                        title={t.nic_zoom_title}
                       >
                         <ZoomIn className="w-4 h-4" />
                       </button>
@@ -449,7 +453,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                           setBackFileName('');
                         }}
                         className="p-1.5 bg-rose-600 text-white rounded-lg hover:bg-rose-700 shadow"
-                        title="Remove attachment"
+                        title={t.nic_remove_title}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -464,10 +468,10 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                       <Upload className="w-5 h-5" />
                     </div>
                     <span className="text-xs font-semibold text-slate-700 group-hover:text-blue-700">
-                      Upload NIC Back Side
+                      {t.nic_upload_back}
                     </span>
                     <span className="text-[10px] text-slate-400 mt-0.5">
-                      PNG, JPG, WEBP (Max 10MB)
+                      {t.nic_file_types}
                     </span>
                   </div>
                 )}
@@ -488,7 +492,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
                   className="text-xs text-blue-700 font-semibold hover:underline flex items-center gap-1"
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  <span>{backImage ? 'Change Back Photo' : 'Browse File / Camera'}</span>
+                  <span>{backImage ? t.nic_change_back : t.nic_browse}</span>
                 </button>
                 {backFileName && (
                   <span className="text-[11px] text-slate-500 truncate max-w-[120px]" title={backFileName}>
@@ -503,13 +507,13 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
           {/* Optional Notes */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Remarks or Special Notes (Optional)
+              {t.nic_remarks_label}
             </label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Registered address is same as estate location in Narammala"
+              placeholder={t.nic_remarks_ph}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none"
             />
           </div>
@@ -526,7 +530,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
           {submitSuccess && (
             <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span className="font-semibold">NIC Front and Back submitted successfully! Queued for Admin Verification.</span>
+              <span className="font-semibold">{t.nic_submit_success}</span>
             </div>
           )}
 
@@ -537,7 +541,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
             >
-              Cancel
+              {t.common_cancel}
             </button>
             <button
               type="submit"
@@ -551,12 +555,12 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
               {isSubmitting ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Submitting to Firestore...</span>
+                  <span>{t.nic_submitting}</span>
                 </>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Submit NIC for Verification</span>
+                  <span>{t.nic_submit_btn}</span>
                 </>
               )}
             </button>
@@ -577,7 +581,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
             </div>
             <img 
               src={previewZoomImage.url} 
-              alt="Zoomed card" 
+              alt={t.nic_zoom_alt} 
               className="w-full max-h-[70vh] object-contain rounded-lg"
             />
           </div>

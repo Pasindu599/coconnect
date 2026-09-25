@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Language, translations } from '../../lib/i18n';
+import { Language, getT } from '../../lib/i18n';
 import { AppState, store } from '../../lib/store';
 import { 
   ShieldCheck, 
@@ -27,7 +27,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
   onLoginSuccess,
   onBackToHome,
 }) => {
-  const t = translations[currentLang] || translations.en;
+  const t = getT(currentLang);
   
   const [email, setEmail] = useState('niluka.fernando@coconnect.gov.lk');
   const [pin, setPin] = useState('998877');
@@ -47,7 +47,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
         store.switchRole('admin');
         onLoginSuccess();
       } else {
-        setError('Administrative credentials rejected. Access is strictly audited.');
+        setError(t.admin_err_credentials);
       }
       setLoading(false);
     }, 400);
@@ -84,7 +84,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
           </div>
           <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-purple-950/80 border border-purple-800 text-purple-300 text-[11px] font-mono font-bold">
             <Building2 className="w-3.5 h-3.5" />
-            <span>ROUTE /admin • RESTRICTED ACCESS</span>
+            <span>{t.admin_route_badge}</span>
           </div>
           <h2 className="text-2xl font-bold text-white tracking-tight">
             {t.admin_login_title}
@@ -142,7 +142,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
                 />
               </div>
               <p className="mt-1 text-[11px] text-slate-500">
-                Authorized staff hardware token or registered biometric authentication.
+                {t.admin_pin_hint}
               </p>
             </div>
 
@@ -152,7 +152,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
               className="w-full py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-sm shadow-md transition flex items-center justify-center space-x-2"
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>{loading ? 'Authenticating...' : t.admin_login_btn}</span>
+              <span>{loading ? t.admin_authenticating : t.admin_login_btn}</span>
             </button>
           </form>
 
@@ -162,7 +162,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-slate-900 px-2 text-slate-500 font-mono text-[10px]">
-                Authorized Staff Credentials
+                {t.admin_divider_label}
               </span>
             </div>
           </div>
@@ -181,19 +181,19 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
                   Niluka Fernando
                 </div>
                 <div className="text-[11px] text-slate-400">
-                  Senior KYC & Dispute Officer (Admin)
+                  {t.admin_officer_title}
                 </div>
               </div>
             </div>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-900 text-purple-200 border border-purple-700">
-              Sign In →
+              {t.admin_sign_in}
             </span>
           </button>
         </div>
 
         {/* Compliance Footer */}
         <div className="text-center text-[11px] text-slate-500 font-mono">
-          <span>Official audit logs are cryptographically hashed and immutable.</span>
+          <span>{t.admin_audit_footer}</span>
         </div>
       </div>
     </div>

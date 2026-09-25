@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { store, AppState } from '../../lib/store';
-import { Language, translations } from '../../lib/i18n';
+import {
+  Language,
+  getT,
+  tJobStatus,
+  tEscrowStatus,
+  tSkill,
+  tTaskType,
+  tParty,
+} from '../../lib/i18n';
 import { 
   UserCheck, 
   Calendar, 
@@ -24,7 +32,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   state,
   currentLang,
 }) => {
-  const t = translations[currentLang];
+  const t = getT(currentLang);
   const user = state.currentUser;
   const [activeTab, setActiveTab] = useState<'assignments' | 'attendance' | 'wages'>('assignments');
 
@@ -53,8 +61,8 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
     return records.map(r => ({
       ...r,
       job_id: comp.job_id,
-      job_task: job?.task_type || 'Agricultural Task',
-      estate_name: job?.estate_name || 'Estate',
+      job_task: job?.task_type || t.default_task,
+      estate_name: job?.estate_name || t.default_estate,
       submitted_at: comp.submitted_at,
       status: comp.status,
       escrow_status: award?.escrow_status || 'held'
@@ -69,6 +77,9 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
     .filter(r => r.escrow_status === 'held')
     .reduce((sum, r) => sum + r.amount, 0);
 
+  const supervisorName =
+    state.users.find(u => u.id === workerRecord.supervisor_id)?.name || '—';
+
   return (
     <div className="space-y-6">
       
@@ -82,18 +93,18 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-bold text-white tracking-tight">{user?.name}</h1>
               <span className="px-2.5 py-0.5 rounded-full bg-teal-950 text-teal-300 text-xs font-semibold border border-teal-800">
-                Dedicated Worker Account
+                {t.worker_badge}
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Phone: <strong className="text-slate-200 font-mono">{user?.phone}</strong> • NIC: <span className="font-mono text-slate-300">{workerRecord.nic_ref}</span>
+              {t.worker_phone_label}: <strong className="text-slate-200 font-mono">{user?.phone}</strong> • {t.roster_nic}: <span className="font-mono text-slate-300">{workerRecord.nic_ref}</span>
             </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-4 bg-slate-950/80 p-3.5 rounded-xl border border-slate-800">
           <div className="text-right">
-            <div className="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">Worker Rating</div>
+            <div className="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">{t.worker_rating}</div>
             <div className="text-lg font-bold text-amber-400 font-mono flex items-center justify-end space-x-1">
               <Star className="w-4 h-4 fill-current text-amber-400" />
               <span>{workerRecord.rating.toFixed(2)}</span>
@@ -101,7 +112,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
           </div>
           <div className="h-8 w-px bg-slate-800" />
           <div className="text-right">
-            <div className="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">Jobs Completed</div>
+            <div className="text-[10px] uppercase text-slate-400 font-semibold tracking-wider">{t.jobs_completed}</div>
             <div className="text-lg font-bold text-teal-400 font-mono">{workerRecord.jobs_completed}</div>
           </div>
         </div>
@@ -110,27 +121,29 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-          <div className="text-xs font-medium text-slate-400">Total Wages Paid Out</div>
+          <div className="text-xs font-medium text-slate-400">{t.total_wages_paid}</div>
           <div className="text-2xl font-bold text-emerald-400 mt-1">
             LKR {totalEarnedReleased.toLocaleString()}
           </div>
-          <div className="text-[11px] text-slate-500 mt-0.5">Disbursed to bank account</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">{t.disbursed_note}</div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-          <div className="text-xs font-medium text-slate-400">Secured in Escrow</div>
+          <div className="text-xs font-medium text-slate-400">{t.secured_in_escrow}</div>
           <div className="text-2xl font-bold text-amber-400 mt-1">
             LKR {totalInEscrow.toLocaleString()}
           </div>
-          <div className="text-[11px] text-slate-500 mt-0.5">Release on owner completion sign-off</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">{t.release_on_signoff}</div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-          <div className="text-xs font-medium text-slate-400">Assigned Harvest Jobs</div>
+          <div className="text-xs font-medium text-slate-400">{t.assigned_harvest_jobs}</div>
           <div className="text-2xl font-bold text-teal-400 mt-1">
-            {assignedJobs.length} Jobs
+            {assignedJobs.length} {t.jobs_suffix}
           </div>
-          <div className="text-[11px] text-slate-500 mt-0.5">Under supervisor Kusal Mendis</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">
+            {t.under_supervisor}: {supervisorName}
+          </div>
         </div>
       </div>
 
@@ -145,7 +158,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
           }`}
         >
           <Calendar className="w-4 h-4" />
-          <span>Assigned Jobs ({assignedJobs.length})</span>
+          <span>{t.tab_assigned_jobs} ({assignedJobs.length})</span>
         </button>
 
         <button
@@ -157,7 +170,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
           }`}
         >
           <Clock className="w-4 h-4" />
-          <span>Attendance Records ({myAttendanceEntries.length})</span>
+          <span>{t.tab_attendance_records} ({myAttendanceEntries.length})</span>
         </button>
 
         <button
@@ -169,7 +182,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
           }`}
         >
           <DollarSign className="w-4 h-4" />
-          <span>Wage Receipts & Escrow</span>
+          <span>{t.tab_wage_receipts}</span>
         </button>
       </div>
 
@@ -190,9 +203,9 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                           job.status === 'IN_PROGRESS' ? 'bg-purple-950 text-purple-300 border border-purple-800' :
                           'bg-slate-800 text-slate-300'
                         }`}>
-                          {job.status.replace(/_/g, ' ')}
+                          {tJobStatus(job.status, currentLang)}
                         </span>
-                        <h3 className="text-base font-bold text-white mt-1.5">{job.task_type}</h3>
+                        <h3 className="text-base font-bold text-white mt-1.5">{tTaskType(job.task_type, currentLang)}</h3>
                         <p className="text-xs text-slate-400 flex items-center mt-0.5">
                           <Trees className="w-3.5 h-3.5 text-emerald-400 mr-1" />
                           <span>{job.estate_name} • {job.estate_location}</span>
@@ -202,33 +215,33 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
 
                     <div className="mt-4 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1.5">
                       <div className="flex justify-between text-slate-400">
-                        <span>Work Dates:</span>
+                        <span>{t.work_dates}:</span>
                         <strong className="text-white">{job.starts_at} → {job.ends_at}</strong>
                       </div>
                       <div className="flex justify-between text-slate-400">
-                        <span>Supervisor:</span>
+                        <span>{t.supervisor_label}:</span>
                         <span className="text-amber-400">{award?.supervisor_name}</span>
                       </div>
                       <div className="flex justify-between text-slate-400">
-                        <span>Escrow State:</span>
-                        <span className="text-emerald-400 font-semibold uppercase">{award?.escrow_status}</span>
+                        <span>{t.escrow_state}:</span>
+                        <span className="text-emerald-400 font-semibold">{tEscrowStatus(award?.escrow_status, currentLang)}</span>
                       </div>
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-1">
                       {job.required_skills.map((s, i) => (
                         <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                          {s}
+                          {tSkill(s, currentLang)}
                         </span>
                       ))}
                     </div>
                   </div>
 
                   <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                    <span>Crew Member Confirmed</span>
+                    <span>{t.crew_member_confirmed}</span>
                     <span className="text-emerald-400 flex items-center space-x-1">
                       <ShieldCheck className="w-4 h-4" />
-                      <span>Funds Protected in Escrow</span>
+                      <span>{t.funds_protected}</span>
                     </span>
                   </div>
                 </div>
@@ -242,7 +255,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
       {activeTab === 'attendance' && (
         <div className="space-y-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-            <h3 className="text-sm font-bold text-white mb-3">Field Check-In History</h3>
+            <h3 className="text-sm font-bold text-white mb-3">{t.checkin_history}</h3>
             <div className="space-y-2">
               {myAttendanceEntries.map((entry) => {
                 const day = state.attendanceDays.find(d => d.id === entry.attendance_day_id);
@@ -251,9 +264,9 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                 return (
                   <div key={entry.id} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
                     <div>
-                      <div className="font-semibold text-white">{job?.task_type}</div>
+                      <div className="font-semibold text-white">{tTaskType(job?.task_type, currentLang)}</div>
                       <div className="text-[11px] text-slate-400">
-                        Date: <span className="font-mono text-slate-300">{day?.work_date}</span> • Recorded by {entry.party}
+                        {t.work_date}: <span className="font-mono text-slate-300">{day?.work_date}</span> • {t.recorded_by} {tParty(entry.party, currentLang)}
                       </div>
                       {entry.notes && (
                         <p className="text-[11px] text-slate-500 mt-1">{entry.notes}</p>
@@ -264,7 +277,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                       <span className={`px-2.5 py-1 rounded text-xs font-semibold ${
                         entry.present ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-rose-950 text-rose-300 border border-rose-800'
                       }`}>
-                        {entry.present ? 'Present' : 'Absent'}
+                        {entry.present ? t.common_present : t.common_absent}
                       </span>
                     </div>
                   </div>
@@ -279,33 +292,33 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
       {activeTab === 'wages' && (
         <div className="space-y-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-            <h3 className="text-sm font-bold text-white mb-3">Completed Job Wage Distribution Records</h3>
+            <h3 className="text-sm font-bold text-white mb-3">{t.wage_distribution_records}</h3>
             
             <div className="space-y-3">
               {myWageRecords.map((r, i) => (
                 <div key={i} className="p-4 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
-                    <h4 className="text-sm font-bold text-white">{r.job_task}</h4>
+                    <h4 className="text-sm font-bold text-white">{tTaskType(r.job_task, currentLang)}</h4>
                     <p className="text-slate-400">{r.estate_name}</p>
                     <div className="text-[11px] text-slate-500 mt-1">
-                      Calculation: {r.days_worked} days @ LKR {r.daily_rate.toLocaleString()} / day
+                      {t.calculation_label}: {r.days_worked} {t.common_days} @ LKR {r.daily_rate.toLocaleString()} {t.per_day}
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
-                      <div className="text-[11px] text-slate-400">Net Wage</div>
+                      <div className="text-[11px] text-slate-400">{t.net_wage}</div>
                       <div className="text-base font-bold text-emerald-400 font-mono">
                         LKR {r.amount.toLocaleString()}
                       </div>
                     </div>
 
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold uppercase ${
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
                       r.escrow_status === 'released' 
                         ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' 
                         : 'bg-amber-950 text-amber-300 border border-amber-800'
                     }`}>
-                      {r.escrow_status === 'released' ? 'Disbursed' : 'In Escrow'}
+                      {r.escrow_status === 'released' ? t.disbursed : t.in_escrow}
                     </span>
                   </div>
                 </div>

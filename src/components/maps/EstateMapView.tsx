@@ -8,6 +8,7 @@ import {
 } from '@vis.gl/react-google-maps';
 import { AppState, store } from '../../lib/store';
 import { Estate, LabourJob } from '../../types';
+import { Language, getT, tJobStatus, tTaskType } from '../../lib/i18n';
 import { 
   Trees, 
   MapPin, 
@@ -23,6 +24,7 @@ import {
 
 interface EstateMapViewProps {
   state: AppState;
+  currentLang: Language;
   onSelectEstate?: (estate: Estate) => void;
   onSelectJob?: (job: LabourJob) => void;
   allowPickLocation?: boolean;
@@ -31,11 +33,13 @@ interface EstateMapViewProps {
 
 export const EstateMapView: React.FC<EstateMapViewProps> = ({
   state,
+  currentLang,
   onSelectEstate,
   onSelectJob,
   allowPickLocation = true,
   onLocationPicked,
 }) => {
+  const t = getT(currentLang);
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBv9If5RVuxomzcSFyz5Z9KBVTC5-WTRVc';
   
   const [filter, setFilter] = useState<'all' | 'estates' | 'jobs'>('all');
@@ -82,8 +86,8 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
             <MapPin className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-white">Interactive Plantation & Labour Map</h2>
-            <p className="text-xs text-slate-400">Coconut Triangle • Kurunegala, Chilaw & Madampe</p>
+            <h2 className="text-sm font-semibold text-white">{t.map_title}</h2>
+            <p className="text-xs text-slate-400">{t.map_sub}</p>
           </div>
         </div>
 
@@ -96,7 +100,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                 filter === 'all' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              All Pins ({state.estates.length + state.jobs.length})
+              {t.map_all_pins} ({state.estates.length + state.jobs.length})
             </button>
             <button
               onClick={() => setFilter('estates')}
@@ -104,7 +108,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                 filter === 'estates' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Estates ({state.estates.length})
+              {t.map_estates} ({state.estates.length})
             </button>
             <button
               onClick={() => setFilter('jobs')}
@@ -112,7 +116,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                 filter === 'jobs' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Active Jobs ({state.jobs.length})
+              {t.map_active_jobs} ({state.jobs.length})
             </button>
           </div>
 
@@ -126,7 +130,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
               }`}
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>{isPickingMode ? 'Click Map to Place Pin' : 'Drop Land Pin'}</span>
+              <span>{isPickingMode ? t.map_click_to_place : t.map_drop_pin}</span>
             </button>
           )}
         </div>
@@ -189,7 +193,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                   >
                     <div className="group cursor-pointer transform hover:scale-110 transition flex flex-col items-center">
                       <div className="px-2 py-0.5 rounded-md bg-amber-900/90 text-amber-200 text-[10px] font-bold border border-amber-500/50 shadow-md whitespace-nowrap mb-1">
-                        LKR {job.wage_budget.toLocaleString()} • {job.worker_count} Clmb
+                        LKR {job.wage_budget.toLocaleString()} • {job.worker_count} {t.map_climbers_short}
                       </div>
                       <div className="w-9 h-9 rounded-xl bg-amber-600 text-slate-950 flex items-center justify-center border-2 border-amber-300 shadow-lg shadow-amber-500/30">
                         <Briefcase className="w-5 h-5 text-slate-900 font-bold" />
@@ -204,7 +208,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
               <AdvancedMarker position={pickedCoords}>
                 <div className="flex flex-col items-center animate-bounce">
                   <div className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-bold rounded shadow mb-1">
-                    New Land Location ({pickedCoords.lat.toFixed(4)}, {pickedCoords.lng.toFixed(4)})
+                    {t.map_new_land} ({pickedCoords.lat.toFixed(4)}, {pickedCoords.lng.toFixed(4)})
                   </div>
                   <div className="w-8 h-8 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center shadow-lg">
                     <MapPin className="w-4 h-4 text-white" />
@@ -230,19 +234,19 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                   <p className="text-xs text-slate-600 mt-1 font-medium">{selectedEstate.location}</p>
                   <div className="grid grid-cols-2 gap-2 my-2 py-1.5 border-y border-slate-200 text-xs">
                     <div>
-                      <span className="text-slate-500 block text-[10px]">Area</span>
-                      <span className="font-semibold text-slate-800">{selectedEstate.area_acres} Acres</span>
+                      <span className="text-slate-500 block text-[10px]">{t.map_area}</span>
+                      <span className="font-semibold text-slate-800">{selectedEstate.area_acres} {t.map_acres_unit}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[10px]">Mature Palms</span>
-                      <span className="font-semibold text-slate-800">{selectedEstate.tree_count} Palms</span>
+                      <span className="text-slate-500 block text-[10px]">{t.map_mature_palms}</span>
+                      <span className="font-semibold text-slate-800">{selectedEstate.tree_count} {t.map_palms_unit}</span>
                     </div>
                   </div>
                   {selectedEstate.notes && (
                     <p className="text-[11px] text-slate-600 italic mb-2 line-clamp-2">{selectedEstate.notes}</p>
                   )}
                   <div className="text-[11px] text-emerald-700 font-medium">
-                    GPS: {selectedEstate.lat || 7.4344}, {selectedEstate.lng || 80.2181}
+                    {t.map_gps}: {selectedEstate.lat || 7.4344}, {selectedEstate.lng || 80.2181}
                   </div>
                 </div>
               </InfoWindow>
@@ -260,24 +264,24 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                 <div className="p-2 text-slate-900 max-w-xs">
                   <div className="flex items-center space-x-1.5 text-amber-800 font-bold text-sm">
                     <Briefcase className="w-4 h-4" />
-                    <span>{selectedJob.task_type}</span>
+                    <span>{tTaskType(selectedJob.task_type, currentLang)}</span>
                   </div>
                   <p className="text-xs text-slate-600 mt-1 font-semibold">{selectedJob.estate_name}</p>
                   <p className="text-[11px] text-slate-500">{selectedJob.estate_location}</p>
                   <div className="grid grid-cols-2 gap-2 my-2 py-1.5 border-y border-slate-200 text-xs">
                     <div>
-                      <span className="text-slate-500 block text-[10px]">Wage Escrow</span>
+                      <span className="text-slate-500 block text-[10px]">{t.map_wage_escrow}</span>
                       <span className="font-bold text-emerald-700">LKR {selectedJob.wage_budget.toLocaleString()}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[10px]">Crew Required</span>
-                      <span className="font-semibold text-slate-800">{selectedJob.worker_count} Workers</span>
+                      <span className="text-slate-500 block text-[10px]">{t.map_crew_required}</span>
+                      <span className="font-semibold text-slate-800">{selectedJob.worker_count} {t.common_workers}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-slate-600 mt-1">
-                    <span>Duration: {selectedJob.duration_days} days</span>
+                    <span>{t.map_duration}: {selectedJob.duration_days} {t.common_days}</span>
                     <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px]">
-                      {selectedJob.status}
+                      {tJobStatus(selectedJob.status, currentLang)}
                     </span>
                   </div>
                 </div>
@@ -288,15 +292,15 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
 
         {/* Floating Quick Region Jump Controls */}
         <div className="absolute top-4 left-4 z-10 flex flex-col space-y-1.5 bg-slate-900/90 backdrop-blur p-2 rounded-xl border border-slate-800 shadow-lg text-xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">Quick Regions</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">{t.map_quick_regions}</span>
           <button
             onClick={() => {
               setSelectedEstate(state.estates[0] || null);
             }}
             className="px-2.5 py-1 text-left rounded-md hover:bg-slate-800 text-slate-200 font-medium transition flex items-center justify-between space-x-3"
           >
-            <span>Narammala / Kurunegala</span>
-            <span className="text-[10px] text-emerald-400">940 Palms</span>
+            <span>{t.map_region_1}</span>
+            <span className="text-[10px] text-emerald-400">{state.estates[0]?.tree_count ?? 0} {t.map_palms_unit}</span>
           </button>
           <button
             onClick={() => {
@@ -304,8 +308,8 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
             }}
             className="px-2.5 py-1 text-left rounded-md hover:bg-slate-800 text-slate-200 font-medium transition flex items-center justify-between space-x-3"
           >
-            <span>Madampe / Chilaw</span>
-            <span className="text-[10px] text-emerald-400">530 Palms</span>
+            <span>{t.map_region_2}</span>
+            <span className="text-[10px] text-emerald-400">{state.estates[1]?.tree_count ?? 0} {t.map_palms_unit}</span>
           </button>
           {state.estates[2] && (
             <button
@@ -314,8 +318,8 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
               }}
               className="px-2.5 py-1 text-left rounded-md hover:bg-slate-800 text-slate-200 font-medium transition flex items-center justify-between space-x-3"
             >
-              <span>Kuliyapitiya Grove</span>
-              <span className="text-[10px] text-emerald-400">720 Palms</span>
+              <span>{t.map_region_3}</span>
+              <span className="text-[10px] text-emerald-400">{state.estates[2]?.tree_count ?? 0} {t.map_palms_unit}</span>
             </button>
           )}
         </div>
@@ -326,7 +330,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
-                  Estate Details
+                  {t.map_estate_details}
                 </span>
                 <h3 className="text-base font-bold text-white mt-1">{selectedEstate.name}</h3>
                 <p className="text-xs text-slate-400 flex items-center space-x-1 mt-0.5">
@@ -344,15 +348,15 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
 
             <div className="grid grid-cols-3 gap-2 my-3 p-2 bg-slate-950/60 rounded-lg text-center text-xs">
               <div>
-                <span className="text-[10px] text-slate-500 block">Acreage</span>
-                <span className="font-bold text-white">{selectedEstate.area_acres} ac</span>
+                <span className="text-[10px] text-slate-500 block">{t.map_acreage}</span>
+                <span className="font-bold text-white">{selectedEstate.area_acres} {t.ac_short}</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 block">Palms</span>
+                <span className="text-[10px] text-slate-500 block">{t.map_palms_unit}</span>
                 <span className="font-bold text-white">{selectedEstate.tree_count}</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 block">Distance</span>
+                <span className="text-[10px] text-slate-500 block">{t.map_distance}</span>
                 <span className="font-bold text-emerald-400">
                   {calculateDistanceKm(7.45, 80.05, selectedEstate.lat || 7.4344, selectedEstate.lng || 80.2181)} km
                 </span>
@@ -363,7 +367,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
 
             <div className="flex items-center justify-between pt-2 border-t border-slate-800">
               <span className="text-[11px] text-slate-400">
-                GPS: {selectedEstate.lat || 7.4344}, {selectedEstate.lng || 80.2181}
+                {t.map_gps}: {selectedEstate.lat || 7.4344}, {selectedEstate.lng || 80.2181}
               </span>
               <button
                 onClick={() => {
@@ -372,7 +376,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                 }}
                 className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition"
               >
-                Manage Land
+                {t.map_manage_land}
               </button>
             </div>
           </div>
