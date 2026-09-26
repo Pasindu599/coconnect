@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { store } from '../../lib/store';
 import { Role } from '../../types';
-import { Language, translations } from '../../lib/i18n';
+import { Language, getT, fmt, tRole } from '../../lib/i18n';
 import { 
   Phone, 
   KeyRound, 
@@ -27,7 +27,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
   onLoginSuccess,
   onBackToHome,
 }) => {
-  const t = translations[currentLang] || translations.en;
+  const t = getT(currentLang);
   const [selectedRole, setSelectedRole] = useState<Role>(initialRole === 'admin' ? 'owner' : initialRole);
   const [phone, setPhone] = useState('+94 77 123 4567');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -56,14 +56,14 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
     e.preventDefault();
     setError(null);
     if (!phone || phone.length < 9) {
-      setError('Please enter a valid phone number with country code');
+      setError(t.login_err_phone);
       return;
     }
     const res = store.requestOtp(phone);
     if (res.success) {
       setStep('otp');
       setOtpCode(res.code);
-      setInfoMessage(`Mock OTP generated: ${res.code} (auto-filled for testing)`);
+      setInfoMessage(fmt(t.login_otp_mock, { code: res.code }));
     }
   };
 
@@ -74,7 +74,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
     if (res.success && res.user) {
       onLoginSuccess(res.user.active_role);
     } else {
-      setError(res.error || 'Verification failed. Please check the code.');
+      setError(res.error || t.login_err_verify);
     }
   };
 
@@ -127,7 +127,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                  1. {t.active_role}
+                  1. {t.login_step_role}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -140,7 +140,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
                     }`}
                   >
                     <Trees className="w-5 h-5 mb-1" />
-                    <span className="text-xs font-bold">{t.landowner.split(' ')[0]}</span>
+                    <span className="text-xs font-bold">{tRole('owner', currentLang)}</span>
                   </button>
 
                   <button
@@ -153,7 +153,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
                     }`}
                   >
                     <HardHat className="w-5 h-5 mb-1" />
-                    <span className="text-xs font-bold">{t.supervisor.split(' ')[0]}</span>
+                    <span className="text-xs font-bold">{tRole('supervisor', currentLang)}</span>
                   </button>
 
                   <button
@@ -166,7 +166,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
                     }`}
                   >
                     <UserCheck className="w-5 h-5 mb-1" />
-                    <span className="text-xs font-bold">{t.worker.split(' ')[0]}</span>
+                    <span className="text-xs font-bold">{tRole('worker', currentLang)}</span>
                   </button>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
                   />
                 </div>
                 <p className="mt-1 text-[11px] text-slate-500">
-                  Rate-limited OTP sent via SMS. Free mock code is provided automatically for testing.
+                  {t.login_otp_note}
                 </p>
               </div>
 
@@ -204,7 +204,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div className="text-center pb-1">
-                <div className="text-xs text-slate-400">Code sent to:</div>
+                <div className="text-xs text-slate-400">{t.login_code_sent_to}</div>
                 <div className="text-sm font-mono font-bold text-emerald-400">{phone}</div>
               </div>
 
@@ -234,7 +234,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
                   onClick={() => setStep('phone')}
                   className="w-1/3 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
                 >
-                  Back
+                  {t.common_back}
                 </button>
                 <button
                   type="submit"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { store, AppState } from './lib/store';
-import { Language } from './lib/i18n';
+import { Language, getT } from './lib/i18n';
 import { Navbar } from './components/common/Navbar';
 import { LandingWebsite } from './components/home/LandingWebsite';
 import { UnifiedLogin } from './components/auth/UnifiedLogin';
@@ -35,6 +35,8 @@ export default function App() {
   });
 
   const [preselectedRole, setPreselectedRole] = useState<Role>('owner');
+
+  const t = getT(currentLang);
 
   const handleLanguageChange = (newLang: Language) => {
     setCurrentLang(newLang);
@@ -194,12 +196,13 @@ export default function App() {
               onClick={() => handleNavigate(state.currentUser ? 'dashboard' : 'home')}
               className="text-xs text-slate-400 hover:text-white flex items-center space-x-1"
             >
-              <span>← {state.currentUser ? 'Back to Dashboard' : 'Back to Home'}</span>
+              <span>← {state.currentUser ? t.back_to_dashboard : t.back_to_home_btn}</span>
             </button>
-            <span className="text-xs font-semibold text-emerald-400">Google Maps Platform • Active Key Loaded</span>
+            <span className="text-xs font-semibold text-emerald-400">{t.map_api_note}</span>
           </div>
           <EstateMapView
             state={state}
+            currentLang={currentLang}
             onSelectEstate={() => {
               handleNavigate(state.currentUser ? 'dashboard' : 'home');
             }}
@@ -232,11 +235,11 @@ export default function App() {
               onClick={() => handleNavigate('dashboard')}
               className="text-xs text-slate-400 hover:text-white flex items-center space-x-1"
             >
-              <span>← Back to Dashboard</span>
+              <span>← {t.back_to_dashboard}</span>
             </button>
-            <span className="text-xs font-semibold text-blue-400">OAuth 2.0 • Google Drive Backup & Firestore</span>
+            <span className="text-xs font-semibold text-blue-400">{t.workspace_oauth_note}</span>
           </div>
-          <WorkspaceHub state={state} />
+          <WorkspaceHub state={state} currentLang={currentLang} />
         </div>
       );
     }
@@ -312,14 +315,14 @@ export default function App() {
       <footer className="border-t border-slate-800 bg-slate-900/50 py-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center space-x-2">
-            <span>Coconnect Labour Hiring & Escrow Platform • Sri Lanka</span>
+            <span>{t.footer_brand}</span>
           </div>
           <div className="flex items-center space-x-3 font-mono text-[11px]">
-            <span>Escrow Contact Gate</span>
+            <span>{t.footer_escrow_gate}</span>
             <span>•</span>
-            <span>Dual PIN Verification</span>
+            <span>{t.footer_dual_pin}</span>
             <span>•</span>
-            <span>Trilingual (EN / සිං / தம)</span>
+            <span>{t.footer_trilingual}</span>
           </div>
         </div>
       </footer>

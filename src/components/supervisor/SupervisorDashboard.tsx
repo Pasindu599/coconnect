@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
 import { store, AppState } from '../../lib/store';
 import { Worker, LabourJob, WageRecord } from '../../types';
-import { Language, translations } from '../../lib/i18n';
+import {
+  Language,
+  getT,
+  fmt,
+  tJobStatus,
+  tReviewStatus,
+  tConsent,
+  tSkill,
+  tTaskType,
+  SKILL_KEYS,
+} from '../../lib/i18n';
 import { 
   HardHat, 
   Users, 
@@ -33,7 +43,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   state,
   currentLang,
 }) => {
-  const t = translations[currentLang];
+  const t = getT(currentLang);
   const user = state.currentUser;
   const [activeTab, setActiveTab] = useState<'roster' | 'marketplace' | 'attendance' | 'completions'>('roster');
   
@@ -62,11 +72,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
   const [attendanceWorkerId, setAttendanceWorkerId] = useState<string>('');
   const [attendancePresent, setAttendancePresent] = useState<boolean>(true);
-  const [attendanceNotes, setAttendanceNotes] = useState<string>('Arrived on time at 07:45 AM');
+  const [attendanceNotes, setAttendanceNotes] = useState<string>(t.attendance_notes_default);
 
   // Completion Form
   const [wageInputs, setWageInputs] = useState<{ [workerId: string]: { days: number; rate: number } }>({});
-  const [completionNotes, setCompletionNotes] = useState('All 940 palms harvested. Nuts collected and piled at estate gate.');
+  const [completionNotes, setCompletionNotes] = useState(t.completion_notes_default);
 
   const supervisorWorkers = state.workers.filter(w => w.supervisor_id === user?.id);
   const openJobs = state.jobs.filter(j => j.status === 'OPEN');
@@ -75,16 +85,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
     supervisorAwards.some(a => a.job_id === j.id) && ['ACTIVE', 'IN_PROGRESS', 'PENDING_COMPLETION'].includes(j.status)
   );
 
-  const availableSkillsList = [
-    'Tree Climbing',
-    'Coconut Plucking',
-    'Nut Gathering',
-    'Nut Husking',
-    'Fertilizer Trenching',
-    'Organic Mulching',
-    'Crown Cleaning',
-    'Copra Bagging'
-  ];
+  const availableSkillsList = SKILL_KEYS;
 
   const handleAddWorker = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +121,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
     if (!selectedJobForBid) return;
 
     if (selectedCrewIds.length < selectedJobForBid.worker_count) {
-      setBidError(`Job requires at least ${selectedJobForBid.worker_count} crew members.`);
+      setBidError(fmt(t.err_min_crew, { n: selectedJobForBid.worker_count }));
       return;
     }
 
@@ -133,11 +134,14 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
     });
 
     if (res.success) {
-      setBidSuccess(`Bid of LKR ${parseFloat(bidPrice).toLocaleString()} submitted successfully for ${selectedJobForBid.task_type}.`);
+      setBidSuccess(fmt(t.bid_success, {
+        price: parseFloat(bidPrice).toLocaleString(),
+        task: tTaskType(selectedJobForBid.task_type, currentLang),
+      }));
       setSelectedJobForBid(null);
       setTimeout(() => setBidSuccess(null), 5000);
     } else {
-      setBidError(res.error || 'Failed to submit bid.');
+      setBidError(res.error || t.err_bid_failed);
     }
   };
 
@@ -198,13 +202,13 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Supervisor & Broker Portal</h1>
+            <h1 className="text-2xl font-bold text-white tracking-tight">{t.sup_portal_title}</h1>
             <span className="px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 text-xs font-semibold border border-amber-800">
-              Licensed Labour Supervisor
+              {t.sup_licensed_badge}
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Logged in as <strong className="text-white">{user?.name}</strong> • Trust Score: <strong className="text-amber-400 font-mono">⭐ {user?.trust_score.toFixed(2)}</strong> • Overlap Prevention Active
+            {t.owner_logged_in_as} <strong className="text-white">{user?.name}</strong> • {t.sup_trust_score}: <strong className="text-amber-400 font-mono">⭐ {user?.trust_score.toFixed(2)}</strong> • {t.sup_overlap}
           </p>
         </div>
 
@@ -237,7 +241,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Crew Roster ({supervisorWorkers.length})</span>
+          <span>{t.tab_crew_roster} ({supervisorWorkers.length})</span>
         </button>
 
         <button
@@ -249,7 +253,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           }`}
         >
           <Briefcase className="w-4 h-4" />
-          <span>Open Jobs ({openJobs.length})</span>
+          <span>{t.tab_open_jobs} ({openJobs.length})</span>
         </button>
 
         <button
@@ -261,7 +265,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           }`}
         >
           <Clock className="w-4 h-4 text-teal-400" />
-          <span>Daily Field Check-In</span>
+          <span>{t.tab_daily_checkin}</span>
         </button>
 
         <button
@@ -273,7 +277,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           }`}
         >
           <DollarSign className="w-4 h-4 text-emerald-400" />
-          <span>Active Contracts & Wages ({activeJobs.length})</span>
+          <span>{t.tab_active_contracts} ({activeJobs.length})</span>
         </button>
       </div>
 
@@ -301,14 +305,14 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                     </div>
 
                     <div className="mt-3 text-xs text-slate-400 space-y-1">
-                      <div>NIC: <span className="text-slate-200 font-mono">{w.nic_ref}</span></div>
-                      <div>Bank: <span className="text-slate-200">{w.bank_ref || 'Cash on site'}</span></div>
+                      <div>{t.roster_nic}: <span className="text-slate-200 font-mono">{w.nic_ref}</span></div>
+                      <div>{t.roster_bank}: <span className="text-slate-200">{w.bank_ref || t.roster_cash_on_site}</span></div>
                       <div className="flex items-center space-x-1.5 pt-1">
                         <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 uppercase font-medium">
-                          Consent: {w.consent_method.replace('_', ' ')}
+                          {t.roster_consent}: {tConsent(w.consent_method, currentLang)}
                         </span>
                         <span className="text-[10px] text-slate-500">
-                          Jobs: {w.jobs_completed}
+                          {t.common_jobs}: {w.jobs_completed}
                         </span>
                       </div>
                     </div>
@@ -316,7 +320,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                     <div className="mt-3 flex flex-wrap gap-1">
                       {w.skills.map((sk, i) => (
                         <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                          {sk}
+                          {tSkill(sk, currentLang)}
                         </span>
                       ))}
                     </div>
@@ -325,7 +329,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                   <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
                     <span className="text-emerald-400 flex items-center space-x-1">
                       <Check className="w-3.5 h-3.5" />
-                      <span>Roster Confirmed</span>
+                      <span>{t.roster_confirmed}</span>
                     </span>
                   </div>
                 </div>
@@ -348,28 +352,28 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                     <div className="flex items-start justify-between">
                       <div>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-950 text-blue-300 border border-blue-800 uppercase">
-                          Open for Bids
+                          {t.open_for_bids}
                         </span>
-                        <h3 className="text-base font-bold text-white mt-1.5">{job.task_type}</h3>
+                        <h3 className="text-base font-bold text-white mt-1.5">{tTaskType(job.task_type, currentLang)}</h3>
                         <p className="text-xs text-slate-400">{job.estate_name} • {job.estate_location}</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs text-slate-400">Owner Budget</div>
+                        <div className="text-xs text-slate-400">{t.owner_budget}</div>
                         <div className="text-sm font-bold text-emerald-400">LKR {job.wage_budget.toLocaleString()}</div>
                       </div>
                     </div>
 
                     <div className="mt-3 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs grid grid-cols-2 gap-2 text-slate-400">
-                      <div>Start Date: <strong className="text-white">{job.starts_at}</strong></div>
-                      <div>End Date: <strong className="text-white">{job.ends_at}</strong></div>
-                      <div>Required Crew: <strong className="text-white">{job.worker_count} Workers</strong></div>
-                      <div>Duration: <strong className="text-white">{job.duration_days} Days</strong></div>
+                      <div>{t.start_date}: <strong className="text-white">{job.starts_at}</strong></div>
+                      <div>{t.end_date}: <strong className="text-white">{job.ends_at}</strong></div>
+                      <div>{t.required_crew}: <strong className="text-white">{job.worker_count} {t.common_workers}</strong></div>
+                      <div>{t.duration_label}: <strong className="text-white">{job.duration_days} {t.common_days}</strong></div>
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {job.required_skills.map((sk, i) => (
                         <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                          {sk}
+                          {tSkill(sk, currentLang)}
                         </span>
                       ))}
                     </div>
@@ -379,9 +383,9 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                     {myBid ? (
                       <div className="w-full flex items-center justify-between">
                         <span className="text-xs text-amber-300 font-medium">
-                          Your Bid: LKR {myBid.price.toLocaleString()} ({myBid.status.toUpperCase()})
+                          {t.your_bid}: LKR {myBid.price.toLocaleString()} ({tReviewStatus(myBid.status, currentLang)})
                         </span>
-                        <span className="text-[11px] text-slate-400">{myBid.crew_member_ids.length} crew selected</span>
+                        <span className="text-[11px] text-slate-400">{myBid.crew_member_ids.length} {t.crew_selected}</span>
                       </div>
                     ) : (
                       <button
@@ -389,7 +393,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                         className="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md transition flex items-center justify-center space-x-1.5"
                       >
                         <Send className="w-4 h-4" />
-                        <span>Submit Crew Bid →</span>
+                        <span>{t.submit_crew_bid_arrow}</span>
                       </button>
                     )}
                   </div>
@@ -407,17 +411,17 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <div>
               <h3 className="text-base font-bold text-white flex items-center space-x-2">
                 <Clock className="w-5 h-5 text-teal-400" />
-                <span>Field Attendance Check-In (Offline-Ready)</span>
+                <span>{t.attendance_checkin_title}</span>
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Mark attendance in rural coconut plantations without network connectivity. Records queue in local outbox and sync automatically.
+                {t.attendance_checkin_desc}
               </p>
             </div>
 
             {state.isOfflineSimulated && (
               <div className="px-3 py-1.5 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center space-x-2">
                 <WifiOff className="w-4 h-4" />
-                <span>Offline Outbox Active ({state.offlineQueue.length} pending)</span>
+                <span>{fmt(t.offline_outbox_active, { n: state.offlineQueue.length })}</span>
               </div>
             )}
           </div>
@@ -431,16 +435,16 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                 <div key={day.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div>
-                      <div className="text-xs font-mono text-amber-400">Work Date: {day.work_date}</div>
-                      <h4 className="text-sm font-bold text-white mt-0.5">{job?.task_type}</h4>
+                      <div className="text-xs font-mono text-amber-400">{t.work_date}: {day.work_date}</div>
+                      <h4 className="text-sm font-bold text-white mt-0.5">{tTaskType(job?.task_type, currentLang)}</h4>
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 uppercase">
-                      Day #{day.id}
+                      {t.day_label} #{day.id}
                     </span>
                   </div>
 
                   <div className="mt-4 space-y-3">
-                    <div className="text-xs font-semibold text-slate-400">Crew Attendance Records:</div>
+                    <div className="text-xs font-semibold text-slate-400">{t.crew_attendance_records}</div>
                     {supervisorWorkers.map((worker) => {
                       const supEntry = entries.find(e => e.worker_id === worker.id && e.party === 'supervisor');
 
@@ -448,7 +452,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                         <div key={worker.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
                           <div>
                             <div className="font-semibold text-white">{worker.name}</div>
-                            <div className="text-[11px] text-slate-400">{worker.skills.slice(0, 2).join(', ')}</div>
+                            <div className="text-[11px] text-slate-400">{worker.skills.slice(0, 2).map((sk) => tSkill(sk, currentLang)).join(', ')}</div>
                           </div>
 
                           <div className="flex items-center space-x-2">
@@ -457,11 +461,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                                 <span className={`px-2 py-1 rounded text-[11px] font-medium ${
                                   supEntry.present ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-rose-950 text-rose-300 border border-rose-800'
                                 }`}>
-                                  {supEntry.present ? 'Marked Present' : 'Marked Absent'}
+                                  {supEntry.present ? t.marked_present : t.marked_absent}
                                 </span>
                                 {supEntry.sync_status === 'pending_offline' && (
                                   <span className="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 text-[10px] border border-amber-800">
-                                    Queued in Outbox
+                                    {t.queued_outbox}
                                   </span>
                                 )}
                               </div>
@@ -472,13 +476,13 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                                   className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center space-x-1"
                                 >
                                   <Check className="w-3.5 h-3.5" />
-                                  <span>Present</span>
+                                  <span>{t.common_present}</span>
                                 </button>
                                 <button
                                   onClick={() => handleRecordAttendance(day.id, worker.id, false)}
                                   className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium"
                                 >
-                                  Absent
+                                  {t.common_absent}
                                 </button>
                               </div>
                             )}
@@ -508,13 +512,13 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                     <div className="flex items-start justify-between">
                       <div>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 uppercase">
-                          {job.status.replace(/_/g, ' ')}
+                          {tJobStatus(job.status, currentLang)}
                         </span>
-                        <h3 className="text-base font-bold text-white mt-2">{job.task_type}</h3>
+                        <h3 className="text-base font-bold text-white mt-2">{tTaskType(job.task_type, currentLang)}</h3>
                         <p className="text-xs text-slate-400">{job.estate_name} • {job.estate_location}</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs text-slate-400">Escrow Held</div>
+                        <div className="text-xs text-slate-400">{t.escrow_held_label}</div>
                         <div className="text-sm font-bold text-amber-400 font-mono">
                           LKR {award?.escrow_amount.toLocaleString()}
                         </div>
@@ -523,11 +527,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
 
                     <div className="mt-4 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
                       <div className="flex justify-between text-slate-400">
-                        <span>Landowner:</span>
+                        <span>{t.landowner_label}:</span>
                         <strong className="text-white">{job.owner_name}</strong>
                       </div>
                       <div className="flex justify-between text-slate-400">
-                        <span>Work Dates:</span>
+                        <span>{t.work_dates}:</span>
                         <span className="text-slate-200">{job.starts_at} to {job.ends_at}</span>
                       </div>
                     </div>
@@ -536,7 +540,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                   <div className="mt-5 pt-3 border-t border-slate-800">
                     {comp ? (
                       <div className="p-3 rounded-xl bg-yellow-950/40 border border-yellow-800 text-yellow-300 text-xs">
-                        Wages submitted: LKR {(comp.total_wages + comp.supervisor_fee).toLocaleString()}. Awaiting Owner's PIN confirmation.
+                        {fmt(t.wages_submitted_await, { amount: (comp.total_wages + comp.supervisor_fee).toLocaleString() })}
                       </div>
                     ) : (
                       <button
@@ -544,7 +548,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                         className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md flex items-center justify-center space-x-1.5"
                       >
                         <DollarSign className="w-4 h-4" />
-                        <span>Submit Job Wages & Completion →</span>
+                        <span>{t.submit_wages_completion}</span>
                       </button>
                     )}
                   </div>
@@ -561,8 +565,8 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-white">Submit Crew Bid</h3>
-                <p className="text-xs text-slate-400">{selectedJobForBid.task_type} • Budget: LKR {selectedJobForBid.wage_budget.toLocaleString()}</p>
+                <h3 className="text-base font-bold text-white">{t.submit_bid}</h3>
+                <p className="text-xs text-slate-400">{tTaskType(selectedJobForBid.task_type, currentLang)} • {t.job_budget}: LKR {selectedJobForBid.wage_budget.toLocaleString()}</p>
               </div>
               <button onClick={() => setSelectedJobForBid(null)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
@@ -580,7 +584,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Total Bid Price (LKR)
+                    {t.total_bid_price}
                   </label>
                   <input
                     type="number"
@@ -592,7 +596,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Supervisor Commission (LKR)
+                    {t.supervisor_commission_lkr}
                   </label>
                   <input
                     type="number"
@@ -606,15 +610,15 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Payment Schedule
+                  {t.payment_schedule_label}
                 </label>
                 <select
                   value={paymentSchedule}
                   onChange={(e) => setPaymentSchedule(e.target.value as any)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
                 >
-                  <option value="daily">Daily Wage Disbursements</option>
-                  <option value="lump_sum">Lump Sum at Completion</option>
+                  <option value="daily">{t.sched_daily}</option>
+                  <option value="lump_sum">{t.sched_lump}</option>
                 </select>
               </div>
 
@@ -622,9 +626,9 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Select Crew Plan ({selectedCrewIds.length} / {selectedJobForBid.worker_count} Required)
+                    {t.select_crew_plan} ({selectedCrewIds.length} / {selectedJobForBid.worker_count} {t.common_required})
                   </label>
-                  <span className="text-[11px] text-slate-500">Section 4.2 Overlap Guarded</span>
+                  <span className="text-[11px] text-slate-500">{t.overlap_guarded}</span>
                 </div>
 
                 <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -650,10 +654,10 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                       >
                         <div>
                           <div>{w.name}</div>
-                          <div className="text-[10px] text-slate-400">{w.skills.slice(0, 2).join(', ')}</div>
+                          <div className="text-[10px] text-slate-400">{w.skills.slice(0, 2).map((sk) => tSkill(sk, currentLang)).join(', ')}</div>
                         </div>
                         <span className="text-amber-400">
-                          {isSelected ? '✓ Selected' : '+ Add to Crew'}
+                          {isSelected ? t.selected_check : t.add_to_crew}
                         </span>
                       </button>
                     );
@@ -667,13 +671,13 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                   onClick={() => setSelectedJobForBid(null)}
                   className="px-4 py-2 rounded-xl text-xs text-slate-400 bg-slate-800"
                 >
-                  Cancel
+                  {t.common_cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 shadow-md"
                 >
-                  Submit Official Bid
+                  {t.submit_official_bid}
                 </button>
               </div>
             </form>
@@ -688,7 +692,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center space-x-2 text-white font-bold text-base">
                 <UserCheck className="w-5 h-5 text-amber-400" />
-                <span>Register Worker with Consent</span>
+                <span>{t.add_worker}</span>
               </div>
               <button onClick={() => setIsAddWorkerOpen(false)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
@@ -697,20 +701,20 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
 
             <form onSubmit={handleAddWorker} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">{t.common_full_name}</label>
                 <input
                   type="text"
                   required
                   value={wName}
                   onChange={(e) => setWName(e.target.value)}
-                  placeholder="e.g. Ruwan Jayawardena"
+                  placeholder={t.worker_name_ph}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Phone Number</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">{t.phone_number}</label>
                   <input
                     type="text"
                     required
@@ -720,7 +724,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">NIC Number</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">{t.common_nic_number}</label>
                   <input
                     type="text"
                     required
@@ -732,25 +736,25 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Consent Method</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">{t.consent_method_label}</label>
                 <select
                   value={wConsent}
                   onChange={(e) => setWConsent(e.target.value as any)}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
                 >
-                  <option value="sms">SMS OTP Confirmation</option>
-                  <option value="written">Written Physical Signature</option>
-                  <option value="verbal_recorded">Verbal Audio Recording</option>
+                  <option value="sms">{tConsent('sms', currentLang)}</option>
+                  <option value="written">{tConsent('written', currentLang)}</option>
+                  <option value="verbal_recorded">{tConsent('verbal_recorded', currentLang)}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Bank / Payout Account</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">{t.bank_payout}</label>
                 <input
                   type="text"
                   value={wBank}
                   onChange={(e) => setWBank(e.target.value)}
-                  placeholder="e.g. Peoples Bank Madampe 1029384"
+                  placeholder={t.bank_payout_ph}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
                 />
               </div>
@@ -761,13 +765,13 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                   onClick={() => setIsAddWorkerOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs text-slate-400 bg-slate-800"
                 >
-                  Cancel
+                  {t.common_cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 shadow-md"
                 >
-                  Register Worker
+                  {t.register_worker}
                 </button>
               </div>
             </form>
@@ -782,7 +786,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center space-x-2 text-white font-bold text-base">
                 <DollarSign className="w-5 h-5 text-emerald-400" />
-                <span>Submit Wage Records & Completion</span>
+                <span>{t.completion_modal_title}</span>
               </div>
               <button onClick={() => setSelectedJobForCompletion(null)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
@@ -791,7 +795,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
 
             <form onSubmit={handleSubmitCompletion} className="space-y-3">
               <div className="text-xs text-slate-400">
-                Specify days worked and daily rate for each crew member. This submits the official completion request for the landowner to dual-confirm with their PIN.
+                {t.completion_desc}
               </div>
 
               <div className="space-y-2">
@@ -803,7 +807,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                     <div key={wid} className="p-3 rounded-xl bg-slate-950 border border-slate-800 grid grid-cols-3 gap-2 items-center text-xs">
                       <div className="font-semibold text-white">{worker?.name}</div>
                       <div>
-                        <span className="text-[10px] text-slate-400">Days:</span>
+                        <span className="text-[10px] text-slate-400">{t.days_label}</span>
                         <input
                           type="number"
                           min="1"
@@ -818,7 +822,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                         />
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400">Rate (LKR):</span>
+                        <span className="text-[10px] text-slate-400">{t.rate_label}</span>
                         <input
                           type="number"
                           step="100"
@@ -838,7 +842,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Completion Notes</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">{t.completion_notes}</label>
                 <textarea
                   rows={2}
                   value={completionNotes}
@@ -853,13 +857,13 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
                   onClick={() => setSelectedJobForCompletion(null)}
                   className="px-4 py-2 rounded-xl text-xs text-slate-400 bg-slate-800"
                 >
-                  Cancel
+                  {t.common_cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md"
                 >
-                  Send to Owner for PIN Release
+                  {t.send_to_owner}
                 </button>
               </div>
             </form>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { store, AppState } from '../../lib/store';
 import { Estate } from '../../types';
-import { Language, translations } from '../../lib/i18n';
+import { Language, getT, fmt } from '../../lib/i18n';
 import { 
   Trees, 
   Plus, 
@@ -26,7 +26,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
   onSelectEstateForJob,
   onViewMap,
 }) => {
-  const t = translations[currentLang];
+  const t = getT(currentLang);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [areaAcres, setAreaAcres] = useState('10.0');
@@ -57,7 +57,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
     setIsModalOpen(false);
     setName('');
     setNotes('');
-    setSuccessBanner(`Coconut land "${name}" successfully registered into the estates registry with GPS coordinates.`);
+    setSuccessBanner(fmt(t.land_registered_success, { name }));
     setTimeout(() => setSuccessBanner(null), 5000);
   };
 
@@ -74,7 +74,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
             <span>{t.my_lands}</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Manage your coconut plantations, palms count, and geographical plot locations for hiring crews.
+            {t.lands_desc}
           </p>
         </div>
 
@@ -85,7 +85,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
               className="inline-flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 text-xs font-semibold shadow-md transition"
             >
               <MapPin className="w-4 h-4" />
-              <span>View Lands on Map</span>
+              <span>{t.view_lands_on_map}</span>
             </button>
           )}
 
@@ -109,16 +109,16 @@ export const LandManagement: React.FC<LandManagementProps> = ({
       {/* Aggregate Estate Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-          <div className="text-xs font-medium text-slate-400">Total Registered Lands</div>
-          <div className="text-2xl font-bold text-white mt-1">{estates.length} Estates</div>
+          <div className="text-xs font-medium text-slate-400">{t.total_registered_lands}</div>
+          <div className="text-2xl font-bold text-white mt-1">{estates.length} {t.estates_suffix}</div>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-          <div className="text-xs font-medium text-slate-400">Total Area (Acres)</div>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">{totalAcres.toFixed(1)} Acres</div>
+          <div className="text-xs font-medium text-slate-400">{t.total_area_acres}</div>
+          <div className="text-2xl font-bold text-emerald-400 mt-1">{totalAcres.toFixed(1)} {t.acres_suffix}</div>
         </div>
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-          <div className="text-xs font-medium text-slate-400">Total Coconut Palms (Trees)</div>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{totalTrees.toLocaleString()} Trees</div>
+          <div className="text-xs font-medium text-slate-400">{t.total_palms}</div>
+          <div className="text-2xl font-bold text-amber-400 mt-1">{totalTrees.toLocaleString()} {t.trees_suffix}</div>
         </div>
       </div>
 
@@ -148,22 +148,22 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                     </div>
                   </div>
                   <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                    ID: {estate.id}
+                    {t.land_id}: {estate.id}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-4 p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-center">
                   <div>
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">Area</div>
-                    <div className="text-sm font-bold text-white mt-0.5">{estate.area_acres} ac</div>
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">{t.map_area}</div>
+                    <div className="text-sm font-bold text-white mt-0.5">{estate.area_acres} {t.ac_short}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">Palms Count</div>
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">{t.land_palms_count}</div>
                     <div className="text-sm font-bold text-amber-400 mt-0.5">{estate.tree_count}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">Density</div>
-                    <div className="text-sm font-bold text-emerald-400 mt-0.5">{density} / ac</div>
+                    <div className="text-[10px] text-slate-400 uppercase tracking-wider">{t.land_density}</div>
+                    <div className="text-sm font-bold text-emerald-400 mt-0.5">{density} {t.per_acre}</div>
                   </div>
                 </div>
 
@@ -176,14 +176,14 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                 <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 bg-slate-950/40 px-3 py-1.5 rounded-lg border border-slate-800">
                   <span className="flex items-center space-x-1">
                     <MapPin className="w-3 h-3 text-emerald-400" />
-                    <span>GPS: {estate.lat || 7.4344}, {estate.lng || 80.2181}</span>
+                    <span>{t.map_gps}: {estate.lat || 7.4344}, {estate.lng || 80.2181}</span>
                   </span>
                   {onViewMap && (
                     <button
                       onClick={onViewMap}
                       className="text-emerald-400 hover:text-emerald-300 font-semibold"
                     >
-                      Locate on Map ↗
+                      {t.locate_on_map}
                     </button>
                   )}
                 </div>
@@ -191,14 +191,14 @@ export const LandManagement: React.FC<LandManagementProps> = ({
 
               <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs">
                 <span className="text-slate-400">
-                  Active jobs on land: <strong className="text-white">{activeEstateJobs.length}</strong>
+                  {t.active_jobs_on_land}: <strong className="text-white">{activeEstateJobs.length}</strong>
                 </span>
                 {onSelectEstateForJob && (
                   <button
                     onClick={() => onSelectEstateForJob(estate.id)}
                     className="px-3 py-1.5 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 font-medium transition"
                   >
-                    Post Job for this Land →
+                    {t.post_job_for_land}
                   </button>
                 )}
               </div>
@@ -227,14 +227,14 @@ export const LandManagement: React.FC<LandManagementProps> = ({
             <form onSubmit={handleAddEstate} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Estate Name
+                  {t.estate_name}
                 </label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Golden Crown Coconut Plantation"
+                  placeholder={t.estate_name_ph}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
@@ -242,7 +242,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Area (Acres)
+                    {t.area_acres_label}
                   </label>
                   <input
                     type="number"
@@ -256,7 +256,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Tree Count (Palms)
+                    {t.tree_count_label}
                   </label>
                   <input
                     type="number"
@@ -271,14 +271,14 @@ export const LandManagement: React.FC<LandManagementProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Location (District / Town)
+                  {t.location_label}
                 </label>
                 <input
                   type="text"
                   required
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Kuliyapitiya, Kurunegala"
+                  placeholder={t.location_ph}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
@@ -288,14 +288,14 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-slate-200 flex items-center space-x-1">
                     <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>GPS Coordinates (Google Maps Pin)</span>
+                    <span>{t.gps_coords}</span>
                   </span>
-                  <span className="text-[10px] text-slate-400">Coconut Triangle</span>
+                  <span className="text-[10px] text-slate-400">{t.coconut_triangle}</span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-0.5">Latitude</label>
+                    <label className="text-[10px] text-slate-400 block mb-0.5">{t.latitude}</label>
                     <input
                       type="number"
                       step="0.0001"
@@ -306,7 +306,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400 block mb-0.5">Longitude</label>
+                    <label className="text-[10px] text-slate-400 block mb-0.5">{t.longitude}</label>
                     <input
                       type="number"
                       step="0.0001"
@@ -319,7 +319,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  <span className="text-[10px] text-slate-500 self-center">Presets:</span>
+                  <span className="text-[10px] text-slate-500 self-center">{t.presets}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -329,7 +329,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                     }}
                     className="px-2 py-0.5 text-[10px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
                   >
-                    Narammala
+                    {t.preset_narammala}
                   </button>
                   <button
                     type="button"
@@ -340,7 +340,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                     }}
                     className="px-2 py-0.5 text-[10px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
                   >
-                    Madampe
+                    {t.preset_madampe}
                   </button>
                   <button
                     type="button"
@@ -351,20 +351,20 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                     }}
                     className="px-2 py-0.5 text-[10px] rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
                   >
-                    Kuliyapitiya
+                    {t.preset_kuliyapitiya}
                   </button>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Estate Notes / Access Details (Optional)
+                  {t.estate_notes_label}
                 </label>
                 <textarea
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Road conditions, soil type, irrigation, tractor accessibility..."
+                  placeholder={t.estate_notes_ph}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
@@ -375,13 +375,13 @@ export const LandManagement: React.FC<LandManagementProps> = ({
                   onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800"
                 >
-                  Cancel
+                  {t.common_cancel}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md"
                 >
-                  Save Land Registration
+                  {t.save_land}
                 </button>
               </div>
             </form>
