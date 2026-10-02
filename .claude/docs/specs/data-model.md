@@ -28,7 +28,7 @@ Replaces the current `User` (`src/types/index.ts`). Adds the multi-category fiel
 
 NIC image URLs (`nic_front_url`, `nic_back_url`) move out of `users` into `nic_submissions` (unchanged shape) once S1-08 lands Storage uploads, to keep the user doc small and avoid re-exposing Storage paths to every reader of a profile.
 
-**Rules:** a user may `read, update` only `users/{request.auth.uid}`, and only fields other than `memberships`, `trust_score`, `nic_status` (those are rejected by a field-diff check in rules — see S1-04). No client `delete`. Any authenticated user may `get` another user's `name` and public profile fields are not separately exposed today — reads are all-or-nothing at the document level, matching current behavior; splitting into a public subset is future work.
+**Rules (implemented in S1-04, superseding the first draft of this paragraph):** a user may `read, update` only `users/{request.auth.uid}`; admins may also `read` any user doc. Update rejects any change to `memberships`, `trust_score` or `nic_status`. No client `delete`. Reads are all-or-nothing at the document level (no field-level split) — since the doc carries NIC numbers and phone, this spec originally proposed letting any authenticated user read any profile, but S1-04 tightened it to self+admin only instead, since nothing in the UI actually needs to read a *stranger's* full profile (jobs/bids already denormalize `owner_name`/`bidder_name` for display). See ADR-006.
 
 ### `sites/{id}`
 Generalizes `Estate`. `siteLabel` per category (Estate / Site) is a config/display concern only (CONTRACTS C1, `src/config/categories.ts`), not a schema difference.
@@ -124,10 +124,10 @@ Generalizes `LabourJob`.
 No `update`/`delete` rule exists for anyone, including Functions logically (the Admin SDK *can* bypass rules, but no Function in this spec ever calls `update`/`delete` on `ledger` — only `create`). **Reconciliation invariant** (checked by S1-12's helper and worth a rules-adjacent unit test): for a given `award_id`, `sum(hold) == sum(release) + sum(refund) + current held balance`.
 
 ### `attendance_days/{id}`, `attendance_entries/{id}`
-Unchanged shape from today's `AttendanceDay`/`AttendanceEntry`, plus `category`. **Rules:** `create` by either party (`owner_id` or the job's `bidder_id`) recording their own side (`party` field must equal the caller's role); no cross-party edits, no deletes once `synced`.
+Unchanged shape from today's `AttendanceDay`/`AttendanceEntry`, plus `category`, **plus denormalized `owner_id` and `bidder_id`** (see ADR-006 — Firestore rules can't run a query to find "the award for this job", only `get()` a known document path, so the job's two parties are copied onto these docs the same way `jobs.owner_name` is already denormalized). **Rules:** `create` by either party (`owner_id` or `bidder_id`) recording their own side (`party` field must equal the caller's role); no cross-party edits, no edits to a `reconciled` day, no deletes.
 
 ### `completions/{id}`
-Unchanged shape plus `category`. **Rules:** `create` by the bidder (`submitted_by`). `status` field: client may only move `pending → ` nothing (all confirmation happens through `confirmCompletion`, a Function, because it checks the hashed PIN — see payments spec). This closes the client-side "releases money" hole in KNOWN_ISSUES #6.
+Unchanged shape plus `category`, plus denormalized `owner_id`/`bidder_id` (same reason as attendance). **Rules:** `create` by the bidder (`submitted_by` / `bidder_id`), starting `status: 'pending'`. No client `update` at all — confirmation happens through `confirmCompletion`, a Function, because it checks the hashed PIN (see payments spec). This closes the client-side "releases money" hole in KNOWN_ISSUES #6.
 
 ### `ratings/{id}`
 Unchanged shape (`RatingSubmission`) plus `category`. **Rules:** `create` by `from_user_id == auth.uid`, once per `(job_id, from_user_id)` pair (checked via a rules `exists()` query or a Function — a rule-only unique check is awkward in Firestore, so this is enforced best-effort in rules with a documented gap: a Function-based `submitRating` is a candidate for week-2 hardening if abuse shows up). No `update`/`delete` (ratings are immutable once submitted).
@@ -136,6 +136,7 @@ Unchanged shape (`RatingSubmission`) plus `category`. **Rules:** `create` by `fr
 | Field | Type |
 |---|---|
 | `category`, `job_id`, `award_id` | |
+| `owner_id`, `bidder_id` | denormalized, same reason as attendance/completions above |
 | `opened_by` (uid), `reason`, `opened_at` | |
 | `status` | `'open' \| 'resolved'` |
 | `resolution` | `'refunded' \| 'released'`, set by `resolveDispute` |

@@ -16,7 +16,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-01 | 2C-1 (pulled forward) | 1 | Vitest + CI + Node 22 pin. **Merge first.** | — | SP1 | done |
 | S1-02 | 1A-1 | 1 | Specs: data model, auth, payments | — | | doing (drafted, pending human review) |
 | S1-03 | 1A-2 | 1 | Firebase project + Emulator Suite | S1-01 | | done |
-| S1-04 | 2A-1, 2C-3, 3C-1 | 2–3 | Firestore + Storage rules, with rules tests | S1-02, S1-03 | | todo |
+| S1-04 | 2A-1, 2C-3, 3C-1 | 2–3 | Firestore + Storage rules, with rules tests | S1-02, S1-03 | | done |
 | S1-05 | 3A-1 | 3 | Phone OTP auth, `auth.ts`, custom-claims Functions | S1-04 | SP2 | todo |
 | S1-06 | 3C-2 | 3 | Emulator seed script | S1-03 | | todo |
 | S1-07 | 4A-1 | 4 | Repositories: users, sites, jobs, bids + `store.startSync()` | S1-04, S1-06 | SP3 | todo |
@@ -52,16 +52,12 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 - **Done when:** `npm run emulators` starts all four. ✅ verified via `firebase emulators:exec` (demo project, no login). The actual `npm run emulators` (without `--project demo-...`) will try to use `gen-lang-client-0417035030` and may prompt for login on first real (non-`exec`) run depending on firebase-tools version — a human on this machine should run it once interactively to confirm, or always pass `--project demo-coconnect` for pure local dev.
 - **Local env notes (this machine):** (1) needs a JDK ≥21 for the Firestore/Storage emulators; only `openjdk@17` was on `PATH`, had to point `JAVA_HOME`/`PATH` at the already-installed-but-unlinked `openjdk@21` Homebrew keg. (2) macOS's AirPlay Receiver squats on port 5000, which is firebase-tools' default Hosting emulator port — moved it to 5050 in `firebase.json`. Neither affects CI (Linux runners, no AirPlay, and Java is provisioned separately if/when functions tests run in CI).
 
-### S1-04: Security rules + rules tests
-- **Files:** `firestore.rules`, `storage.rules`, `tests/rules/**`, `src/types/index.ts` (add `memberships: Membership[]` and `active_category` to `User`), CI step to run rules tests on the emulator.
-- **Rules:**
-  - Users read and write only their own profile, and never their roles or memberships.
-  - Posters write their own sites and jobs.
-  - Bidders write their own bids and workers.
-  - `awards`, `payments`, `ledger`, `audit_logs`: clients can read their own, nobody can write.
-  - NIC files: readable by the owner and admins only.
-- **Done when:** rules tests cover allow **and** deny for every collection, and pass in CI. Closes KNOWN_ISSUES #1.
-- Write the tests first, from the spec, then the rules.
+### S1-04: Security rules + rules tests — done
+- **Files:** `firestore.rules`, `storage.rules`, `tests/rules/{setup,firestore,storage}.test.ts`, `vitest.rules.config.ts`, `src/types/index.ts` (added `memberships: Membership[]` and `active_category` to `User`, and widened `EscrowStatus` to the full state machine), `package.json` (`test:rules` script, `@firebase/rules-unit-testing` dev dep), CI `rules` job (Java 21 + `npm run test:rules`).
+- **Rules implemented:** users (self+admin read/write, `memberships`/`nic_status`/`trust_score` client-immutable), sites, jobs (owner-only, status locked down to DRAFT/OPEN/CANCELLED client-side), bids (sealed — only the bidder and job owner can read), workers (manager-only, `rating`/`jobs_completed` immutable), `awards`/`payments`/`ledger`/`audit_logs` (Functions-only; `audit_logs` has no client read at all), attendance/completions/disputes (both parties, via denormalized `owner_id`/`bidder_id` — see ADR-006), `nic_submissions` (owner + admin), `ratings` (self-attested, best-effort uniqueness per the documented gap in `payments.md`). Deny-by-default catch-all at the end.
+- **Done when:** rules tests cover allow **and** deny for every collection, and pass in CI. ✅ 54/54 passing locally via `npm run test:rules` (`firebase emulators:exec --only firestore,storage`); CI job added (untested in actual CI since nothing has been pushed through GitHub Actions yet — flag if the Java setup step needs tweaking). Closes KNOWN_ISSUES #1.
+- Deviated from the data-model spec draft in one place: `users` reads are self+admin only, not "any authenticated user" — see ADR-006 for why, and `data-model.md` is updated to match.
+- **Local env note:** the Firestore/Storage emulators need a JDK ≥21; see the S1-03 note above for the `JAVA_HOME` workaround on this machine. CI installs Java via `actions/setup-java`.
 
 ### S1-05: Auth (delivers SP2)
 - **Files:** `src/lib/auth.ts` (exactly the API in CONTRACTS C3), `functions/src/auth/*` (`onUserCreate`, `addMembership`, `setAdmin`), `src/lib/firebase.ts`.

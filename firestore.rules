@@ -1,8 +1,251 @@
 rules_version = '2';
+
+// See .claude/docs/specs/data-model.md for the collection-by-collection design
+// this implements, and .claude/docs/specs/auth.md for why authorization reads
+// request.auth.token.memberships (a custom claim) rather than doing a get()
+// on the caller's own user doc on every rule evaluation.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function hasMembership(category, role) {
+      return isSignedIn()
+        && 'memberships' in request.auth.token
+        && request.auth.token.memberships.hasAny([{'category': category, 'role': role}]);
+    }
+
+    // Capabilities mirror src/types/category.ts (CONTRACTS C1). Duplicated
+    // here deliberately: Functions/rules never import frontend config.
+    function isPoster(category) {
+      return hasMembership(category, 'owner') || hasMembership(category, 'client');
+    }
+
+    function isBidder(category) {
+      return hasMembership(category, 'broker')
+        || hasMembership(category, 'contractor')
+        || hasMembership(category, 'subcontractor');
+    }
+
+    function unchanged(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
+    // ---- users ----
+    match /users/{uid} {
+      // All-or-nothing at the document level today (no field-level read
+      // split), so reads are scoped to the owner and admins rather than any
+      // authenticated user, since the doc carries NIC numbers and phone.
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+
+      allow create: if isSignedIn() && request.auth.uid == uid
+        && request.resource.data.memberships == []
+        && !('trust_score' in request.resource.data);
+
+      // A user may update their own doc, but never memberships, nic_status
+      // or trust_score client-side — those move only through Functions.
+      allow update: if isSignedIn() && request.auth.uid == uid
+        && unchanged('memberships')
+        && unchanged('nic_status')
+        && unchanged('trust_score');
+
+      allow delete: if false;
+    }
+
+    // ---- sites ----
+    match /sites/{siteId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.owner_id == request.auth.uid
+        && isPoster(request.resource.data.category);
+
+      allow update, delete: if isSignedIn() && resource.data.owner_id == request.auth.uid;
+    }
+
+    // ---- jobs ----
+    match /jobs/{jobId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.owner_id == request.auth.uid
+        && isPoster(request.resource.data.category)
+        && request.resource.data.status in ['DRAFT', 'OPEN'];
+
+      // The owner may edit while still DRAFT/OPEN, and may only move between
+      // DRAFT, OPEN and CANCELLED. Every status past that (AWARDED_* onward)
+      // is written by Functions, which use the Admin SDK and bypass rules.
+      allow update: if isSignedIn()
+        && resource.data.owner_id == request.auth.uid
+        && unchanged('owner_id')
+        && resource.data.status in ['DRAFT', 'OPEN']
+        && request.resource.data.status in ['DRAFT', 'OPEN', 'CANCELLED'];
+
+      allow delete: if false;
+    }
+
+    // ---- bids ----
+    match /bids/{bidId} {
+      // Sealed-bid: only the bidder and the job's owner can read a bid.
+      allow read: if isSignedIn()
+        && (resource.data.bidder_id == request.auth.uid
+            || get(/databases/$(database)/documents/jobs/$(resource.data.job_id)).data.owner_id == request.auth.uid);
+
+      allow create: if isSignedIn()
+        && request.resource.data.bidder_id == request.auth.uid
+        && isBidder(request.resource.data.category)
+        && get(/databases/$(database)/documents/jobs/$(request.resource.data.job_id)).data.status == 'OPEN';
+
+      // Two distinct kinds of update, both narrow:
+      //  - the bidder edits their own still-pending bid
+      //  - the job owner accepts/rejects (status only), while pending
+      // Awarding (which also touches jobs + awards atomically) goes through
+      // the awardBid Function/transaction instead of relying on this alone.
+      allow update: if isSignedIn() && (
+        (resource.data.bidder_id == request.auth.uid
+          && resource.data.status == 'pending'
+          && unchanged('bidder_id')
+          && unchanged('job_id'))
+        || (
+          get(/databases/$(database)/documents/jobs/$(resource.data.job_id)).data.owner_id == request.auth.uid
+          && resource.data.status == 'pending'
+          && request.resource.data.status in ['accepted', 'rejected']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        )
+      );
+
+      allow delete: if false;
+    }
+
+    // ---- workers ----
+    match /workers/{workerId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.manager_id == request.auth.uid
+        && isBidder(request.resource.data.category);
+
+      // rating and jobs_completed are derived server-side; never client-writable.
+      allow update: if isSignedIn()
+        && resource.data.manager_id == request.auth.uid
+        && unchanged('manager_id')
+        && unchanged('rating')
+        && unchanged('jobs_completed');
+
+      allow delete: if false;
+    }
+
+    // ---- Functions-only collections ----
+    match /awards/{awardId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || resource.data.bidder_id == request.auth.uid
+        || get(/databases/$(database)/documents/jobs/$(resource.data.job_id)).data.owner_id == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.bidder_id == request.auth.uid
+        || get(/databases/$(database)/documents/jobs/$(get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.job_id)).data.owner_id == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    match /ledger/{entryId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.bidder_id == request.auth.uid
+        || get(/databases/$(database)/documents/jobs/$(get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.job_id)).data.owner_id == request.auth.uid
+      );
+      allow write: if false;
+    }
+
+    match /audit_logs/{logId} {
+      allow read, write: if false;
+    }
+
+    // ---- attendance ----
+    // Denormalized owner_id/bidder_id (same pattern as jobs' owner_name)
+    // keep these rules a single get() away instead of a query rules can't do.
+    match /attendance_days/{dayId} {
+      allow read: if isSignedIn() && (
+        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid || isAdmin()
+      );
+      allow create: if isSignedIn() && (
+        request.resource.data.owner_id == request.auth.uid || request.resource.data.bidder_id == request.auth.uid
+      );
+      allow update: if isSignedIn() && resource.data.status != 'reconciled' && (
+        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid
+      );
+      allow delete: if false;
+    }
+
+    match /attendance_entries/{entryId} {
+      allow read: if isSignedIn() && (
+        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid || isAdmin()
+      );
+      // Each party records only their own side.
+      allow create: if isSignedIn()
+        && request.resource.data.recorded_by == request.auth.uid
+        && ((request.resource.data.party == 'owner' && request.resource.data.owner_id == request.auth.uid)
+            || (request.resource.data.party == 'supervisor' && request.resource.data.bidder_id == request.auth.uid));
+      allow update, delete: if false;
+    }
+
+    // ---- completions ----
+    match /completions/{completionId} {
+      allow read: if isSignedIn() && (
+        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid || isAdmin()
+      );
+      allow create: if isSignedIn() && request.resource.data.bidder_id == request.auth.uid
+        && request.resource.data.status == 'pending';
+      // Confirmation checks a hashed PIN server-side (confirmCompletion Function).
+      allow update, delete: if false;
+    }
+
+    // ---- ratings ----
+    match /ratings/{ratingId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.from_user_id == request.auth.uid;
+      // No reliable one-per-job uniqueness without a query; documented gap
+      // in .claude/docs/specs/payments.md and KNOWN_ISSUES.
+      allow update, delete: if false;
+    }
+
+    // ---- disputes ----
+    match /disputes/{disputeId} {
+      allow read: if isSignedIn() && (
+        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid || isAdmin()
+      );
+      allow create: if isSignedIn()
+        && request.resource.data.opened_by == request.auth.uid
+        && (request.resource.data.owner_id == request.auth.uid || request.resource.data.bidder_id == request.auth.uid)
+        && request.resource.data.status == 'open';
+      // resolveDispute (admin, via a Function) writes the resolution.
+      allow update, delete: if false;
+    }
+
+    // ---- NIC submissions ----
+    match /nic_submissions/{subId} {
+      allow read: if isSignedIn() && (resource.data.user_id == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.user_id == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // Deny anything not explicitly listed above.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

@@ -1,3 +1,5 @@
+import type { CategoryId, Membership } from './category';
+
 export type Role = 'owner' | 'supervisor' | 'worker' | 'admin';
 
 export type NicStatus = 'unverified' | 'pending' | 'verified' | 'rejected';
@@ -16,7 +18,7 @@ export type JobStatus =
 
 export type PaymentSchedule = 'daily' | 'lump_sum';
 
-export type EscrowStatus = 'pending' | 'held' | 'released' | 'refunded';
+export type EscrowStatus = 'pending' | 'held' | 'release_requested' | 'released' | 'disputed' | 'refunded';
 
 export type ReconciliationStatus = 'MATCH' | 'MISMATCH' | 'AWAITING_COUNTERPARTY';
 
@@ -27,6 +29,10 @@ export interface User {
   name: string;
   roles: Role[];
   active_role: Role;
+  /** Multi-category memberships (CONTRACTS C1). Written only by the `addMembership` Function. */
+  memberships: Membership[];
+  /** Which category's UI the user is currently in; a client-writable UI preference. */
+  active_category?: CategoryId;
   nic_status: NicStatus;
   nic_number?: string;
   nic_front_url?: string;
