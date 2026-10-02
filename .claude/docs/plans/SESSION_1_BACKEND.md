@@ -15,7 +15,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 |---|---|---|---|---|---|---|
 | S1-01 | 2C-1 (pulled forward) | 1 | Vitest + CI + Node 22 pin. **Merge first.** | — | SP1 | done |
 | S1-02 | 1A-1 | 1 | Specs: data model, auth, payments | — | | doing (drafted, pending human review) |
-| S1-03 | 1A-2 | 1 | Firebase project + Emulator Suite | S1-01 | | todo |
+| S1-03 | 1A-2 | 1 | Firebase project + Emulator Suite | S1-01 | | done |
 | S1-04 | 2A-1, 2C-3, 3C-1 | 2–3 | Firestore + Storage rules, with rules tests | S1-02, S1-03 | | todo |
 | S1-05 | 3A-1 | 3 | Phone OTP auth, `auth.ts`, custom-claims Functions | S1-04 | SP2 | todo |
 | S1-06 | 3C-2 | 3 | Emulator seed script | S1-03 | | todo |
@@ -45,10 +45,12 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 - **Content:** start from `ARCHITECTURE.md` and `CONTRACTS.md`. Collections and fields, which role may read/write each, escrow state transitions, the PayHere flow, and failure cases (duplicate webhook, amount mismatch, refund after release).
 - **Done when:** a teammate has reviewed them.
 
-### S1-03: Firebase + emulators
-- **Files:** `firebase.json`, `.firebaserc`, `src/lib/firebase.ts`, `package.json` (`firebase-tools` dev dep, `emulators` script), `.env.example`.
-- `src/lib/firebase.ts` connects to the Auth, Firestore, Storage and Functions emulators when `VITE_USE_EMULATORS=true`.
-- **Done when:** `npm run emulators` starts all four, and the app runs against them.
+### S1-03: Firebase + emulators — done
+- **Files:** `firebase.json`, `.firebaserc`, `firestore.indexes.json`, `src/lib/firebase.ts`, `src/vite-env.d.ts`, `package.json` (`firebase-tools` dev dep, `emulators` script), `.env.example`, plus a minimal `functions/` scaffold (package.json, tsconfig, `src/index.ts`) so the Functions emulator has something to load — real Functions land task by task from S1-05 on.
+- `src/lib/firebase.ts` connects Auth/Firestore/Storage/Functions clients to the emulators when `VITE_USE_EMULATORS=true` (now the default in `.env.example`).
+- Used the existing AI-Studio-provisioned Firebase project (`gen-lang-client-0417035030`, from `firebase-applet-config.json`) as `.firebaserc`'s default rather than creating a new one — a new project needs `firebase projects:create`, which needs `firebase login` (interactive browser OAuth), which isn't possible from this non-interactive session. **Nobody has run `firebase login` on this machine or in CI yet** — fine for emulator-only local dev (verified: `firebase emulators:exec --project demo-coconnect` starts auth+firestore+storage+functions+hosting cleanly with a fake "demo-" project id, no login needed), but it blocks any real `firebase deploy` (rules, functions, hosting) until a human runs it. That's the real blocker for S1-13 (staging deploy), not anything code-shaped.
+- **Done when:** `npm run emulators` starts all four. ✅ verified via `firebase emulators:exec` (demo project, no login). The actual `npm run emulators` (without `--project demo-...`) will try to use `gen-lang-client-0417035030` and may prompt for login on first real (non-`exec`) run depending on firebase-tools version — a human on this machine should run it once interactively to confirm, or always pass `--project demo-coconnect` for pure local dev.
+- **Local env notes (this machine):** (1) needs a JDK ≥21 for the Firestore/Storage emulators; only `openjdk@17` was on `PATH`, had to point `JAVA_HOME`/`PATH` at the already-installed-but-unlinked `openjdk@21` Homebrew keg. (2) macOS's AirPlay Receiver squats on port 5000, which is firebase-tools' default Hosting emulator port — moved it to 5050 in `firebase.json`. Neither affects CI (Linux runners, no AirPlay, and Java is provisioned separately if/when functions tests run in CI).
 
 ### S1-04: Security rules + rules tests
 - **Files:** `firestore.rules`, `storage.rules`, `tests/rules/**`, `src/types/index.ts` (add `memberships: Membership[]` and `active_category` to `User`), CI step to run rules tests on the emulator.

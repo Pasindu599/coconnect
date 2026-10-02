@@ -1,21 +1,25 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  setDoc, 
-  getDocs, 
+import {
+  getFirestore,
+  collection,
+  doc,
+  setDoc,
+  getDocs,
   onSnapshot,
-  Firestore
+  Firestore,
+  connectFirestoreEmulator
 } from 'firebase/firestore';
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged, 
-  User 
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  User,
+  connectAuthEmulator
 } from 'firebase/auth';
+import { getStorage, connectStorageEmulator, FirebaseStorage } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator, Functions } from 'firebase/functions';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { Estate, LabourJob, NicSubmission } from '../types';
 
@@ -29,6 +33,25 @@ export const db: Firestore = (firebaseConfig as any).firestoreDatabaseId
 
 // Initialize Auth
 export const auth = getAuth(app);
+
+export const storage: FirebaseStorage = getStorage(app);
+export const functions: Functions = getFunctions(app);
+
+/**
+ * When VITE_USE_EMULATORS=true, point every Firebase client at the local
+ * Emulator Suite (see `npm run emulators` / firebase.json) instead of the
+ * real project. Guarded by a module-level flag because Vite's HMR can
+ * re-run this module and connect*Emulator() throws if called twice on the
+ * same instance.
+ */
+let emulatorsConnected = false;
+if (import.meta.env.VITE_USE_EMULATORS === 'true' && !emulatorsConnected) {
+  emulatorsConnected = true;
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectStorageEmulator(storage, '127.0.0.1', 9199);
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+}
 
 // Configure Google Auth Provider with Google Drive Scopes (Calendar and Chat removed)
 export const googleProvider = new GoogleAuthProvider();

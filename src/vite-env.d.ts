@@ -26,4 +26,11 @@ interface ImportMetaEnv {
    * unavailable" panel in that case rather than falling back to a shared key.
    */
   readonly VITE_GOOGLE_MAPS_API_KEY?: string;
+
+  /**
+   * When "true", src/lib/firebase.ts connects Auth, Firestore, Storage and
+   * Functions to the local Firebase Emulator Suite (see `npm run emulators`)
+   * instead of the real project. Unset (falsy) talks to the real project.
+   */
+  readonly VITE_USE_EMULATORS?: string;
 }

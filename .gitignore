@@ -7,3 +7,11 @@ coverage/
 .env*
 !.env.example
 .claude/settings.local.json
+
+# Firebase
+functions/lib/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+emulator-data/

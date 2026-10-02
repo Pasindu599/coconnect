@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Placeholder: deny everything until S1-04 adds per-path rules
+// (nic/{uid}/* readable by the owner and admins only, per the data-model spec).
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
