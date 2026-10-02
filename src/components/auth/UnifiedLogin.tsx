@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useT } from '../../config/CategoryContext';
 import { store } from '../../lib/store';
 import { Role } from '../../types';
-import { Language, getT, fmt, tRole } from '../../lib/i18n';
+import { Language, fmt, tRole } from '../../lib/i18n';
 import { 
   Phone, 
   KeyRound, 
@@ -27,7 +28,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
   onLoginSuccess,
   onBackToHome,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   const [selectedRole, setSelectedRole] = useState<Role>(initialRole === 'admin' ? 'owner' : initialRole);
   const [phone, setPhone] = useState('+94 77 123 4567');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');

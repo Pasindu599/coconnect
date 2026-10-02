@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { useT } from '../../config/CategoryContext';
 import { store, AppState } from '../../lib/store';
-import { Language, getT } from '../../lib/i18n';
+import { Language } from '../../lib/i18n';
 import { 
   Trees, 
   LogOut, 
@@ -26,7 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   const user = state.currentUser;
 
   const langNames: Record<Language, { label: string; code: string }> = {

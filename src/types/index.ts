@@ -29,8 +29,12 @@ export interface User {
   name: string;
   roles: Role[];
   active_role: Role;
-  /** Multi-category memberships (CONTRACTS C1). Written only by the `addMembership` Function. */
-  memberships: Membership[];
+  /**
+   * Multi-category memberships (CONTRACTS C1). Written only by the `addMembership` Function.
+   * Optional while the mock store still has users from before categories existed (those are
+   * coconut members); S1-07 makes it required once the data layer is migrated.
+   */
+  memberships?: Membership[];
   /** Which category's UI the user is currently in; a client-writable UI preference. */
   active_category?: CategoryId;
   nic_status: NicStatus;
@@ -75,6 +79,8 @@ export interface Estate {
   id: string;
   /** Optional, defaults to 'coconut' at write time (see store.ts) until a category-aware posting UI sets it explicitly. Required by firestore.rules' isPoster() check. */
   category?: CategoryId;
+  /** Category-specific site fields from the registry (e.g. construction floor_area_sqft). */
+  attributes?: Record<string, string | number>;
   owner_id: string;
   name: string;
   area_acres: number;

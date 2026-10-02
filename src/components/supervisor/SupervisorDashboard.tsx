@@ -1,17 +1,9 @@
 import React, { useState } from 'react';
+import { useCategory, useT } from '../../config/CategoryContext';
 import { store, AppState } from '../../lib/store';
 import { Worker, LabourJob, WageRecord } from '../../types';
-import {
-  Language,
-  getT,
-  fmt,
-  tJobStatus,
-  tReviewStatus,
-  tConsent,
-  tSkill,
-  tTaskType,
-  SKILL_KEYS,
-} from '../../lib/i18n';
+import { Language, fmt, tJobStatus, tReviewStatus, tConsent, tSkill, tTaskType } from '../../lib/i18n';
+import { categoryOf } from '../../config/categories';
 import { 
   HardHat, 
   Users, 
@@ -43,7 +35,8 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   state,
   currentLang,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
+  const { category } = useCategory();
   const user = state.currentUser;
   const [activeTab, setActiveTab] = useState<'roster' | 'marketplace' | 'attendance' | 'completions'>('roster');
   
@@ -58,7 +51,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   const [wNic, setWNic] = useState('199');
   const [wBank, setWBank] = useState('BOC 889922');
   const [wConsent, setWConsent] = useState<'sms' | 'written' | 'verbal_recorded'>('sms');
-  const [wSkills, setWSkills] = useState<string[]>(['Tree Climbing', 'Coconut Plucking']);
+  const [wSkills, setWSkills] = useState<string[]>(category.defaults.skills);
 
   // Bid Submission Form
   const [bidPrice, setBidPrice] = useState('45000');
@@ -78,14 +71,17 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   const [wageInputs, setWageInputs] = useState<{ [workerId: string]: { days: number; rate: number } }>({});
   const [completionNotes, setCompletionNotes] = useState(t.completion_notes_default);
 
-  const supervisorWorkers = state.workers.filter(w => w.supervisor_id === user?.id);
-  const openJobs = state.jobs.filter(j => j.status === 'OPEN');
-  const supervisorAwards = state.awards.filter(a => a.supervisor_id === user?.id);
+  const supervisorWorkers = state.workers.filter(w => w.supervisor_id === user?.id && categoryOf(w) === category.id);
+  const openJobs = state.jobs.filter(j => j.status === 'OPEN' && categoryOf(j) === category.id);
+  const supervisorAwards = state.awards.filter(a => {
+    const job = state.jobs.find(j => j.id === a.job_id);
+    return a.supervisor_id === user?.id && categoryOf(job) === category.id;
+  });
   const activeJobs = state.jobs.filter(j => 
     supervisorAwards.some(a => a.job_id === j.id) && ['ACTIVE', 'IN_PROGRESS', 'PENDING_COMPLETION'].includes(j.status)
   );
 
-  const availableSkillsList = SKILL_KEYS;
+  const availableSkillsList = category.skills;
 
   const handleAddWorker = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +93,8 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       skills: wSkills,
       nic_ref: wNic,
       bank_ref: wBank,
-      consent_method: wConsent
+      consent_method: wConsent,
+      category: category.id
     });
 
     setIsAddWorkerOpen(false);

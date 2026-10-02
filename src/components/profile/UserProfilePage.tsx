@@ -1,15 +1,7 @@
 import React, { useState } from 'react';
+import { useT } from '../../config/CategoryContext';
 import { store, AppState } from '../../lib/store';
-import {
-  Language,
-  getT,
-  fmt,
-  tRole,
-  tRoleLong,
-  tReviewStatus,
-  tDocType,
-  tReviewTag,
-} from '../../lib/i18n';
+import { Language, fmt, tRole, tRoleLong, tReviewStatus, tDocType, tReviewTag } from '../../lib/i18n';
 import { Role } from '../../types';
 import { 
   User, 
@@ -42,7 +34,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   state,
   currentLang,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   const user = state.currentUser;
   
   // Verification upload state
@@ -54,7 +46,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   if (!user) {
     return (
       <div className="p-8 text-center text-slate-400">
-        {getT(currentLang).profile_login_required}
+        {t.profile_login_required}
       </div>
     );
   }

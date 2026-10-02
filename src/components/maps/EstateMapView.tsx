@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useT } from '../../config/CategoryContext';
 import { 
   APIProvider, 
   Map, 
@@ -8,7 +9,7 @@ import {
 } from '@vis.gl/react-google-maps';
 import { AppState, store } from '../../lib/store';
 import { Estate, LabourJob } from '../../types';
-import { Language, getT, tJobStatus, tTaskType } from '../../lib/i18n';
+import { Language, TranslationDict, tJobStatus, tTaskType } from '../../lib/i18n';
 import { 
   Trees, 
   MapPin, 
@@ -35,7 +36,7 @@ interface EstateMapViewProps {
  * Shown instead of the map when `VITE_GOOGLE_MAPS_API_KEY` is not set, so a
  * missing key degrades to a readable panel rather than a blank grey canvas.
  */
-const MapKeyMissing: React.FC<{ t: ReturnType<typeof getT> }> = ({ t }) => (
+const MapKeyMissing: React.FC<{ t: TranslationDict }> = ({ t }) => (
   <div className="w-full h-full flex items-center justify-center p-6">
     <div className="max-w-md text-center space-y-3">
       <div className="w-12 h-12 mx-auto rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/30">
@@ -58,7 +59,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
   allowPickLocation = true,
   onLocationPicked,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   // Browser key, injected at build time. It is public by design and is only safe
   // because of the HTTP-referrer + API restrictions set on it in Google Cloud
   // Console, so there is deliberately no fallback key in the source.

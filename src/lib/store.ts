@@ -18,6 +18,7 @@ import {
   ScoringRuleVersion,
   NicSubmission
 } from '../types';
+import type { CategoryId } from '../types/category';
 import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
 import { saveNicSubmissionToFirestore, updateNicSubmissionInFirestore } from './firebase';
 import { createEstate as createEstateRemote, subscribeToEstates } from './data/estates';
@@ -905,13 +906,15 @@ class StoreService {
     notes?: string;
     lat?: number;
     lng?: number;
+    category?: CategoryId;
+    attributes?: Record<string, string | number>;
   }): Estate {
     if (!this.state.currentUser) throw new Error('Unauthorized');
     const newEstate: Estate = {
       id: `est-${Date.now()}`,
-      // Hardcoded until a category-aware posting UI exists (Session 2); every
-      // estate created through this flow today is a coconut estate.
-      category: 'coconut',
+      // Falls back to coconut (pre-category behaviour); the category-aware form always passes one
+      category: data.category ?? 'coconut',
+      attributes: data.attributes,
       owner_id: this.state.currentUser.id,
       name: data.name,
       area_acres: Number(data.area_acres),
@@ -937,10 +940,12 @@ class StoreService {
     nic_ref: string;
     bank_ref?: string;
     consent_method: 'sms' | 'written' | 'verbal_recorded';
+    category?: CategoryId;
   }): Worker {
     if (!this.state.currentUser) throw new Error('Unauthorized');
     const newWorker: Worker = {
       id: `worker-${Date.now()}`,
+      category: data.category,
       supervisor_id: this.state.currentUser.id,
       name: data.name,
       phone: data.phone,
@@ -977,7 +982,7 @@ class StoreService {
 
     const newJob: LabourJob = {
       id: `job-${Date.now()}`,
-      category: 'coconut',
+      category: estate.category ?? 'coconut',
       owner_id: this.state.currentUser.id,
       owner_name: this.state.currentUser.name,
       estate_id: estate.id,

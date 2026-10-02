@@ -1,5 +1,6 @@
 import React from 'react';
-import { Language, getT } from '../../lib/i18n';
+import { useT } from '../../config/CategoryContext';
+import { Language } from '../../lib/i18n';
 import { AppState } from '../../lib/store';
 import { Role } from '../../types';
 import { 
@@ -32,7 +33,7 @@ export const LandingWebsite: React.FC<LandingWebsiteProps> = ({
   onExploreMap,
   onLanguageChange,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
 
   const handleRoleClick = (role: Role) => {
     // If demo user exists, quick switch or open login for that role

@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
+import { useCategory, useT } from '../../config/CategoryContext';
+import { CategoryIcon } from '../../config/CategoryIcon';
+import { categoryOf } from '../../config/categories';
+import { Worker } from '../../types';
 import { store, AppState } from '../../lib/store';
-import {
-  Language,
-  getT,
-  tJobStatus,
-  tEscrowStatus,
-  tSkill,
-  tTaskType,
-  tParty,
-} from '../../lib/i18n';
+import { Language, tJobStatus, tEscrowStatus, tSkill, tTaskType, tParty } from '../../lib/i18n';
 import { 
   UserCheck, 
   Calendar, 
@@ -32,18 +28,36 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   state,
   currentLang,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
+  const { category } = useCategory();
   const user = state.currentUser;
   const [activeTab, setActiveTab] = useState<'assignments' | 'attendance' | 'wages'>('assignments');
 
-  // Find worker record matching current user's phone or name
-  const workerRecord = state.workers.find(w => 
-    w.phone.replace(/\s+/g, '') === user?.phone.replace(/\s+/g, '') ||
-    w.name.toLowerCase() === user?.name.toLowerCase()
-  ) || state.workers[0];
+  // The worker record a contractor/broker registered for this user in the active category.
+  // A worker nobody has registered yet sees an empty dashboard, never someone else's data.
+  const noWorkerRecord: Worker = {
+    id: 'no-worker-record',
+    supervisor_id: '',
+    name: user?.name ?? '',
+    phone: user?.phone ?? '',
+    skills: [],
+    nic_ref: '',
+    consent_captured_at: '',
+    consent_method: 'sms',
+    rating: 0,
+    jobs_completed: 0,
+    active: true,
+  };
+  const workerRecord = state.workers.find(w =>
+    categoryOf(w) === category.id && (
+      w.phone.replace(/\s+/g, '') === user?.phone.replace(/\s+/g, '') ||
+      w.name.toLowerCase() === user?.name.toLowerCase()
+    )
+  ) ?? noWorkerRecord;
 
   // Find assignments across bids & awards
   const assignedJobs = state.jobs.filter(job => {
+    if (categoryOf(job) !== category.id) return false;
     const award = state.awards.find(a => a.job_id === job.id);
     if (!award) return false;
     const bid = state.bids.find(b => b.id === award.bid_id);
@@ -207,7 +221,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                         </span>
                         <h3 className="text-base font-bold text-white mt-1.5">{tTaskType(job.task_type, currentLang)}</h3>
                         <p className="text-xs text-slate-400 flex items-center mt-0.5">
-                          <Trees className="w-3.5 h-3.5 text-emerald-400 mr-1" />
+                          <CategoryIcon icon={category.icon} className="w-3.5 h-3.5 text-emerald-400 mr-1" />
                           <span>{job.estate_name} • {job.estate_location}</span>
                         </p>
                       </div>

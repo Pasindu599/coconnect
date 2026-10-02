@@ -1,18 +1,8 @@
 import React, { useState } from 'react';
+import { useT } from '../../config/CategoryContext';
 import { store, AppState } from '../../lib/store';
 import { VerificationDoc, ExceptionIssue, AuditLogEntry, NicSubmission } from '../../types';
-import {
-  Language,
-  getT,
-  tRole,
-  tReviewStatus,
-  tDocType,
-  tReasonCode,
-  tTaskType,
-  tAuditAction,
-  tSubjectType,
-  tGender,
-} from '../../lib/i18n';
+import { Language, tRole, tReviewStatus, tDocType, tReasonCode, tTaskType, tAuditAction, tSubjectType, tGender } from '../../lib/i18n';
 import { 
   ShieldCheck, 
   UserCheck, 
@@ -46,20 +36,20 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   currentLang,
   onExitAdmin,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   const user = state.currentUser;
   const [adminTab, setAdminTab] = useState<'verifications' | 'exceptions' | 'audit' | 'trust_rules'>('verifications');
   
   // Verification action state
   const [selectedDoc, setSelectedDoc] = useState<VerificationDoc | null>(null);
-  const [reviewNotes, setReviewNotes] = useState(getT(currentLang).review_notes_default);
+  const [reviewNotes, setReviewNotes] = useState(t.review_notes_default);
   
   // Zoom Image State for Front / Back inspection
   const [zoomImage, setZoomImage] = useState<{ url: string; title: string; side: string } | null>(null);
 
   // Exception action state
   const [selectedException, setSelectedException] = useState<ExceptionIssue | null>(null);
-  const [resolutionNotes, setResolutionNotes] = useState(getT(currentLang).resolution_notes_default);
+  const [resolutionNotes, setResolutionNotes] = useState(t.resolution_notes_default);
 
   // Strict Separation Check: Standard users have no access
   const isAdmin = user && user.roles.includes('admin');

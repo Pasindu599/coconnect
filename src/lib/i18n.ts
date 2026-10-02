@@ -1,3 +1,6 @@
+import type { CategoryId } from '../types/category';
+import { CATEGORIES } from '../config/categories';
+
 export type Language = 'en' | 'si' | 'ta';
 
 /**
@@ -2006,6 +2009,28 @@ export const translations: Record<Language, TranslationDict> = { en, si, ta };
 /** Safe dictionary lookup — always falls back to English for unknown languages. */
 export const getT = (lang: Language): TranslationDict => translations[lang] || translations.en;
 
+const categoryDictCache = new Map<string, TranslationDict>();
+
+/**
+ * The dictionary with the category's wording applied on top (e.g. "Estate" becomes "Site"
+ * for construction). Coconut is the base text, so it returns the base dictionary.
+ */
+export const getCategoryT = (lang: Language, category: CategoryId | null | undefined): TranslationDict => {
+  const base = getT(lang);
+  const vocab = category ? CATEGORIES[category]?.vocab : undefined;
+  if (!vocab) return base;
+  const cacheKey = `${category}:${lang}`;
+  let merged = categoryDictCache.get(cacheKey);
+  if (!merged) {
+    merged = { ...base };
+    for (const [key, value] of Object.entries(vocab)) {
+      (merged as Record<string, string>)[key] = value[lang] || value.en;
+    }
+    categoryDictCache.set(cacheKey, merged);
+  }
+  return merged;
+};
+
 /**
  * Fills `{placeholder}` tokens in a translated string.
  * e.g. fmt(t.err_min_crew, { n: 3 })
@@ -2122,6 +2147,46 @@ const SKILL = buildLookup({
   'Field Clearing': { en: 'Field Clearing', si: 'ක්ෂේත්‍රය පිරිසිදු කිරීම', ta: 'வயல் சுத்தம் செய்தல்' },
   'Tractor Transport': { en: 'Tractor Transport', si: 'ට්‍රැක්ටර් ප්‍රවාහනය', ta: 'டிராக்டர் போக்குவரத்து' },
   'Nut Counting & Grading': { en: 'Nut Counting & Grading', si: 'ගෙඩි ගණන් කිරීම සහ ශ්‍රේණිගත කිරීම', ta: 'தேங்காய் எண்ணுதல் & தரப்படுத்தல்' },
+  'Mason': {
+    en: 'Mason',
+    si: 'පෙදරේරු',
+    ta: 'கொத்தனார்',
+  },
+  'Carpenter': {
+    en: 'Carpenter',
+    si: 'වඩු බාස්',
+    ta: 'தச்சர்',
+  },
+  'Electrician': {
+    en: 'Electrician',
+    si: 'විදුලි කාර්මික',
+    ta: 'மின்சார பணியாளர்',
+  },
+  'Plumber': {
+    en: 'Plumber',
+    si: 'ජල නළ කාර්මික',
+    ta: 'குழாய் பணியாளர்',
+  },
+  'Painter': {
+    en: 'Painter',
+    si: 'තීන්ත ආලේපක',
+    ta: 'வண்ணம் பூசுபவர்',
+  },
+  'Tiler': {
+    en: 'Tiler',
+    si: 'ටයිල් කරු',
+    ta: 'ஓடு பதிப்பவர்',
+  },
+  'Steel Fixer': {
+    en: 'Steel Fixer',
+    si: 'වානේ සවිකරු',
+    ta: 'கம்பி கட்டுபவர்',
+  },
+  'Helper (Labourer)': {
+    en: 'Helper (Labourer)',
+    si: 'සහායක (ශ්‍රමිකයා)',
+    ta: 'உதவியாளர் (கூலி)',
+  },
 });
 
 const TASK_TYPE = buildLookup({
@@ -2150,6 +2215,46 @@ const TASK_TYPE = buildLookup({
     si: 'ට්‍රැක්ටරයෙන් යටි පඳුරු පිරිසිදු කිරීම',
     ta: 'டிராக்டர் மூலம் புதர் அகற்றுதல்',
   },
+  'Foundation & Masonry Work': {
+    en: 'Foundation & Masonry Work',
+    si: 'අත්තිවාරම සහ පෙදරේරු වැඩ',
+    ta: 'அடித்தளம் மற்றும் கொத்து வேலை',
+  },
+  'Concreting (Slab, Column & Beam)': {
+    en: 'Concreting (Slab, Column & Beam)',
+    si: 'කොන්ක්‍රීට් දැමීම (ස්ලැබ්, කුළුණු සහ බාල්ක)',
+    ta: 'கான்கிரீட் இடுதல் (தளம், தூண் மற்றும் உத்திரம்)',
+  },
+  'Carpentry & Formwork': {
+    en: 'Carpentry & Formwork',
+    si: 'වඩු කර්මාන්තය සහ අච්චු වැඩ',
+    ta: 'தச்சு வேலை மற்றும் அச்சுப்பலகை',
+  },
+  'Electrical Wiring & Fittings': {
+    en: 'Electrical Wiring & Fittings',
+    si: 'විදුලි රැහැන් සහ සවිකිරීම්',
+    ta: 'மின் வயரிங் மற்றும் பொருத்துதல்',
+  },
+  'Plumbing & Sanitary Installation': {
+    en: 'Plumbing & Sanitary Installation',
+    si: 'ජල නළ සහ සනීපාරක්ෂක සවිකිරීම්',
+    ta: 'குழாய் மற்றும் சுகாதார பொருத்துதல்',
+  },
+  'Plastering & Painting': {
+    en: 'Plastering & Painting',
+    si: 'ප්ලාස්ටර් සහ තීන්ත ආලේපනය',
+    ta: 'பூச்சு மற்றும் வண்ணம் பூசுதல்',
+  },
+  'Tiling & Floor Finishing': {
+    en: 'Tiling & Floor Finishing',
+    si: 'ටයිල් දැමීම සහ බිම නිමාව',
+    ta: 'ஓடு பதித்தல் மற்றும் தரை முடிப்பு',
+  },
+  'Site Clearing & General Labour': {
+    en: 'Site Clearing & General Labour',
+    si: 'ස්ථානය පිරිසිදු කිරීම සහ සාමාන්‍ය ශ්‍රමය',
+    ta: 'இடம் சுத்தம் செய்தல் மற்றும் பொது வேலை',
+  },
 });
 
 const REVIEW_TAG = buildLookup({
@@ -2162,6 +2267,31 @@ const REVIEW_TAG = buildLookup({
   'Prompt Escrow Release': { en: 'Prompt Escrow Release', si: 'කඩිනම් එස්ක්‍රෝ නිදහස් කිරීම', ta: 'விரைவான எஸ்க்ரோ விடுவிப்பு' },
   'Clear Estate Instructions': { en: 'Clear Estate Instructions', si: 'පැහැදිලි වත්තේ උපදෙස්', ta: 'தெளிவான தோட்ட அறிவுறுத்தல்கள்' },
   'Clean Drinking Water': { en: 'Clean Drinking Water', si: 'පිරිසිදු පානීය ජලය', ta: 'சுத்தமான குடிநீர்' },
+  'On Schedule': {
+    en: 'On Schedule',
+    si: 'නියමිත කාලයට',
+    ta: 'நேரத்திற்கு',
+  },
+  'Quality Workmanship': {
+    en: 'Quality Workmanship',
+    si: 'ගුණාත්මක වැඩ',
+    ta: 'தரமான வேலைப்பாடு',
+  },
+  'Safe Site Practices': {
+    en: 'Safe Site Practices',
+    si: 'ආරක්ෂිත ස්ථාන පිළිවෙත්',
+    ta: 'பாதுகாப்பான இட நடைமுறைகள்',
+  },
+  'Clean Site': {
+    en: 'Clean Site',
+    si: 'පිරිසිදු ස්ථානය',
+    ta: 'சுத்தமான இடம்',
+  },
+  'Good Communication': {
+    en: 'Good Communication',
+    si: 'හොඳ සන්නිවේදනය',
+    ta: 'நல்ல தொடர்பு',
+  },
 });
 
 const AUDIT_ACTION = buildLookup({

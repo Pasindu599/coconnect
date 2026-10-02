@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Language, getT } from '../../lib/i18n';
+import { useT } from '../../config/CategoryContext';
+import { Language } from '../../lib/i18n';
 import { AppState, store } from '../../lib/store';
 import { 
   ShieldCheck, 
@@ -25,7 +26,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
   onLoginSuccess,
   onBackToHome,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   
   const [email, setEmail] = useState('');
   const [pin, setPin] = useState('');

@@ -1,21 +1,10 @@
 import React, { useState } from 'react';
 import { store, AppState } from '../../lib/store';
 import { LabourJob, Bid, Award, AttendanceDay, WageRecord } from '../../types';
-import {
-  Language,
-  getT,
-  fmt,
-  tJobStatus,
-  tEscrowStatus,
-  tReviewStatus,
-  tSkill,
-  tTaskType,
-  tPaymentSchedule,
-  tReviewTag,
-  TASK_TYPE_KEYS,
-  SKILL_KEYS,
-  REVIEW_TAG_KEYS,
-} from '../../lib/i18n';
+import { Language, fmt, tJobStatus, tEscrowStatus, tReviewStatus, tSkill, tTaskType, tPaymentSchedule, tReviewTag } from '../../lib/i18n';
+import { useCategory, useT } from '../../config/CategoryContext';
+import { CategoryIcon } from '../../config/CategoryIcon';
+import { categoryOf, formatSiteSummary } from '../../config/categories';
 import { LandManagement } from './LandManagement';
 import { 
   Trees, 
@@ -51,7 +40,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   currentLang,
   onNavigate,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
+  const { category } = useCategory();
   const user = state.currentUser;
   const [activeTab, setActiveTab] = useState<'jobs' | 'lands' | 'attendance' | 'escrow'>('jobs');
   
@@ -63,31 +53,31 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const [viewContactsAwardId, setViewContactsAwardId] = useState<string | null>(null);
   
   // New Job Form State
-  const ownerEstates = state.estates.filter(e => e.owner_id === user?.id);
+  const ownerEstates = state.estates.filter(e => e.owner_id === user?.id && categoryOf(e) === category.id);
   const [estateId, setEstateId] = useState(ownerEstates[0]?.id || '');
-  const [taskType, setTaskType] = useState('Coconut Harvesting & Bunch Lowering');
+  const [taskType, setTaskType] = useState(category.defaults.taskType);
   const [startsAt, setStartsAt] = useState('2026-09-28');
   const [endsAt, setEndsAt] = useState('2026-09-30');
   const [workerCount, setWorkerCount] = useState('3');
   const [durationDays, setDurationDays] = useState('2');
   const [wageBudget, setWageBudget] = useState('42000');
-  const [skillsSelected, setSkillsSelected] = useState<string[]>(['Tree Climbing', 'Coconut Plucking']);
+  const [skillsSelected, setSkillsSelected] = useState<string[]>(category.defaults.skills);
   const [description, setDescription] = useState('');
 
   // Dual-Confirmation PIN & Rating State
   const [pinInput, setPinInput] = useState('1234');
   const [ratingScore, setRatingScore] = useState(5);
   const [ratingComment, setRatingComment] = useState(t.rating_comment_default);
-  const [selectedTags, setSelectedTags] = useState<string[]>(['Punctual Crew', 'Safe Tree Climbing', 'Clean Estate']);
+  const [selectedTags, setSelectedTags] = useState<string[]>(category.defaults.ratingTags);
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
-  const ownerJobs = state.jobs.filter(j => j.owner_id === user?.id);
+  const ownerJobs = state.jobs.filter(j => j.owner_id === user?.id && categoryOf(j) === category.id);
   const ownerAwards = state.awards.filter(a => {
     const job = state.jobs.find(j => j.id === a.job_id);
-    return job?.owner_id === user?.id;
+    return job?.owner_id === user?.id && categoryOf(job) === category.id;
   });
 
-  const availableSkills = SKILL_KEYS;
+  const availableSkills = category.skills;
 
   const handleCreateJob = (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,7 +184,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
               : 'border-transparent text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Trees className="w-4 h-4" />
+          <CategoryIcon icon={category.icon} className="w-4 h-4" />
           <span>{t.my_lands} ({ownerEstates.length})</span>
         </button>
 
@@ -249,7 +239,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                         </span>
                         <h3 className="text-base font-bold text-white mt-2">{tTaskType(job.task_type, currentLang)}</h3>
                         <p className="text-xs text-slate-400 flex items-center mt-1">
-                          <Trees className="w-3.5 h-3.5 text-emerald-400 mr-1" />
+                          <CategoryIcon icon={category.icon} className="w-3.5 h-3.5 text-emerald-400 mr-1" />
                           <span>{job.estate_name} ({job.estate_location})</span>
                         </p>
                       </div>
@@ -453,7 +443,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           </div>
 
           <div className="space-y-4">
-            {state.attendanceDays.map((day) => {
+            {state.attendanceDays.filter(day => ownerJobs.some(j => j.id === day.job_id)).map((day) => {
               const job = state.jobs.find(j => j.id === day.job_id);
               const entries = state.attendanceEntries.filter(e => e.attendance_day_id === day.id);
               const workers = state.workers;
@@ -565,7 +555,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   <option value="" disabled>{t.choose_land}</option>
                   {ownerEstates.map(e => (
                     <option key={e.id} value={e.id}>
-                      {e.name} ({e.area_acres} {t.acres_word} • {e.tree_count} {t.trees_word}) - {e.location}
+                      {e.name} ({formatSiteSummary(e, currentLang)}) - {e.location}
                     </option>
                   ))}
                 </select>
@@ -580,7 +570,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                   onChange={(e) => setTaskType(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500"
                 >
-                  {TASK_TYPE_KEYS.map((key) => (
+                  {category.taskTypes.map((key) => (
                     <option key={key} value={key}>{tTaskType(key, currentLang)}</option>
                   ))}
                 </select>
@@ -1014,7 +1004,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
                 <div className="mt-3">
                   <label className="block text-[11px] text-slate-400 mb-1">{t.review_tags_label}</label>
                   <div className="flex flex-wrap gap-1.5">
-                    {REVIEW_TAG_KEYS.map(tag => {
+                    {category.ratingTags.map(tag => {
                       const active = selectedTags.includes(tag);
                       return (
                         <button

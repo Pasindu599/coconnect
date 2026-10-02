@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useT } from '../../config/CategoryContext';
 import { AppState, store } from '../../lib/store';
 import { 
   googleSignIn, 
@@ -31,7 +32,7 @@ import {
   Lock
 } from 'lucide-react';
 import { User } from 'firebase/auth';
-import { Language, getT, fmt } from '../../lib/i18n';
+import { Language, fmt } from '../../lib/i18n';
 
 interface WorkspaceHubProps {
   state: AppState;
@@ -39,7 +40,7 @@ interface WorkspaceHubProps {
 }
 
 export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state, currentLang }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);

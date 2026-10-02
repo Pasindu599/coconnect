@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { useT } from '../../config/CategoryContext';
 import { store, AppState } from '../../lib/store';
 import { Estate } from '../../types';
-import { Language, getT, fmt } from '../../lib/i18n';
+import { Language, fmt } from '../../lib/i18n';
 import { 
   Trees, 
   Plus, 
@@ -26,7 +27,7 @@ export const LandManagement: React.FC<LandManagementProps> = ({
   onSelectEstateForJob,
   onViewMap,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [areaAcres, setAreaAcres] = useState('10.0');
