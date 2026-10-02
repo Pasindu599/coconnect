@@ -20,6 +20,24 @@ export function formatAmount(amount: number): string {
   return amount.toFixed(2);
 }
 
+/**
+ * The notify-webhook signature, per PayHere's documented formula — same
+ * shape as the checkout hash but with status_code folded in before the
+ * hashed secret. Re-verify against PayHere's current docs once sandbox
+ * access exists (1C-4), same caveat as computeHash above.
+ */
+export function computeNotifySig(
+  merchantId: string,
+  orderId: string,
+  amount: string,
+  currency: string,
+  statusCode: string,
+  merchantSecret: string
+): string {
+  const hashedSecret = md5(merchantSecret).toUpperCase();
+  return md5(`${merchantId}${orderId}${amount}${currency}${statusCode}${hashedSecret}`).toUpperCase();
+}
+
 export interface PayHereConfig {
   merchantId: string;
   merchantSecret: string;

@@ -23,7 +23,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-08 | 5A-1 | 5 | Repositories: workers, awards, attendance, completions; NIC images → Storage | S1-07 | | done |
 | — | 5C-1 | 5 | **SP4: week-1 demo + reviews (humans, both sessions)** | | | **blocked — needs a human.** S1's week-1 work (S1-01..S1-08) is merged to `main` and ready to demo on the emulator (`npm run emulators` + `npm run seed`). This row is a human checkpoint (live demo with Session 2, `/code-review`, `/security-review` walkthrough) that an autonomous session can't satisfy on its own — flagging rather than marking done. Continuing into week 2 below since nothing there is actually blocked by this. |
 | S1-09 | 6A, 6C | 6 | `createPayment` Function + `payments.ts` + fee calc, with tests | S1-08, 1C-4 | SP5 | done (sandbox hash unverified, see note) — **SP5 delivered** |
-| S1-10 | 7A | 7 | `payhereNotify` webhook, with tests | S1-09 | SP6 | todo |
+| S1-10 | 7A | 7 | `payhereNotify` webhook, with tests | S1-09 | SP6 | done — **SP6 delivered** |
 | S1-11 | 8A, 8C (rules) | 8 | Completion, dispute, refund Functions; payments/ledger rules tests | S1-10 | | todo |
 | S1-12 | 9A | 9 | Admin payout recording + ledger reconciliation | S1-11 | | todo |
 | S1-13 | 9C | 9 | Staging deploy (Hosting + Functions) via CI; error monitoring | S1-01, S1-10 | SP7 | todo |
@@ -100,11 +100,12 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 - **Tests:** ✅ fee calculation (incl. rounding), hash (pinned fixture + sensitivity to every input), only the job's poster can create a payment, cannot pay twice (rejects once `paid`, reuses a pending payment within 30 min instead of duplicating). Both a direct `.run()` unit-test suite (`functions/`) and a real-HTTP integration test (`tests/integration/createPayment.test.ts`) — the latter is what confirmed `defineSecret` actually resolves through the emulator, not just in a direct call.
 - `order_id` is the bare `payments/{id}` document id (not the literal string `"payments/{id}"`) — see payments.md's note; this is a backend-only decision since S2 only passes the value through.
 
-### S1-10: payhereNotify webhook (delivers SP6)
-- **Files:** `functions/src/payments/payhereNotify.ts`.
-- Verify `md5sig`, merchant ID, amount and currency. Make it idempotent: a repeated notify for the same order changes nothing.
-- On success, in one transaction: payment `paid`, escrow `held`, job `ACTIVE`, ledger entry, audit log, contacts released.
-- **Tests:** valid notify; bad signature; amount mismatch; duplicate notify; unknown order; failed/cancelled status codes.
+### S1-10: payhereNotify webhook (delivers SP6) — done
+- **Files:** `functions/src/payments/payhereNotify.ts`, `computeNotifySig` added to `payhere.ts`.
+- Verifies `md5sig` (own hash formula from `payhere.ts`, folding in `status_code`), merchant ID, amount. Always responds `200` once parsed (per payments.md's "Response note"), even on rejection — logged server-side, never surfaced as an HTTP error to PayHere, so a forged/bad request doesn't trigger retry-hammering.
+- On `status_code == '2'`, one transaction: `payments.status = 'paid'`, `awards.escrow_status = 'held'` (+ `contacts_released_at`), `jobs.status = 'ACTIVE'`, a `ledger` `hold` entry, an `audit_logs` entry. Idempotent: re-checks `status !== 'paid'` both before and inside the transaction (closes a race between two near-simultaneous notifies for the same order). Other status codes (`0`/`-1`/`-2`/`-3`) just update `payments.status`, no escrow/job/ledger effect.
+- **Tests:** ✅ valid notify, bad signature, amount mismatch (+ audit log), duplicate/idempotent notify (no duplicate ledger entry), unknown order, non-success status codes — all as direct Functions tests. Plus a real-HTTP, form-urlencoded POST integration test (`tests/integration/payhereNotify.test.ts`) against the actual Functions emulator endpoint, since PayHere posts form-encoded, not JSON, and that's exactly the kind of "assumed shape doesn't match reality" gap S1-07/08 kept finding.
+- **Known gap, deliberately not solved here:** the *supervisor's* side of "contacts released" has nothing to release from — `Award` has no `owner_phone`/`owner_name` field, so a supervisor who can read the award still can't see the owner's phone number anywhere. The owner's side works today (job owner can already read the bid, which carries `supervisor_phone`). Needs a decision (denormalize onto `Award` in a Function, vs. a dedicated `getAwardContacts`-style callable) — flagging for S1-11 rather than guessing, since payments.md already marked this exact design choice as open ("Decide callable-vs-rules in S1-11/S2 handoff").
 
 ### S1-11: Completion, dispute, refund
 - **Files:** `functions/src/escrow/{confirmCompletion,openDispute,resolveDispute}.ts`, `tests/rules/**`.
