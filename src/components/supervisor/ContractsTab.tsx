@@ -3,6 +3,7 @@ import { AppState } from '../../lib/store';
 import { LabourJob, Award } from '../../types';
 import { Language, fmt, tJobStatus, tTaskType } from '../../lib/i18n';
 import { useT } from '../../config/CategoryContext';
+import { EscrowTimeline } from '../common/EscrowTimeline';
 import { DollarSign } from 'lucide-react';
 
 interface ContractsTabProps {
@@ -54,6 +55,12 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ state, currentLang, 
                   </div>
                 </div>
               </div>
+
+              {award && (
+                <div className="mt-4 pt-3 border-t border-slate-800">
+                  <EscrowTimeline status={award.escrow_status} currentLang={currentLang} />
+                </div>
+              )}
 
               <div className="mt-5 pt-3 border-t border-slate-800">
                 {comp ? (

@@ -3,6 +3,7 @@ import { AppState } from '../../lib/store';
 import { Award } from '../../types';
 import { Language, fmt } from '../../lib/i18n';
 import { useT } from '../../config/CategoryContext';
+import { contactsUnlocked } from '../../config/escrow';
 import { usePaymentFlow } from './usePaymentFlow';
 import { CheckCircle2, CreditCard, Loader2, ShieldCheck, X } from 'lucide-react';
 
@@ -25,7 +26,8 @@ export const EscrowPaymentModal: React.FC<EscrowPaymentModalProps> = ({ state, c
   const { phase, fees, pay, retry, isMock } = usePaymentFlow(award.id);
 
   const live = state.awards.find(a => a.id === award.id) ?? award;
-  const isHeld = live.escrow_status === 'held' || live.escrow_status === 'released';
+  // Paid = the money is in escrow or beyond; set only by the webhook, never by this modal
+  const isHeld = contactsUnlocked(live.escrow_status);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" data-testid="payment-modal">

@@ -11,6 +11,16 @@ export type Language = 'en' | 'si' | 'ta';
 const en = {
   app_title: 'Coconnect',
   tagline: 'Coconut Sector Labour Hiring & Escrow Platform',
+  // ------------------------------------------------ Escrow timeline
+  tl_heading: 'Escrow progress',
+  tl_awarded: 'Awarded',
+  tl_in_escrow: 'In escrow',
+  tl_completion: 'Completion confirmed',
+  tl_paid_out: 'Paid out',
+  tl_waiting_payment: 'Waiting for payment',
+  tl_disputed: 'Dispute open: the funds are frozen until an admin resolves it.',
+  tl_refunded: 'The payment was refunded.',
+  contacts_locked_until_paid: 'Contact details unlock once the payment is held in escrow.',
   // ------------------------------------------------ Escrow payment (PayHere)
   pay_breakdown_title: 'Payment breakdown',
   pay_bid_price: 'Accepted bid price',
@@ -691,6 +701,16 @@ export type TranslationDict = typeof en;
 const si: TranslationDict = {
   app_title: 'කොකොනෙක්ට් (Coconnect)',
   tagline: 'පොල් වගා ශ්‍රම බඳවාගැනීම් සහ එස්ක්‍රෝ ගෙවීම් පද්ධතිය',
+  // ------------------------------------------------ Escrow timeline
+  tl_heading: 'එස්ක්‍රෝ ප්‍රගතිය',
+  tl_awarded: 'පවරා ඇත',
+  tl_in_escrow: 'එස්ක්‍රෝ ගිණුමේ',
+  tl_completion: 'නිමාව තහවුරු කළා',
+  tl_paid_out: 'ගෙවා අවසන්',
+  tl_waiting_payment: 'ගෙවීම බලාපොරොත්තුවෙන්',
+  tl_disputed: 'ආරවුලක් විවෘතයි: පරිපාලකයෙකු විසඳන තුරු මුදල් අත්හිටුවා ඇත.',
+  tl_refunded: 'ගෙවීම ආපසු ගෙවන ලදී.',
+  contacts_locked_until_paid: 'ගෙවීම එස්ක්‍රෝ ගිණුමේ තැන්පත් වූ පසු සම්බන්ධතා විස්තර විවෘත වේ.',
   // ------------------------------------------------ Escrow payment (PayHere)
   pay_breakdown_title: 'ගෙවීම් විස්තරය',
   pay_bid_price: 'පිළිගත් ලංසු මිල',
@@ -1358,6 +1378,16 @@ const si: TranslationDict = {
 const ta: TranslationDict = {
   app_title: 'கொகனெக்ட் (Coconnect)',
   tagline: 'தென்னை துறை தொழிலாளர் நியமனம் மற்றும் எஸ்க்ரோ தளம்',
+  // ------------------------------------------------ Escrow timeline
+  tl_heading: 'எஸ்க்ரோ முன்னேற்றம்',
+  tl_awarded: 'ஒதுக்கப்பட்டது',
+  tl_in_escrow: 'எஸ்க்ரோவில்',
+  tl_completion: 'முடிவு உறுதிசெய்யப்பட்டது',
+  tl_paid_out: 'செலுத்தி முடிந்தது',
+  tl_waiting_payment: 'கட்டணத்திற்காக காத்திருக்கிறது',
+  tl_disputed: 'சர்ச்சை திறந்துள்ளது: நிர்வாகி தீர்க்கும் வரை பணம் முடக்கப்பட்டுள்ளது.',
+  tl_refunded: 'கட்டணம் திருப்பி வழங்கப்பட்டது.',
+  contacts_locked_until_paid: 'கட்டணம் எஸ்க்ரோவில் வைக்கப்பட்டதும் தொடர்பு விவரங்கள் திறக்கப்படும்.',
   // ------------------------------------------------ Escrow payment (PayHere)
   pay_breakdown_title: 'கட்டண விவரம்',
   pay_bid_price: 'ஏற்கப்பட்ட ஏலத் தொகை',
@@ -2089,6 +2119,8 @@ const JOB_STATUS = buildLookup({
 const ESCROW_STATUS = buildLookup({
   pending: { en: 'Pending', si: 'පොරොත්තුවෙන්', ta: 'நிலுவையில்' },
   held: { en: 'Held', si: 'රඳවා ඇත', ta: 'வைத்திருக்கப்பட்டுள்ளது' },
+  release_requested: { en: 'Release requested', si: 'නිදහස් කිරීම ඉල්ලා ඇත', ta: 'விடுவிப்பு கோரப்பட்டது' },
+  disputed: { en: 'Disputed', si: 'ආරවුලක් ඇත', ta: 'சர்ச்சையில் உள்ளது' },
   released: { en: 'Released', si: 'නිදහස් කර ඇත', ta: 'விடுவிக்கப்பட்டது' },
   refunded: { en: 'Refunded', si: 'ආපසු ගෙවා ඇත', ta: 'திரும்ப வழங்கப்பட்டது' },
 });

@@ -95,9 +95,10 @@ describe('registry invariants', () => {
     }
   });
 
-  it('keeps the coconut and construction task lists separate', () => {
-    const coconut = new Set(CATEGORIES.coconut.taskTypes);
-    expect(CATEGORIES.construction.taskTypes.some(t => coconut.has(t))).toBe(false);
+  it.each(['taskTypes', 'skills', 'ratingTags'] as const)('keeps the coconut and construction %s separate', list => {
+    const coconut = new Set(CATEGORIES.coconut[list]);
+    const shared = CATEGORIES.construction[list].filter(item => coconut.has(item));
+    expect(shared).toEqual([]);
   });
 });
 

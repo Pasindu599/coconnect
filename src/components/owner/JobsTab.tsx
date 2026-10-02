@@ -4,6 +4,8 @@ import { LabourJob, Award } from '../../types';
 import { Language, tJobStatus, tSkill, tTaskType } from '../../lib/i18n';
 import { useCategory, useT } from '../../config/CategoryContext';
 import { CategoryIcon } from '../../config/CategoryIcon';
+import { contactsUnlocked } from '../../config/escrow';
+import { EscrowTimeline } from '../common/EscrowTimeline';
 import { ShieldCheck, Lock, Phone, CheckCircle2 } from 'lucide-react';
 
 interface JobsTabProps {
@@ -74,6 +76,12 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
                 </div>
               </div>
 
+              {award && (
+                <div className="mt-4 pt-3 border-t border-slate-800/80">
+                  <EscrowTimeline status={award.escrow_status} currentLang={currentLang} />
+                </div>
+              )}
+
               {/* Actions depending on status */}
               <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between">
                 {job.status === 'OPEN' && (
@@ -107,17 +115,26 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
 
                 {['ACTIVE', 'IN_PROGRESS'].includes(job.status) && award && (
                   <div className="w-full flex items-center justify-between">
-                    <span className="text-xs text-emerald-400 font-medium flex items-center space-x-1">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>{t.escrow_held_secured}</span>
-                    </span>
-                    <button
-                      onClick={() => onViewContacts(award.id)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-300 border border-emerald-800 text-xs font-medium flex items-center space-x-1.5"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>{t.view_direct_contacts}</span>
-                    </button>
+                    {contactsUnlocked(award.escrow_status) ? (
+                      <>
+                        <span className="text-xs text-emerald-400 font-medium flex items-center space-x-1">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>{t.escrow_held_secured}</span>
+                        </span>
+                        <button
+                          onClick={() => onViewContacts(award.id)}
+                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-300 border border-emerald-800 text-xs font-medium flex items-center space-x-1.5"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>{t.view_direct_contacts}</span>
+                        </button>
+                      </>
+                    ) : (
+                      <span className="text-xs text-amber-300 font-medium flex items-center space-x-1">
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>{t.contacts_locked_until_paid}</span>
+                      </span>
+                    )}
                   </div>
                 )}
 

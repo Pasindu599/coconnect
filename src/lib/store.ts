@@ -21,6 +21,7 @@ import {
 import type { CategoryId, Membership } from '../types/category';
 import { constructionSeed } from './seed/construction';
 import { getRole, membershipsOf } from '../config/categories';
+import { contactsUnlocked } from '../config/escrow';
 import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
 import { saveNicSubmissionToFirestore, updateNicSubmissionInFirestore } from './firebase';
 import { createEstate as createEstateRemote, subscribeToEstates } from './data/estates';
@@ -1222,7 +1223,7 @@ class StoreService {
     const award = this.state.awards.find(a => a.id === awardId);
     if (!award) return { success: false, error: 'Award not found' };
 
-    if (award.escrow_status !== 'held' && award.escrow_status !== 'released') {
+    if (!contactsUnlocked(award.escrow_status)) {
       return {
         success: false,
         error: 'ESCROW_NOT_VERIFIED: Contact details are protected and will only be released once funds are verified in escrow.'

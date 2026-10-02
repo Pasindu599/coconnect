@@ -2,6 +2,8 @@ import React from 'react';
 import { AppState } from '../../lib/store';
 import { Award } from '../../types';
 import { Language, tEscrowStatus, tTaskType } from '../../lib/i18n';
+import { contactsUnlocked } from '../../config/escrow';
+import { EscrowTimeline } from '../common/EscrowTimeline';
 import { useT } from '../../config/CategoryContext';
 import { ShieldCheck, Unlock } from 'lucide-react';
 
@@ -31,17 +33,17 @@ export const EscrowTab: React.FC<EscrowTabProps> = ({ state, currentLang, awards
       <div className="space-y-3">
         {awards.map((award) => {
           const job = state.jobs.find(j => j.id === award.job_id);
-          const isHeld = award.escrow_status === 'held';
-          const isReleased = award.escrow_status === 'released';
+          const status = award.escrow_status;
 
           return (
-            <div key={award.id} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div key={award.id} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center space-x-2">
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                    isHeld ? 'bg-amber-950 text-amber-300 border border-amber-800' :
-                    isReleased ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
-                    'bg-rose-950 text-rose-300 border border-rose-800'
+                    status === 'released' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
+                    status === 'disputed' || status === 'refunded' ? 'bg-rose-950 text-rose-300 border border-rose-800' :
+                    'bg-amber-950 text-amber-300 border border-amber-800'
                   }`}>
                     {t.escrow_label}: {tEscrowStatus(award.escrow_status, currentLang)}
                   </span>
@@ -61,7 +63,7 @@ export const EscrowTab: React.FC<EscrowTabProps> = ({ state, currentLang, awards
                   <div className="text-base font-bold text-emerald-400">LKR {award.escrow_amount.toLocaleString()}</div>
                 </div>
 
-                {isHeld || isReleased ? (
+                {contactsUnlocked(status) ? (
                   <button
                     onClick={() => onViewContacts(award.id)}
                     className="px-3.5 py-2 rounded-xl bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-800 text-xs font-semibold flex items-center space-x-1.5"
@@ -69,15 +71,18 @@ export const EscrowTab: React.FC<EscrowTabProps> = ({ state, currentLang, awards
                     <Unlock className="w-3.5 h-3.5 text-emerald-400" />
                     <span>{t.view_released_contacts}</span>
                   </button>
-                ) : (
+                ) : status === 'pending' ? (
                   <button
                     onClick={() => onPayEscrow(award)}
                     className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md"
                   >
                     {t.pay_into_escrow} →
                   </button>
-                )}
+                ) : null}
               </div>
+              </div>
+
+              <EscrowTimeline status={status} currentLang={currentLang} />
             </div>
           );
         })}
