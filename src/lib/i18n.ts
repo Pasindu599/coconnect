@@ -11,6 +11,25 @@ export type Language = 'en' | 'si' | 'ta';
 const en = {
   app_title: 'Coconnect',
   tagline: 'Coconut Sector Labour Hiring & Escrow Platform',
+  // ------------------------------------------------ Escrow payment (PayHere)
+  pay_breakdown_title: 'Payment breakdown',
+  pay_bid_price: 'Accepted bid price',
+  pay_platform_fee: 'Platform fee',
+  pay_total: 'Total to pay',
+  pay_fee_note: 'The platform fee covers the escrow service. It is added to the bid price and is not paid to the crew.',
+  pay_loading: 'Preparing your payment…',
+  pay_error: 'We could not prepare the payment. You have not been charged. Please try again.',
+  pay_retry: 'Try again',
+  pay_with_payhere: 'Pay with PayHere',
+  pay_sandbox_note: 'Sandbox mode: no real money moves.',
+  pay_simulate: 'Simulate sandbox payment',
+  pay_opening: 'Opening PayHere…',
+  pay_waiting_title: 'Waiting for payment confirmation',
+  pay_waiting_desc: 'PayHere is confirming your payment, which usually takes a few seconds. You can close this window: the job activates on its own once the money is held in escrow.',
+  pay_held_title: 'Payment received: funds are held in escrow',
+  pay_held_desc: 'The job is now active and the crew\'s contact details are unlocked.',
+  pay_cancelled: 'The payment was cancelled. You have not been charged.',
+  pay_close: 'Close',
   // ------------------------------------------------ Worker registration
   worker_skills_label: 'Skills',
   // ------------------------------------------------ Join a category
@@ -672,6 +691,25 @@ export type TranslationDict = typeof en;
 const si: TranslationDict = {
   app_title: 'කොකොනෙක්ට් (Coconnect)',
   tagline: 'පොල් වගා ශ්‍රම බඳවාගැනීම් සහ එස්ක්‍රෝ ගෙවීම් පද්ධතිය',
+  // ------------------------------------------------ Escrow payment (PayHere)
+  pay_breakdown_title: 'ගෙවීම් විස්තරය',
+  pay_bid_price: 'පිළිගත් ලංසු මිල',
+  pay_platform_fee: 'වේදිකා ගාස්තුව',
+  pay_total: 'ගෙවිය යුතු මුළු මුදල',
+  pay_fee_note: 'වේදිකා ගාස්තුව එස්ක්‍රෝ සේවාව සඳහාය. එය ලංසු මිලට එකතු වන අතර කණ්ඩායමට නොගෙවේ.',
+  pay_loading: 'ඔබේ ගෙවීම සූදානම් කරමින්…',
+  pay_error: 'ගෙවීම සූදානම් කළ නොහැකි විය. ඔබෙන් මුදල් අය කර නැත. කරුණාකර නැවත උත්සාහ කරන්න.',
+  pay_retry: 'නැවත උත්සාහ කරන්න',
+  pay_with_payhere: 'PayHere මගින් ගෙවන්න',
+  pay_sandbox_note: 'සැන්ඩ්බොක්ස් ආකාරය: සැබෑ මුදල් නොගෙවේ.',
+  pay_simulate: 'සැන්ඩ්බොක්ස් ගෙවීම අනුකරණය කරන්න',
+  pay_opening: 'PayHere විවෘත කරමින්…',
+  pay_waiting_title: 'ගෙවීම තහවුරු වන තුරු රැඳී සිටී',
+  pay_waiting_desc: 'PayHere ඔබේ ගෙවීම තහවුරු කරමින් සිටී; සාමාන්‍යයෙන් තත්පර කිහිපයක් ගතවේ. ඔබට මෙම කවුළුව වසා දැමිය හැක; මුදල් එස්ක්‍රෝ ගිණුමේ තැන්පත් වූ පසු රැකියාව ස්වයංක්‍රීයව ක්‍රියාත්මක වේ.',
+  pay_held_title: 'ගෙවීම ලැබුණි: මුදල් එස්ක්‍රෝ ගිණුමේ තැන්පත්ව ඇත',
+  pay_held_desc: 'රැකියාව දැන් ක්‍රියාත්මකයි; කණ්ඩායමේ සම්බන්ධතා විස්තර විවෘත කර ඇත.',
+  pay_cancelled: 'ගෙවීම අවලංගු කරන ලදී. ඔබෙන් මුදල් අය කර නැත.',
+  pay_close: 'වසන්න',
   // ------------------------------------------------ Worker registration
   worker_skills_label: 'කුසලතා',
   // ------------------------------------------------ Join a category
@@ -1320,6 +1358,25 @@ const si: TranslationDict = {
 const ta: TranslationDict = {
   app_title: 'கொகனெக்ட் (Coconnect)',
   tagline: 'தென்னை துறை தொழிலாளர் நியமனம் மற்றும் எஸ்க்ரோ தளம்',
+  // ------------------------------------------------ Escrow payment (PayHere)
+  pay_breakdown_title: 'கட்டண விவரம்',
+  pay_bid_price: 'ஏற்கப்பட்ட ஏலத் தொகை',
+  pay_platform_fee: 'தள கட்டணம்',
+  pay_total: 'செலுத்த வேண்டிய மொத்தம்',
+  pay_fee_note: 'தள கட்டணம் எஸ்க்ரோ சேவைக்கானது. இது ஏலத் தொகையுடன் சேர்க்கப்படும்; குழுவுக்கு வழங்கப்படாது.',
+  pay_loading: 'உங்கள் கட்டணத்தைத் தயார் செய்கிறோம்…',
+  pay_error: 'கட்டணத்தைத் தயார் செய்ய முடியவில்லை. உங்களிடம் பணம் வசூலிக்கப்படவில்லை. மீண்டும் முயற்சிக்கவும்.',
+  pay_retry: 'மீண்டும் முயற்சிக்கவும்',
+  pay_with_payhere: 'PayHere மூலம் செலுத்துங்கள்',
+  pay_sandbox_note: 'சாண்ட்பாக்ஸ் முறை: உண்மையான பணம் நகராது.',
+  pay_simulate: 'சாண்ட்பாக்ஸ் கட்டணத்தை உருவகப்படுத்துக',
+  pay_opening: 'PayHere ஐத் திறக்கிறோம்…',
+  pay_waiting_title: 'கட்டண உறுதிப்படுத்தலுக்காக காத்திருக்கிறது',
+  pay_waiting_desc: 'PayHere உங்கள் கட்டணத்தை உறுதிப்படுத்துகிறது; இது பொதுவாக சில விநாடிகள் ஆகும். இந்த சாளரத்தை மூடலாம்: பணம் எஸ்க்ரோவில் வைக்கப்பட்டதும் வேலை தானாகவே செயல்படும்.',
+  pay_held_title: 'கட்டணம் பெறப்பட்டது: பணம் எஸ்க்ரோவில் உள்ளது',
+  pay_held_desc: 'வேலை இப்போது செயலில் உள்ளது; குழுவின் தொடர்பு விவரங்கள் திறக்கப்பட்டுள்ளன.',
+  pay_cancelled: 'கட்டணம் ரத்து செய்யப்பட்டது. உங்களிடம் பணம் வசூலிக்கப்படவில்லை.',
+  pay_close: 'மூடுக',
   // ------------------------------------------------ Worker registration
   worker_skills_label: 'திறன்கள்',
   // ------------------------------------------------ Join a category

@@ -56,11 +56,6 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     }
   };
 
-  const handleDepositEscrow = (awardId: string) => {
-    store.payEscrow(awardId);
-    setSelectedAwardForEscrow(null);
-  };
-
   const openPostJob = (estateId?: string) => {
     setPostJobEstateId(estateId);
     setIsPostJobOpen(true);
@@ -200,10 +195,10 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
       {selectedAwardForEscrow && (
         <EscrowPaymentModal
+          state={state}
           currentLang={currentLang}
           award={selectedAwardForEscrow}
           onClose={() => setSelectedAwardForEscrow(null)}
-          onConfirm={handleDepositEscrow}
         />
       )}
 
