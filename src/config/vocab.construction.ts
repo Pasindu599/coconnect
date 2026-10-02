@@ -204,8 +204,6 @@ export const CONSTRUCTION_VOCAB: Vocab = {
   add_land: { en: 'Register New Site', si: 'නව ස්ථානයක් ලියාපදිංචි කරන්න', ta: 'புதிய இடத்தைப் பதிவு செய்க' },
   select_estate: { en: 'Select Construction Site', si: 'ඉදිකිරීම් ස්ථානය තෝරන්න', ta: 'கட்டுமான இடத்தைத் தேர்ந்தெடுக்கவும்' },
   choose_land: { en: 'Choose site...', si: 'ස්ථානය තෝරන්න...', ta: 'இடத்தைத் தேர்ந்தெடுக்கவும்...' },
-  trees_word: { en: 'sq ft', si: 'වර්ග අඩි', ta: 'சதுர அடி' },
-  trees_suffix: { en: 'sq ft', si: 'වර්ග අඩි', ta: 'சதுர அடி' },
   estate_instructions: { en: 'Site Work Instructions', si: 'ස්ථානයේ වැඩ උපදෙස්', ta: 'இட வேலை அறிவுறுத்தல்கள்' },
   estate_instructions_ph: {
     en: 'Specific requirements, access times, materials and tools provided...',
@@ -239,10 +237,6 @@ export const CONSTRUCTION_VOCAB: Vocab = {
   },
   total_registered_lands: { en: 'Total Registered Sites', si: 'ලියාපදිංචි මුළු ස්ථාන', ta: 'பதிவு செய்யப்பட்ட மொத்த இடங்கள்' },
   estates_suffix: { en: 'Sites', si: 'ස්ථාන', ta: 'இடங்கள்' },
-  total_palms: { en: 'Total Floor Area (sq ft)', si: 'මුළු වර්ග ප්‍රමාණය (වර්ග අඩි)', ta: 'மொத்த தள அளவு (சதுர அடி)' },
-  land_palms_count: { en: 'Floor Area', si: 'වර්ග ප්‍රමාණය', ta: 'தள அளவு' },
-  land_density: { en: 'Floors', si: 'තට්ටු', ta: 'மாடிகள்' },
-  tree_count_label: { en: 'Floor Area (sq ft)', si: 'වර්ග ප්‍රමාණය (වර්ග අඩි)', ta: 'தள அளவு (சதுர அடி)' },
   coconut_triangle: { en: 'Island-wide', si: 'දිවයින පුරා', ta: 'நாடு முழுவதும்' },
   active_jobs_on_land: { en: 'Active jobs on site', si: 'ස්ථානයේ ක්‍රියාත්මක රැකියා', ta: 'இடத்தில் செயலில் உள்ள வேலைகள்' },
   post_job_for_land: { en: 'Post Job for this Site →', si: 'මෙම ස්ථානය සඳහා රැකියාවක් පළ කරන්න →', ta: 'இந்த இடத்திற்கு வேலையை இடுகையிடுக →' },
@@ -262,8 +256,6 @@ export const CONSTRUCTION_VOCAB: Vocab = {
   map_estates: { en: 'Sites', si: 'ස්ථාන', ta: 'இடங்கள்' },
   map_drop_pin: { en: 'Drop Site Pin', si: 'ස්ථාන සලකුණ දමන්න', ta: 'இடக் குறியை இடுக' },
   map_new_land: { en: 'New Site Location', si: 'නව ස්ථාන පිහිටීම', ta: 'புதிய இட இருப்பிடம்' },
-  map_mature_palms: { en: 'Floor Area', si: 'වර්ග ප්‍රමාණය', ta: 'தள அளவு' },
-  map_palms_unit: { en: 'sq ft', si: 'වර්ග අඩි', ta: 'சதுர அடி' },
   map_estate_details: { en: 'Site Details', si: 'ස්ථාන විස්තර', ta: 'இட விவரங்கள்' },
   map_manage_land: { en: 'Manage Site', si: 'ස්ථානය කළමනාකරණය', ta: 'இடத்தை நிர்வகிக்கவும்' },
 

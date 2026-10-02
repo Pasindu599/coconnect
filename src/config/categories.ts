@@ -48,8 +48,30 @@ export interface SiteField {
   label: L10n;
   type: 'number' | 'select';
   unit?: L10n;
+  /** Unit text when the value is exactly 1 ("1 floor", not "1 floors"). */
+  unitOne?: L10n;
   options?: FieldOption[];
   required?: boolean;
+  /** Input hints for number fields, and the value the form starts with. */
+  min?: number;
+  step?: number;
+  defaultValue?: string;
+  /** Set on fields that get a "total across all sites" tile on the sites tab. */
+  totalLabel?: L10n;
+}
+
+/** A quick-pick location for the site form. */
+export interface LocationPreset {
+  label: L10n;
+  location: string;
+  lat: number;
+  lng: number;
+}
+
+/** A derived figure shown on a site card, e.g. palms per acre. Return null to hide it. */
+export interface SiteMetric {
+  label: L10n;
+  value: (site: SiteValues, lang: Language) => string | null;
 }
 
 export type PricingUnit = 'per_palm' | 'per_day' | 'lump_sum';
@@ -71,6 +93,9 @@ export interface CategoryConfig {
   ratingTags: string[];
   defaults: { taskType: string; skills: string[]; ratingTags: string[]; wageBudget: string };
   siteFields: SiteField[];
+  siteMetrics?: SiteMetric[];
+  locationPresets: LocationPreset[];
+  map: { center: { lat: number; lng: number }; zoom: number };
   pricingUnit: PricingUnit;
   /** What the first landing-page stat counts: palms (coconut) or registered sites. */
   landingStat: 'tree_count' | 'site_count';
@@ -179,6 +204,10 @@ const COCONUT: CategoryConfig = {
       type: 'number',
       unit: { en: 'acres', si: 'අක්කර', ta: 'ஏக்கர்' },
       required: true,
+      min: 0.5,
+      step: 0.1,
+      defaultValue: '10.0',
+      totalLabel: { en: 'Total Area (Acres)', si: 'මුළු ප්‍රමාණය (අක්කර)', ta: 'மொத்த பரப்பளவு (ஏக்கர்)' },
     },
     {
       key: 'tree_count',
@@ -187,8 +216,26 @@ const COCONUT: CategoryConfig = {
       type: 'number',
       unit: { en: 'palms', si: 'ගස්', ta: 'மரங்கள்' },
       required: true,
+      min: 10,
+      defaultValue: '650',
+      totalLabel: { en: 'Total Coconut Palms (Trees)', si: 'මුළු පොල් ගස් ගණන', ta: 'மொத்த தென்னை மரங்கள்' },
     },
   ],
+  siteMetrics: [
+    {
+      label: { en: 'Density', si: 'ඝනත්වය', ta: 'அடர்த்தி' },
+      value: (site, lang) =>
+        site.area_acres && site.tree_count
+          ? `${Math.round(site.tree_count / site.area_acres)} ${l10n({ en: '/ ac', si: '/ අක්කරයට', ta: '/ ஏக்கருக்கு' }, lang)}`
+          : null,
+    },
+  ],
+  locationPresets: [
+    { label: { en: 'Narammala', si: 'නාරම්මල', ta: 'நரம்மல' }, location: 'Narammala, Kurunegala', lat: 7.4344, lng: 80.2181 },
+    { label: { en: 'Madampe', si: 'මාදම්පේ', ta: 'மாதம்பே' }, location: 'Madampe, Chilaw', lat: 7.4988, lng: 79.8458 },
+    { label: { en: 'Kuliyapitiya', si: 'කුලියාපිටිය', ta: 'குளியாப்பிட்டிய' }, location: 'Kuliyapitiya, Wayamba', lat: 7.4689, lng: 80.0436 },
+  ],
+  map: { center: { lat: 7.45, lng: 80.05 }, zoom: 10 },
   pricingUnit: 'per_palm',
   landingStat: 'tree_count',
 };
@@ -321,6 +368,7 @@ const CONSTRUCTION: CategoryConfig = {
       label: { en: 'Site Type', si: 'ස්ථාන වර්ගය', ta: 'இட வகை' },
       type: 'select',
       required: true,
+      defaultValue: 'House',
       options: [
         { value: 'House', label: { en: 'House', si: 'නිවස', ta: 'வீடு' } },
         { value: 'Commercial Building', label: { en: 'Commercial Building', si: 'වාණිජ ගොඩනැගිල්ල', ta: 'வணிகக் கட்டிடம்' } },
@@ -335,6 +383,10 @@ const CONSTRUCTION: CategoryConfig = {
       type: 'number',
       unit: { en: 'sq ft', si: 'වර්ග අඩි', ta: 'சதுர அடி' },
       required: true,
+      min: 100,
+      step: 50,
+      defaultValue: '1500',
+      totalLabel: { en: 'Total Floor Area (sq ft)', si: 'මුළු වර්ග ප්‍රමාණය (වර්ග අඩි)', ta: 'மொத்த தள அளவு (சதுர அடி)' },
     },
     {
       key: 'floors',
@@ -342,8 +394,19 @@ const CONSTRUCTION: CategoryConfig = {
       label: { en: 'Number of Floors', si: 'තට්ටු ගණන', ta: 'மாடிகளின் எண்ணிக்கை' },
       type: 'number',
       unit: { en: 'floors', si: 'තට්ටු', ta: 'மாடிகள்' },
+      unitOne: { en: 'floor', si: 'තට්ටුව', ta: 'மாடி' },
+      min: 1,
+      step: 1,
+      defaultValue: '1',
     },
   ],
+  locationPresets: [
+    { label: { en: 'Colombo', si: 'කොළඹ', ta: 'கொழும்பு' }, location: 'Colombo', lat: 6.9271, lng: 79.8612 },
+    { label: { en: 'Nugegoda', si: 'නුගේගොඩ', ta: 'நுகேகொடை' }, location: 'Nugegoda, Colombo District', lat: 6.8649, lng: 79.8997 },
+    { label: { en: 'Kandy', si: 'මහනුවර', ta: 'கண்டி' }, location: 'Kandy', lat: 7.2906, lng: 80.6337 },
+    { label: { en: 'Galle', si: 'ගාල්ල', ta: 'காலி' }, location: 'Galle', lat: 6.0535, lng: 80.221 },
+  ],
+  map: { center: { lat: 7.1, lng: 80.2 }, zoom: 8 },
   pricingUnit: 'per_day',
   landingStat: 'site_count',
   vocab: CONSTRUCTION_VOCAB,
@@ -406,6 +469,13 @@ export const membershipsOf = (user: Pick<User, 'roles' | 'memberships'> | null |
     .map(r => ({ category: DEFAULT_CATEGORY, role: LEGACY_TO_COCONUT_ROLE[r] }));
 };
 
+/** Whether the user holds a role with this capability in the category (e.g. is a poster there). */
+export const hasCapabilityIn = (
+  user: Pick<User, 'roles' | 'memberships'> | null | undefined,
+  category: CategoryId,
+  capability: Capability
+): boolean => membershipsInCategory(user, category).some(m => getRole(m.category, m.role)?.capability === capability);
+
 export const membershipsInCategory = (
   user: Pick<User, 'roles' | 'memberships'> | null | undefined,
   category: CategoryId
@@ -428,25 +498,87 @@ export const activeLegacyRoleIn = (
 
 // ---------------------------------------------------------------- site fields
 
-type SiteLike = { area_acres?: number; tree_count?: number; attributes?: Record<string, string | number> };
+export type SiteValues = {
+  area_acres?: number;
+  tree_count?: number;
+  attributes?: Record<string, string | number>;
+};
 
-export const getSiteFieldValue = (site: SiteLike, field: SiteField): string | number | undefined =>
+export const getSiteFieldValue = (site: SiteValues, field: SiteField): string | number | undefined =>
   field.target === 'top' ? (site as Record<string, any>)[field.key] : site.attributes?.[field.key];
+
+/** One field of a site as display text, e.g. "2,400 sq ft" or the translated site type. Empty when unset. */
+export const formatSiteFieldValue = (site: SiteValues, field: SiteField, lang: Language): string => {
+  const value = getSiteFieldValue(site, field);
+  if (value === undefined || value === '') return '';
+  if (field.type === 'select') {
+    return l10n(field.options?.find(o => o.value === value)?.label, lang) || String(value);
+  }
+  const shown = typeof value === 'number' ? value.toLocaleString() : value;
+  const unit = value === 1 && field.unitOne ? field.unitOne : field.unit;
+  return unit ? `${shown} ${l10n(unit, lang)}` : String(shown);
+};
 
 /**
  * One-line summary of a site's registry fields, e.g. "10 acres • 650 palms" (coconut) or
  * "House • 2,400 sq ft • 2 floors" (construction). Uses the site's own category.
  */
-export const formatSiteSummary = (site: SiteLike & { category?: CategoryId }, lang: Language, separator = ' • '): string =>
+export const formatSiteSummary = (site: SiteValues & { category?: CategoryId }, lang: Language, separator = ' • '): string =>
   getCategory(categoryOf(site))
-    .siteFields.map(field => {
-      const value = getSiteFieldValue(site, field);
-      if (value === undefined || value === '') return null;
-      if (field.type === 'select') {
-        return l10n(field.options?.find(o => o.value === value)?.label, lang) || String(value);
-      }
-      const shown = typeof value === 'number' ? value.toLocaleString() : value;
-      return field.unit ? `${shown} ${l10n(field.unit, lang)}` : String(shown);
-    })
-    .filter((part): part is string => !!part)
+    .siteFields.map(field => formatSiteFieldValue(site, field, lang))
+    .filter(Boolean)
     .join(separator);
+
+/** Starting values for the register-site form: each field's default, or the first option. */
+export const siteFormDefaults = (category: CategoryConfig): Record<string, string> =>
+  Object.fromEntries(
+    category.siteFields.map(f => [f.key, f.defaultValue ?? (f.type === 'select' ? f.options?.[0]?.value ?? '' : '')])
+  );
+
+/**
+ * Turns the form's text values into what the store takes. Fields that are first-class on
+ * Estate (acres, trees) stay top-level (0 when the category has none); the rest go in `attributes`.
+ * Returns the names of required fields that are empty or invalid when the form is incomplete.
+ */
+export const buildSitePayload = (
+  category: CategoryConfig,
+  values: Record<string, string>
+):
+  | { ok: true; area_acres: number; tree_count: number; attributes?: Record<string, string | number> }
+  | { ok: false; missing: string[] } => {
+  const missing: string[] = [];
+  let area_acres = 0;
+  let tree_count = 0;
+  const attributes: Record<string, string | number> = {};
+
+  for (const field of category.siteFields) {
+    const raw = (values[field.key] ?? '').trim();
+    const parsed = field.type === 'number' ? Number(raw) : raw;
+    const invalid = raw === '' || (field.type === 'number' && !Number.isFinite(parsed));
+    if (invalid) {
+      if (field.required) missing.push(field.key);
+      continue;
+    }
+    if (field.target === 'top') {
+      if (field.key === 'area_acres') area_acres = parsed as number;
+      if (field.key === 'tree_count') tree_count = parsed as number;
+    } else {
+      attributes[field.key] = parsed;
+    }
+  }
+
+  if (missing.length > 0) return { ok: false, missing };
+  return { ok: true, area_acres, tree_count, attributes: Object.keys(attributes).length ? attributes : undefined };
+};
+
+/** Totals for the fields that have a `totalLabel`, across the given sites. */
+export const siteTotals = (
+  sites: SiteValues[],
+  category: CategoryConfig
+): { field: SiteField; total: number }[] =>
+  category.siteFields
+    .filter(f => f.totalLabel)
+    .map(field => ({
+      field,
+      total: sites.reduce((sum, site) => sum + (Number(getSiteFieldValue(site, field)) || 0), 0),
+    }));

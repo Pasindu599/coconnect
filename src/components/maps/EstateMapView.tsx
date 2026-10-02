@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { useT } from '../../config/CategoryContext';
+import { useCategory, useT } from '../../config/CategoryContext';
+import { CategoryIcon } from '../../config/CategoryIcon';
+import { categoryOf, formatSiteFieldValue, hasCapabilityIn, l10n } from '../../config/categories';
 import { 
   APIProvider, 
   Map, 
@@ -11,7 +13,6 @@ import { AppState, store } from '../../lib/store';
 import { Estate, LabourJob } from '../../types';
 import { Language, TranslationDict, tJobStatus, tTaskType } from '../../lib/i18n';
 import { 
-  Trees, 
   MapPin, 
   Layers, 
   Navigation, 
@@ -60,6 +61,10 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
   onLocationPicked,
 }) => {
   const t = useT(currentLang);
+  const { category } = useCategory();
+  // Only this category's pins: construction sites never show up on the coconut map
+  const estates = state.estates.filter(e => categoryOf(e) === category.id);
+  const jobs = state.jobs.filter(j => categoryOf(j) === category.id);
   // Browser key, injected at build time. It is public by design and is only safe
   // because of the HTTP-referrer + API restrictions set on it in Google Cloud
   // Console, so there is deliberately no fallback key in the source.
@@ -73,8 +78,9 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
   const [isPickingMode, setIsPickingMode] = useState<boolean>(false);
   const [mapType, setMapType] = useState<string>('roadmap');
 
-  // Sri Lanka Coconut Triangle default center
-  const defaultCenter = { lat: 7.45, lng: 80.05 };
+  const defaultCenter = category.map.center;
+  // The headline number shown next to each site in the quick-jump list (acres / palms, floor area)
+  const primaryField = category.siteFields.find(f => f.type === 'number');
 
   const handleMapClick = (e: MapMouseEvent) => {
     if (isPickingMode && e.detail.latLng) {
@@ -124,7 +130,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                 filter === 'all' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              {t.map_all_pins} ({state.estates.length + state.jobs.length})
+              {t.map_all_pins} ({estates.length + jobs.length})
             </button>
             <button
               onClick={() => setFilter('estates')}
@@ -132,7 +138,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                 filter === 'estates' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              {t.map_estates} ({state.estates.length})
+              {t.map_estates} ({estates.length})
             </button>
             <button
               onClick={() => setFilter('jobs')}
@@ -140,7 +146,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                 filter === 'jobs' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              {t.map_active_jobs} ({state.jobs.length})
+              {t.map_active_jobs} ({jobs.length})
             </button>
           </div>
 
@@ -170,7 +176,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
             mapId="COCONNECT_ESTATE_MAP"
             internalUsageAttributionIds={["gmp_mcp_codeassist_v1_aistudio"]}
             defaultCenter={defaultCenter}
-            defaultZoom={10}
+            defaultZoom={category.map.zoom}
             gestureHandling="greedy"
             disableDefaultUI={false}
             onClick={handleMapClick}
@@ -178,9 +184,9 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
           >
             {/* Estate Markers */}
             {(filter === 'all' || filter === 'estates') &&
-              state.estates.map((estate) => {
-                const lat = estate.lat || 7.4344;
-                const lng = estate.lng || 80.2181;
+              estates.map((estate) => {
+                const lat = estate.lat ?? defaultCenter.lat;
+                const lng = estate.lng ?? defaultCenter.lng;
                 return (
                   <AdvancedMarker
                     key={estate.id}
@@ -196,7 +202,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                         {estate.name}
                       </div>
                       <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center border-2 border-emerald-400 shadow-lg shadow-emerald-500/30">
-                        <Trees className="w-5 h-5 text-emerald-100" />
+                        <CategoryIcon icon={category.icon} className="w-5 h-5 text-emerald-100" />
                       </div>
                     </div>
                   </AdvancedMarker>
@@ -205,9 +211,9 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
 
             {/* Active Job Markers */}
             {(filter === 'all' || filter === 'jobs') &&
-              state.jobs.map((job) => {
-                const lat = job.lat || 7.4988;
-                const lng = job.lng || 79.8458;
+              jobs.map((job) => {
+                const lat = job.lat ?? defaultCenter.lat;
+                const lng = job.lng ?? defaultCenter.lng;
                 return (
                   <AdvancedMarker
                     key={job.id}
@@ -248,32 +254,30 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
             {selectedEstate && (
               <InfoWindow
                 position={{
-                  lat: selectedEstate.lat || 7.4344,
-                  lng: selectedEstate.lng || 80.2181,
+                  lat: selectedEstate.lat ?? defaultCenter.lat,
+                  lng: selectedEstate.lng ?? defaultCenter.lng,
                 }}
                 onCloseClick={() => setSelectedEstate(null)}
               >
                 <div className="p-2 text-slate-900 max-w-xs">
                   <div className="flex items-center space-x-1.5 text-emerald-800 font-bold text-sm">
-                    <Trees className="w-4 h-4" />
+                    <CategoryIcon icon={category.icon} className="w-4 h-4" />
                     <span>{selectedEstate.name}</span>
                   </div>
                   <p className="text-xs text-slate-600 mt-1 font-medium">{selectedEstate.location}</p>
                   <div className="grid grid-cols-2 gap-2 my-2 py-1.5 border-y border-slate-200 text-xs">
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">{t.map_area}</span>
-                      <span className="font-semibold text-slate-800">{selectedEstate.area_acres} {t.map_acres_unit}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-[10px]">{t.map_mature_palms}</span>
-                      <span className="font-semibold text-slate-800">{selectedEstate.tree_count} {t.map_palms_unit}</span>
-                    </div>
+                    {category.siteFields.map(field => (
+                      <div key={field.key}>
+                        <span className="text-slate-500 block text-[10px]">{l10n(field.label, currentLang)}</span>
+                        <span className="font-semibold text-slate-800">{formatSiteFieldValue(selectedEstate, field, currentLang)}</span>
+                      </div>
+                    ))}
                   </div>
                   {selectedEstate.notes && (
                     <p className="text-[11px] text-slate-600 italic mb-2 line-clamp-2">{selectedEstate.notes}</p>
                   )}
                   <div className="text-[11px] text-emerald-700 font-medium">
-                    {t.map_gps}: {selectedEstate.lat || 7.4344}, {selectedEstate.lng || 80.2181}
+                    {t.map_gps}: {selectedEstate.lat ?? defaultCenter.lat}, {selectedEstate.lng ?? defaultCenter.lng}
                   </div>
                 </div>
               </InfoWindow>
@@ -283,8 +287,8 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
             {selectedJob && (
               <InfoWindow
                 position={{
-                  lat: selectedJob.lat || 7.4988,
-                  lng: selectedJob.lng || 79.8458,
+                  lat: selectedJob.lat ?? defaultCenter.lat,
+                  lng: selectedJob.lng ?? defaultCenter.lng,
                 }}
                 onCloseClick={() => setSelectedJob(null)}
               >
@@ -321,35 +325,16 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
         {/* Floating Quick Region Jump Controls */}
         <div className="absolute top-4 left-4 z-10 flex flex-col space-y-1.5 bg-slate-900/90 backdrop-blur p-2 rounded-xl border border-slate-800 shadow-lg text-xs">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">{t.map_quick_regions}</span>
-          <button
-            onClick={() => {
-              setSelectedEstate(state.estates[0] || null);
-            }}
-            className="px-2.5 py-1 text-left rounded-md hover:bg-slate-800 text-slate-200 font-medium transition flex items-center justify-between space-x-3"
-          >
-            <span>{t.map_region_1}</span>
-            <span className="text-[10px] text-emerald-400">{state.estates[0]?.tree_count ?? 0} {t.map_palms_unit}</span>
-          </button>
-          <button
-            onClick={() => {
-              setSelectedEstate(state.estates[1] || null);
-            }}
-            className="px-2.5 py-1 text-left rounded-md hover:bg-slate-800 text-slate-200 font-medium transition flex items-center justify-between space-x-3"
-          >
-            <span>{t.map_region_2}</span>
-            <span className="text-[10px] text-emerald-400">{state.estates[1]?.tree_count ?? 0} {t.map_palms_unit}</span>
-          </button>
-          {state.estates[2] && (
+          {estates.slice(0, 3).map(estate => (
             <button
-              onClick={() => {
-                setSelectedEstate(state.estates[2] || null);
-              }}
+              key={estate.id}
+              onClick={() => setSelectedEstate(estate)}
               className="px-2.5 py-1 text-left rounded-md hover:bg-slate-800 text-slate-200 font-medium transition flex items-center justify-between space-x-3"
             >
-              <span>{t.map_region_3}</span>
-              <span className="text-[10px] text-emerald-400">{state.estates[2]?.tree_count ?? 0} {t.map_palms_unit}</span>
+              <span>{estate.name}</span>
+              <span className="text-[10px] text-emerald-400">{primaryField ? formatSiteFieldValue(estate, primaryField, currentLang) : ''}</span>
             </button>
-          )}
+          ))}
         </div>
 
         {/* Selected Pin Bottom Sheet / Card */}
@@ -375,18 +360,16 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
             </div>
 
             <div className="grid grid-cols-3 gap-2 my-3 p-2 bg-slate-950/60 rounded-lg text-center text-xs">
-              <div>
-                <span className="text-[10px] text-slate-500 block">{t.map_acreage}</span>
-                <span className="font-bold text-white">{selectedEstate.area_acres} {t.ac_short}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-500 block">{t.map_palms_unit}</span>
-                <span className="font-bold text-white">{selectedEstate.tree_count}</span>
-              </div>
+              {category.siteFields.slice(0, 2).map(field => (
+                <div key={field.key}>
+                  <span className="text-[10px] text-slate-500 block">{l10n(field.label, currentLang)}</span>
+                  <span className="font-bold text-white">{formatSiteFieldValue(selectedEstate, field, currentLang)}</span>
+                </div>
+              ))}
               <div>
                 <span className="text-[10px] text-slate-500 block">{t.map_distance}</span>
                 <span className="font-bold text-emerald-400">
-                  {calculateDistanceKm(7.45, 80.05, selectedEstate.lat || 7.4344, selectedEstate.lng || 80.2181)} km
+                  {calculateDistanceKm(defaultCenter.lat, defaultCenter.lng, selectedEstate.lat ?? defaultCenter.lat, selectedEstate.lng ?? defaultCenter.lng)} km
                 </span>
               </div>
             </div>
@@ -395,9 +378,9 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
 
             <div className="flex items-center justify-between pt-2 border-t border-slate-800">
               <span className="text-[11px] text-slate-400">
-                {t.map_gps}: {selectedEstate.lat || 7.4344}, {selectedEstate.lng || 80.2181}
+                {t.map_gps}: {selectedEstate.lat ?? defaultCenter.lat}, {selectedEstate.lng ?? defaultCenter.lng}
               </span>
-              {state.currentUser?.roles.includes('owner') && (
+              {hasCapabilityIn(state.currentUser, category.id, 'poster') && (
                 <button
                   onClick={() => {
                     store.switchRole('owner');

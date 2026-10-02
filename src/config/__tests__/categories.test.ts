@@ -3,18 +3,24 @@ import {
   CATEGORIES,
   CATEGORY_LIST,
   activeLegacyRoleIn,
+  buildSitePayload,
   canRegisterWorkers,
   capabilityOfLegacyRole,
   categoryOf,
+  formatSiteFieldValue,
   formatSiteSummary,
   getRole,
+  hasCapabilityIn,
   isCategoryId,
   membershipsInCategory,
   membershipsOf,
   rolesWithCapability,
+  siteFormDefaults,
+  siteTotals,
 } from '../categories';
 import { tReviewTag, tSkill, tTaskType, translations } from '../../lib/i18n';
 import type { Language } from '../../lib/i18n';
+import type { SiteValues } from '../categories';
 import type { User } from '../../types';
 
 const LANGS: Language[] = ['en', 'si', 'ta'];
@@ -204,5 +210,95 @@ describe('site helpers', () => {
     const site = { category: 'construction' as const, attributes: { site_type: 'House', floor_area_sqft: 900 } };
     expect(formatSiteSummary(site, 'en')).toBe('House • 900 sq ft');
     expect(formatSiteSummary(site, 'si')).toContain('නිවස');
+  });
+});
+
+describe('site form helpers', () => {
+  const coconut = CATEGORIES.coconut;
+  const construction = CATEGORIES.construction;
+
+  it('starts each form from the field defaults, or the first select option', () => {
+    expect(siteFormDefaults(coconut)).toEqual({ area_acres: '10.0', tree_count: '650' });
+    expect(siteFormDefaults(construction)).toEqual({ site_type: 'House', floor_area_sqft: '1500', floors: '1' });
+  });
+
+  it('keeps coconut acres and trees top-level', () => {
+    const result = buildSitePayload(coconut, { area_acres: '12.5', tree_count: '800' });
+    expect(result).toEqual({ ok: true, area_acres: 12.5, tree_count: 800, attributes: undefined });
+  });
+
+  it('puts construction fields in attributes and zeroes the coconut-only numbers', () => {
+    const result = buildSitePayload(construction, { site_type: 'House', floor_area_sqft: '2400', floors: '2' });
+    expect(result).toEqual({
+      ok: true,
+      area_acres: 0,
+      tree_count: 0,
+      attributes: { site_type: 'House', floor_area_sqft: 2400, floors: 2 },
+    });
+  });
+
+  it('allows an optional field to be left blank', () => {
+    const result = buildSitePayload(construction, { site_type: 'House', floor_area_sqft: '900', floors: '' });
+    expect(result).toMatchObject({ ok: true, attributes: { site_type: 'House', floor_area_sqft: 900 } });
+    expect((result as { attributes: object }).attributes).not.toHaveProperty('floors');
+  });
+
+  it('reports the required fields that are empty or not numbers', () => {
+    expect(buildSitePayload(construction, { site_type: 'House', floor_area_sqft: '', floors: '1' })).toEqual({
+      ok: false,
+      missing: ['floor_area_sqft'],
+    });
+    expect(buildSitePayload(coconut, { area_acres: 'abc', tree_count: '' })).toEqual({
+      ok: false,
+      missing: ['area_acres', 'tree_count'],
+    });
+  });
+
+  it('totals only the fields that have a total label', () => {
+    const sites = [
+      { area_acres: 10, tree_count: 100 },
+      { area_acres: 4.5, tree_count: 50 },
+    ];
+    expect(siteTotals(sites, coconut).map(t => [t.field.key, t.total])).toEqual([
+      ['area_acres', 14.5],
+      ['tree_count', 150],
+    ]);
+    const buildings: SiteValues[] = [
+      { attributes: { floor_area_sqft: 2400, floors: 2 } },
+      { attributes: { floor_area_sqft: 900 } },
+    ];
+    expect(siteTotals(buildings, construction).map(t => [t.field.key, t.total])).toEqual([['floor_area_sqft', 3300]]);
+  });
+
+  it('formats a single field and leaves unset ones empty', () => {
+    const field = construction.siteFields.find(f => f.key === 'floor_area_sqft')!;
+    expect(formatSiteFieldValue({ attributes: { floor_area_sqft: 2400 } }, field, 'en')).toBe('2,400 sq ft');
+    expect(formatSiteFieldValue({ attributes: {} }, field, 'en')).toBe('');
+  });
+
+  it('uses the singular unit for exactly one', () => {
+    const floors = construction.siteFields.find(f => f.key === 'floors')!;
+    expect(formatSiteFieldValue({ attributes: { floors: 1 } }, floors, 'en')).toBe('1 floor');
+    expect(formatSiteFieldValue({ attributes: { floors: 2 } }, floors, 'en')).toBe('2 floors');
+  });
+
+  it('shows the coconut density metric only when it can be computed', () => {
+    const density = coconut.siteMetrics![0];
+    expect(density.value({ area_acres: 10, tree_count: 650 }, 'en')).toBe('65 / ac');
+    expect(density.value({ area_acres: 0, tree_count: 0 }, 'en')).toBeNull();
+  });
+});
+
+describe('capability checks', () => {
+  it('knows who can post in a category', () => {
+    const client = user({ roles: ['owner'], memberships: [{ category: 'construction', role: 'client' }] });
+    expect(hasCapabilityIn(client, 'construction', 'poster')).toBe(true);
+    expect(hasCapabilityIn(client, 'construction', 'bidder')).toBe(false);
+    expect(hasCapabilityIn(client, 'coconut', 'poster')).toBe(false);
+    expect(hasCapabilityIn(null, 'coconut', 'poster')).toBe(false);
+  });
+
+  it('counts a legacy owner as a coconut poster', () => {
+    expect(hasCapabilityIn(user({ roles: ['owner'] }), 'coconut', 'poster')).toBe(true);
   });
 });
