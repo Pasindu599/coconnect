@@ -137,6 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {showAccount && (user ? (
               <div className="relative">
                 <button
+                  data-testid="account-menu"
                   onClick={() => setShowRoleMenu(!showRoleMenu)}
                   className="flex items-center space-x-2 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-750 text-xs transition"
                 >
@@ -154,6 +155,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </div>
                     <div className="pt-1">
                       <button
+                        data-testid="logout"
                         onClick={() => {
                           store.logout();
                           setShowRoleMenu(false);

@@ -24,7 +24,12 @@ export const MarketplaceTab: React.FC<MarketplaceTabProps> = ({ state, currentLa
           const myBid = state.bids.find(b => b.job_id === job.id && b.supervisor_id === userId);
 
           return (
-            <div key={job.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+            <div
+              key={job.id}
+              data-testid="open-job-card"
+              data-job-task={job.task_type}
+              className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between"
+            >
               <div>
                 <div className="flex items-start justify-between">
                   <div>
@@ -66,6 +71,7 @@ export const MarketplaceTab: React.FC<MarketplaceTabProps> = ({ state, currentLa
                   </div>
                 ) : (
                   <button
+                    data-testid="place-bid"
                     onClick={() => onBid(job)}
                     className="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md transition flex items-center justify-center space-x-1.5"
                   >

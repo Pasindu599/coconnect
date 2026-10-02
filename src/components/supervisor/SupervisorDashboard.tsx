@@ -86,6 +86,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       {/* Tabs */}
       <div className="border-b border-slate-800 flex items-center space-x-2">
         <button
+          data-testid="tab-roster"
           onClick={() => setActiveTab('roster')}
           className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
             activeTab === 'roster' 
@@ -98,6 +99,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         </button>
 
         <button
+          data-testid="tab-marketplace"
           onClick={() => setActiveTab('marketplace')}
           className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
             activeTab === 'marketplace' 
@@ -110,6 +112,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         </button>
 
         <button
+          data-testid="tab-attendance"
           onClick={() => setActiveTab('attendance')}
           className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
             activeTab === 'attendance' 
@@ -122,6 +125,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         </button>
 
         <button
+          data-testid="tab-completions"
           onClick={() => setActiveTab('completions')}
           className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
             activeTab === 'completions' 

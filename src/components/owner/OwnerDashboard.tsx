@@ -80,6 +80,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
         <div className="flex items-center space-x-3">
           <button
+            data-testid="post-job"
             onClick={() => setIsPostJobOpen(true)}
             className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition"
           >
@@ -92,6 +93,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       {/* Tabs */}
       <div className="border-b border-slate-800 flex items-center space-x-2">
         <button
+          data-testid="tab-jobs"
           onClick={() => setActiveTab('jobs')}
           className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
             activeTab === 'jobs' 
@@ -104,6 +106,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </button>
 
         <button
+          data-testid="tab-lands"
           onClick={() => setActiveTab('lands')}
           className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
             activeTab === 'lands' 
@@ -116,6 +119,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </button>
 
         <button
+          data-testid="tab-escrow"
           onClick={() => setActiveTab('escrow')}
           className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
             activeTab === 'escrow' 
@@ -128,6 +132,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </button>
 
         <button
+          data-testid="tab-attendance"
           onClick={() => setActiveTab('attendance')}
           className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
             activeTab === 'attendance' 

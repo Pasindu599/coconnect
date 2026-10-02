@@ -17,7 +17,8 @@
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-coconnect-test \"vitest run --config vitest.rules.config.ts\"",
     "test:integration": "firebase emulators:exec --only auth,firestore --project gen-lang-client-0417035030 \"vitest run --config vitest.integration.config.ts\"",
     "emulators": "firebase emulators:start",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",
     "@google-cloud/firestore": "^9.3.1",
+    "@playwright/test": "^1.63.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",

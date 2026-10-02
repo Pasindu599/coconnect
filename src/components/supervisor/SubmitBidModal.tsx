@@ -169,6 +169,7 @@ export const SubmitBidModal: React.FC<SubmitBidModalProps> = ({ currentLang, job
             </button>
             <button
               type="submit"
+              data-testid="submit-bid"
               className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 shadow-md"
             >
               {t.submit_official_bid}

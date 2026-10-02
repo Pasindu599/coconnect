@@ -83,6 +83,7 @@ export const BidsModal: React.FC<BidsModalProps> = ({ state, currentLang, job, o
                     {t.payment_label}: <strong>{tPaymentSchedule(bid.payment_schedule, currentLang)}</strong>
                   </span>
                   <button
+                    data-testid="accept-bid"
                     onClick={() => onAward(bid.id)}
                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition"
                   >

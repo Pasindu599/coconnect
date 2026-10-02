@@ -92,6 +92,7 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ currentLang, estates
               {t.task_type_label}
             </label>
             <select
+              data-testid="job-task-type"
               value={taskType}
               onChange={(e) => setTaskType(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500"
@@ -110,6 +111,7 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ currentLang, estates
               <input
                 type="date"
                 required
+                data-testid="job-start"
                 value={startsAt}
                 onChange={(e) => setStartsAt(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
@@ -122,6 +124,7 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ currentLang, estates
               <input
                 type="date"
                 required
+                data-testid="job-end"
                 value={endsAt}
                 onChange={(e) => setEndsAt(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
@@ -207,6 +210,7 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ currentLang, estates
               {t.estate_instructions}
             </label>
             <textarea
+              data-testid="job-description"
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -225,6 +229,7 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ currentLang, estates
             </button>
             <button
               type="submit"
+              data-testid="publish-job"
               className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md"
             >
               {t.publish_job}

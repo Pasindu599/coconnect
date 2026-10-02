@@ -42,7 +42,7 @@ npm run dev      # http://localhost:3000
 npm run lint     # tsc --noEmit (type check)
 npm run build
 ```
-Planned: `npm test` (Vitest), `firebase emulators:start`, `npx playwright test`.
+Also: `npm test` (Vitest), `npm run test:e2e` (Playwright; locally `PW_CHROME_PATH=/usr/bin/google-chrome npm run test:e2e` uses an installed Chrome), `npm run emulators`.
 
 ### Local environment
 `.env.local` is gitignored; `.env.example` holds placeholders only. Ask the team

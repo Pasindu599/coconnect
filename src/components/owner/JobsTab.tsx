@@ -31,7 +31,13 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
           const completion = state.completions.find(c => c.job_id === job.id);
 
           return (
-            <div key={job.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+            <div
+              key={job.id}
+              data-testid="job-card"
+              data-job-task={job.task_type}
+              data-job-status={job.status}
+              className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between"
+            >
               <div>
                 <div className="flex items-start justify-between">
                   <div>
@@ -90,6 +96,7 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
                       <strong>{bids.length}</strong> {t.bids_received_label}
                     </span>
                     <button
+                      data-testid="review-bids"
                       onClick={() => onReviewBids(job)}
                       className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition"
                     >
@@ -122,6 +129,7 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
                           <span>{t.escrow_held_secured}</span>
                         </span>
                         <button
+                          data-testid="view-contacts"
                           onClick={() => onViewContacts(award.id)}
                           className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-300 border border-emerald-800 text-xs font-medium flex items-center space-x-1.5"
                         >

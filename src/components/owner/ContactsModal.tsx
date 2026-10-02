@@ -44,7 +44,7 @@ export const ContactsModal: React.FC<ContactsModalProps> = ({ currentLang, award
                 <div className="text-sm font-bold text-white mt-1">{supervisor_name}</div>
                 <div className="text-emerald-400 font-mono text-sm mt-0.5 flex items-center space-x-1">
                   <Phone className="w-3.5 h-3.5" />
-                  <span>{supervisor_phone}</span>
+                  <span data-testid="contact-phone">{supervisor_phone}</span>
                 </div>
               </div>
 
