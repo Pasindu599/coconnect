@@ -1,5 +1,5 @@
 import type { Bid } from '../../types';
-import { patchDoc, putDoc, subscribeToCollection, type RemoteChanges } from './firestoreSync';
+import { patchDoc, putDoc, subscribeToOwnedCollection, type RemoteChanges } from './firestoreSync';
 
 const COLLECTION = 'bids';
 
@@ -12,9 +12,14 @@ export function updateBid(id: string, patch: Partial<Bid>): Promise<void> {
   return patchDoc(COLLECTION, id, patch);
 }
 
+/**
+ * Sealed-bid, so this can't be a bare collection listener — see ADR-009.
+ * `uid`'s own bids (as the bidder) and the bids on jobs `uid` owns.
+ */
 export function subscribeToBids(
+  uid: string,
   onChange: (changes: RemoteChanges<Bid>) => void,
   onError: (err: unknown) => void
 ): () => void {
-  return subscribeToCollection<Bid>(COLLECTION, onChange, onError);
+  return subscribeToOwnedCollection<Bid>(COLLECTION, uid, { ownerField: 'owner_id', supervisorField: 'supervisor_id' }, onChange, onError);
 }

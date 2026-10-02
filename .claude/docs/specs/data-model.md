@@ -101,6 +101,7 @@ Generalizes `LabourJob`.
 | Field | Type |
 |---|---|
 | `category`, `award_id`, `job_id` | |
+| `owner_id`, `supervisor_id` | denormalized from the award at creation time (ADR-008/009 — a `list`/`onSnapshot` query needs a plain field check, a cross-document `get()` on `award_id` can't satisfy Firestore's list-safety check) |
 | `amount`, `platform_fee`, `currency` | |
 | `provider` | `'payhere'` (kept as a string, not hardcoded logic, so `PaymentProvider` can be swapped per ADR-002) |
 | `provider_order_id` | = the document ID, per CONTRACTS C4 `order_id: "payments/{id}"` |
@@ -108,12 +109,13 @@ Generalizes `LabourJob`.
 | `status` | `'pending' \| 'paid' \| 'failed' \| 'cancelled' \| 'refunded'` |
 | `created_at`, `paid_at` | |
 
-**Rules:** no client writes at all. `read`: the award's `owner_id`/`supervisor_id` (resolved via a `get()` on the referenced award in the rule).
+**Rules:** no client writes at all. `read`: `owner_id`/`supervisor_id` equal the caller, or admin.
 
 ### `ledger/{id}` — Functions only, append-only
 | Field | Type |
 |---|---|
 | `category`, `award_id`, `payment_id` | |
+| `owner_id`, `supervisor_id` | denormalized, same reason as `payments` above |
 | `type` | `'charge' \| 'hold' \| 'release' \| 'refund' \| 'fee'` |
 | `amount` | number (always positive; `type` gives direction) |
 | `currency` | `'LKR'` |

@@ -5,6 +5,7 @@ import { getApps, initializeApp, deleteApp, type App } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore';
 import type { UserRecord } from 'firebase-admin/auth';
 import { onUserCreate } from '../onUserCreate.js';
+import { DATABASE_ID } from '../../db.js';
 
 let app: App;
 
@@ -30,7 +31,7 @@ describe('onUserCreate', () => {
 
     await onUserCreate.run(user, {} as never);
 
-    const snap = await getFirestore(app).collection('users').doc(user.uid).get();
+    const snap = await getFirestore(app, DATABASE_ID).collection('users').doc(user.uid).get();
     expect(snap.exists).toBe(true);
     expect(snap.data()).toMatchObject({
       phone: user.phoneNumber,

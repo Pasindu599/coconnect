@@ -20,6 +20,7 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { DATABASE_ID } from '../functions/src/db';
 
 const PROJECT_ID = process.env.GCLOUD_PROJECT ?? 'demo-coconnect';
 
@@ -30,7 +31,9 @@ process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 
 const app = initializeApp({ projectId: PROJECT_ID });
 const auth = getAuth(app);
-const db = getFirestore(app);
+// Must match src/lib/firebase.ts's named database (ADR-010) — getFirestore(app)
+// alone would silently write to the separate, empty `(default)` database.
+const db = getFirestore(app, DATABASE_ID);
 
 const iso = (s: string) => Timestamp.fromDate(new Date(s));
 

@@ -19,12 +19,24 @@ import {
   NicSubmission
 } from '../types';
 import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
-import { saveNicSubmissionToFirestore, updateNicSubmissionInFirestore } from './firebase';
+import { saveNicSubmissionToFirestore, updateNicSubmissionInFirestore, auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { createEstate as createEstateRemote, subscribeToEstates } from './data/estates';
 import { createJob as createJobRemote, subscribeToJobs } from './data/jobs';
 import { createBid as createBidRemote, subscribeToBids } from './data/bids';
-import { subscribeToUsers } from './data/users';
+import { subscribeToOwnUser } from './data/users';
+import { createWorker as createWorkerRemote, subscribeToWorkers } from './data/workers';
+import { subscribeToAwards } from './data/awards';
+import {
+  createAttendanceDay as createAttendanceDayRemote,
+  createAttendanceEntry as createAttendanceEntryRemote,
+  updateAttendanceDay as updateAttendanceDayRemote,
+  subscribeToAttendanceDays,
+  subscribeToAttendanceEntries,
+} from './data/attendance';
+import { createCompletion as createCompletionRemote, subscribeToCompletions } from './data/completions';
 import { reconcile, type RemoteChanges } from './data/firestoreSync';
+import { awardBid as awardBidRemote } from './data/jobEngine';
 
 const STORAGE_KEY = 'coconnect_app_state_v1';
 
@@ -741,18 +753,15 @@ class StoreService {
   }
 
   /**
-   * Starts Firestore listeners for users, estates, jobs and bids (CONTRACTS
-   * C2). Each one reconciles adds, modifications AND removals into state —
-   * the previous ad-hoc sync in App.tsx only ever merged in adds (closes
-   * KNOWN_ISSUES #10 for these four collections; workers/awards/attendance/
-   * completions follow in S1-08). Returns one combined unsubscribe.
+   * Starts Firestore listeners for every repository-backed collection
+   * (CONTRACTS C2). Each one reconciles adds, modifications AND removals
+   * into state — the previous ad-hoc sync in App.tsx only ever merged in
+   * adds (closes KNOWN_ISSUES #10). Returns one combined unsubscribe.
    */
   public startSync(): () => void {
-    const unsubscribers = [
-      subscribeToUsers(
-        (changes) => this.applyRemoteChanges('users', changes),
-        (err) => this.reportSyncError('users.sync', err)
-      ),
+    // estates/jobs/workers have an isSignedIn()-only read rule — no
+    // per-document branch — so a bare collection listener is fine (ADR-009).
+    const alwaysOn = [
       subscribeToEstates(
         (changes) => this.applyRemoteChanges('estates', changes),
         (err) => this.reportSyncError('estates.sync', err)
@@ -761,19 +770,76 @@ class StoreService {
         (changes) => this.applyRemoteChanges('jobs', changes),
         (err) => this.reportSyncError('jobs.sync', err)
       ),
-      subscribeToBids(
-        (changes) => this.applyRemoteChanges('bids', changes),
-        (err) => this.reportSyncError('bids.sync', err)
+      subscribeToWorkers(
+        (changes) => this.applyRemoteChanges('workers', changes),
+        (err) => this.reportSyncError('workers.sync', err)
       ),
     ];
 
-    return () => unsubscribers.forEach((unsub) => unsub());
+    // Everything else is scoped to "me" (owner or supervisor, or just the
+    // one user doc) — firestore.rules denies these outright for a caller
+    // who isn't actually signed in to *real* Firebase Auth, which the
+    // still-mock OTP/admin login in this file doesn't do (CONTRACTS SP2:
+    // Session 2 switches that over). Re-subscribed on every real auth state
+    // change, keyed off auth.currentUser.uid, not this.state.currentUser.
+    let perUserUnsubscribers: Array<() => void> = [];
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      perUserUnsubscribers.forEach((unsub) => unsub());
+      perUserUnsubscribers = [];
+      if (!firebaseUser) return;
+
+      const uid = firebaseUser.uid;
+      perUserUnsubscribers = [
+        subscribeToOwnUser(
+          uid,
+          (user) => this.applyOwnUser(user),
+          (err) => this.reportSyncError('users.sync', err)
+        ),
+        subscribeToBids(
+          uid,
+          (changes) => this.applyRemoteChanges('bids', changes),
+          (err) => this.reportSyncError('bids.sync', err)
+        ),
+        subscribeToAwards(
+          uid,
+          (changes) => this.applyRemoteChanges('awards', changes),
+          (err) => this.reportSyncError('awards.sync', err)
+        ),
+        subscribeToAttendanceDays(
+          uid,
+          (changes) => this.applyRemoteChanges('attendanceDays', changes),
+          (err) => this.reportSyncError('attendanceDays.sync', err)
+        ),
+        subscribeToAttendanceEntries(
+          uid,
+          (changes) => this.applyRemoteChanges('attendanceEntries', changes),
+          (err) => this.reportSyncError('attendanceEntries.sync', err)
+        ),
+        subscribeToCompletions(
+          uid,
+          (changes) => this.applyRemoteChanges('completions', changes),
+          (err) => this.reportSyncError('completions.sync', err)
+        ),
+      ];
+    });
+
+    return () => {
+      alwaysOn.forEach((unsub) => unsub());
+      perUserUnsubscribers.forEach((unsub) => unsub());
+      unsubscribeAuth();
+    };
   }
 
-  private applyRemoteChanges<K extends 'users' | 'estates' | 'jobs' | 'bids'>(
-    key: K,
-    changes: RemoteChanges<AppState[K][number]>
-  ) {
+  private applyOwnUser(user: User | null) {
+    if (!user) return;
+    const others = this.state.users.filter((u) => u.id !== user.id);
+    this.state.users = [user, ...others];
+    this.notify();
+  }
+
+  private applyRemoteChanges<
+    K extends 'users' | 'estates' | 'jobs' | 'bids' | 'workers' | 'awards' | 'attendanceDays' | 'attendanceEntries' | 'completions'
+  >(key: K, changes: RemoteChanges<AppState[K][number]>) {
     type Item = AppState[K][number] & { id: string };
     (this.state[key] as unknown as Item[]) = reconcile(this.state[key] as unknown as Item[], changes);
     this.notify();
@@ -941,6 +1007,7 @@ class StoreService {
     if (!this.state.currentUser) throw new Error('Unauthorized');
     const newWorker: Worker = {
       id: `worker-${Date.now()}`,
+      category: 'coconut',
       supervisor_id: this.state.currentUser.id,
       name: data.name,
       phone: data.phone,
@@ -956,6 +1023,7 @@ class StoreService {
     this.state.workers.unshift(newWorker);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'worker.registered', 'worker', newWorker.id, `Supervisor registered worker ${data.name} with consent via ${data.consent_method}`);
     this.notify();
+    createWorkerRemote(newWorker).catch((err) => this.reportSyncError('worker.registered', err));
     return newWorker;
   }
 
@@ -1045,6 +1113,7 @@ class StoreService {
       id: `bid-${Date.now()}`,
       category: 'coconut',
       job_id: data.job_id,
+      owner_id: job.owner_id,
       supervisor_id: this.state.currentUser.id,
       supervisor_name: this.state.currentUser.name,
       supervisor_phone: this.state.currentUser.phone,
@@ -1084,7 +1153,9 @@ class StoreService {
 
     const award: Award = {
       id: `award-${Date.now()}`,
+      category: job.category ?? 'coconut',
       job_id: job.id,
+      owner_id: job.owner_id,
       bid_id: bid.id,
       supervisor_id: bid.supervisor_id,
       supervisor_name: bid.supervisor_name,
@@ -1096,6 +1167,12 @@ class StoreService {
     this.state.awards.unshift(award);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'award.created', 'award', award.id, `Owner accepted bid #${bid.id}. Escrow deposit of LKR ${bid.price} pending.`);
     this.notify();
+    // The real award, status transitions and audit entry are written by the
+    // awardBid Function (Admin SDK, bypasses rules) — this client can't
+    // write jobs.status past OPEN or any award field directly. awardId is
+    // this same client-generated id, so the eventual sync listener update
+    // reconciles in place rather than duplicating.
+    awardBidRemote(bid.id, award.id).catch((err) => this.reportSyncError('award.created', err));
     return { success: true, award };
   }
 
@@ -1176,27 +1253,44 @@ class StoreService {
     };
   }
 
+  /** The award's supervisor_id for a job, falling back to the accepted bid if awarding hasn't synced yet. */
+  private findSupervisorIdForJob(jobId: string): string | undefined {
+    return (
+      this.state.awards.find(a => a.job_id === jobId)?.supervisor_id ??
+      this.state.bids.find(b => b.job_id === jobId && b.status === 'accepted')?.supervisor_id
+    );
+  }
+
   // --- Attendance ---
   public openAttendanceDay(jobId: string, dateStr?: string): AttendanceDay {
     const today = dateStr || new Date().toISOString().split('T')[0];
     const existing = this.state.attendanceDays.find(d => d.job_id === jobId && d.work_date === today);
     if (existing) return existing;
 
+    const job = this.state.jobs.find(j => j.id === jobId);
     const newDay: AttendanceDay = {
       id: `day-${Date.now()}`,
       job_id: jobId,
+      owner_id: job?.owner_id,
+      supervisor_id: this.findSupervisorIdForJob(jobId),
       work_date: today,
       status: 'open',
       created_at: new Date().toISOString()
     };
     this.state.attendanceDays.unshift(newDay);
-    
-    const job = this.state.jobs.find(j => j.id === jobId);
+
     if (job && job.status === 'ACTIVE') {
+      // Local-only: ACTIVE -> IN_PROGRESS isn't in the client-allowed subset
+      // of job.status transitions (firestore.rules), and no Function covers
+      // it yet. Flagged as a gap rather than silently attempting a write
+      // that would just be denied.
       job.status = 'IN_PROGRESS';
     }
 
     this.notify();
+    if (newDay.owner_id && newDay.supervisor_id) {
+      createAttendanceDayRemote(newDay).catch((err) => this.reportSyncError('attendanceDay.created', err));
+    }
     return newDay;
   }
 
@@ -1210,10 +1304,13 @@ class StoreService {
   }): AttendanceEntry {
     if (!this.state.currentUser) throw new Error('Unauthorized');
     const worker = this.state.workers.find(w => w.id === data.worker_id);
+    const day = this.state.attendanceDays.find(d => d.id === data.attendance_day_id);
 
     const entry: AttendanceEntry = {
       id: `entry-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       attendance_day_id: data.attendance_day_id,
+      owner_id: day?.owner_id,
+      supervisor_id: day?.supervisor_id,
       worker_id: data.worker_id,
       worker_name: worker?.name || 'Worker',
       party: data.party,
@@ -1240,6 +1337,9 @@ class StoreService {
     this.reconcileAttendanceDay(data.attendance_day_id);
 
     this.notify();
+    if (entry.owner_id && entry.supervisor_id) {
+      createAttendanceEntryRemote(entry).catch((err) => this.reportSyncError('attendanceEntry.recorded', err));
+    }
     return entry;
   }
 
@@ -1264,10 +1364,16 @@ class StoreService {
       }
     }
 
+    const previousStatus = day.status;
     if (hasMismatch) {
       day.status = 'disputed';
     } else if (allMatched && workerIds.length > 0) {
       day.status = 'reconciled';
+    }
+    if (day.status !== previousStatus && day.owner_id && day.supervisor_id) {
+      updateAttendanceDayRemote(day.id, { status: day.status }).catch((err) =>
+        this.reportSyncError('attendanceDay.reconciled', err)
+      );
     }
   }
 
@@ -1298,6 +1404,7 @@ class StoreService {
     const completion: Completion = {
       id: `comp-${Date.now()}`,
       job_id: jobId,
+      owner_id: job.owner_id,
       submitted_by: this.state.currentUser.id,
       submitted_at: new Date().toISOString(),
       status: 'pending',
@@ -1307,10 +1414,14 @@ class StoreService {
       notes
     };
 
+    // Local-only: PENDING_COMPLETION isn't in the client-allowed subset of
+    // job.status transitions (firestore.rules) — same gap as
+    // openAttendanceDay's ACTIVE -> IN_PROGRESS above.
     job.status = 'PENDING_COMPLETION';
     this.state.completions.unshift(completion);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'completion.submitted', 'completion', completion.id, `Supervisor submitted completion with wage records total LKR ${totalWages + supervisorFee}`);
     this.notify();
+    createCompletionRemote(completion).catch((err) => this.reportSyncError('completion.submitted', err));
     return completion;
   }
 
