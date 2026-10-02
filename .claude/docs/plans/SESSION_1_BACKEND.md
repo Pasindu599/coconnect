@@ -13,7 +13,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 
 | ID | Roadmap | Day | Task | Depends on | Unblocks S2 | Status |
 |---|---|---|---|---|---|---|
-| S1-01 | 2C-1 (pulled forward) | 1 | Vitest + CI + Node 22 pin. **Merge first.** | — | SP1 | todo |
+| S1-01 | 2C-1 (pulled forward) | 1 | Vitest + CI + Node 22 pin. **Merge first.** | — | SP1 | done |
 | S1-02 | 1A-1 | 1 | Specs: data model, auth, payments | — | | todo |
 | S1-03 | 1A-2 | 1 | Firebase project + Emulator Suite | S1-01 | | todo |
 | S1-04 | 2A-1, 2C-3, 3C-1 | 2–3 | Firestore + Storage rules, with rules tests | S1-02, S1-03 | | todo |
@@ -34,10 +34,11 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 
 ## Task details
 
-### S1-01: Vitest + CI + Node 22 pin
+### S1-01: Vitest + CI + Node 22 pin — done
 - **Files:** `package.json` (scripts `test`, `engines: { node: ">=22.12" }`), `.nvmrc` (`22`), `vitest.config.ts`, `.github/workflows/ci.yml`, one sample test.
 - **Done when:** `npm test` runs. CI on every PR runs `npm ci`, `npm run lint`, `npm test`, `npm run build` on Node 22.
 - **Note:** merge this before anything else. Session 2 rebases on it before adding its own test dependencies.
+- **Local env note:** this machine's global Node is still 20.19 (no nvm/volta/fnm installed to switch via `.nvmrc`). `npm test`/`build`/`lint` all run fine on 20 in practice, so this wasn't a blocker, but someone should `nvm install` (or equivalent) to match `.nvmrc` for local dev. CI pins Node 22 via `actions/setup-node` regardless.
 
 ### S1-02: Specs
 - **Files:** `.claude/docs/specs/data-model.md`, `auth.md`, `payments.md`.
