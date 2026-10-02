@@ -89,7 +89,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
     .reduce((sum, r) => sum + r.amount, 0);
 
   const totalInEscrow = myWageRecords
-    .filter(r => r.escrow_status === 'held')
+    .filter(r => r.escrow_status === 'held' || r.escrow_status === 'release_requested')
     .reduce((sum, r) => sum + r.amount, 0);
 
   const supervisorName =

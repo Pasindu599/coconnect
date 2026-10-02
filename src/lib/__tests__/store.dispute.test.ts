@@ -111,10 +111,10 @@ describe('confirmCompletion guards', () => {
     expect(store.confirmCompletion('job-101', '1234').success).toBe(false); // no award yet
   });
 
-  it('releases a held escrow for the owner with the right PIN', () => {
+  it('requests the release for the owner with the right PIN; the money has not left escrow yet', () => {
     store.verifyOtp(OWNER, '123456', 'owner');
     expect(store.confirmCompletion('job-102', '1234').success).toBe(true);
-    expect(award(HELD_AWARD).escrow_status).toBe('released');
+    expect(award(HELD_AWARD).escrow_status).toBe('release_requested');
   });
 
   it('rejects a wrong PIN without releasing anything', () => {

@@ -47,7 +47,10 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
     return a.supervisor_id === user?.id && categoryOf(job) === category.id;
   });
   const awardedJobs = state.jobs.filter(j => supervisorAwards.some(a => a.job_id === j.id));
-  const activeJobs = awardedJobs.filter(j => ['ACTIVE', 'IN_PROGRESS', 'PENDING_COMPLETION'].includes(j.status));
+  // Contracts stay on this tab after sign-off, a dispute or a refund so the timeline can show where the money is
+  const activeJobs = awardedJobs.filter(j =>
+    ['ACTIVE', 'IN_PROGRESS', 'PENDING_COMPLETION', 'EXCEPTION_OPEN', 'COMPLETED', 'CLOSED_DISPUTED'].includes(j.status)
+  );
 
   const handleBidSubmitted = (message: string) => {
     setBidSuccess(message);

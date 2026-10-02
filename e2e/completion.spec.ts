@@ -15,7 +15,7 @@ const FLOWS: Flow[] = [
 ];
 
 for (const flow of FLOWS) {
-  test(`${flow.category}: the bidder submits the wages, the poster signs off with a PIN and the money is released`, async ({ page }) => {
+  test(`${flow.category}: the bidder submits the wages, the poster signs off with a PIN and the payout is requested`, async ({ page }) => {
     const job = (selector: string) => page.locator(`${selector}[data-job-task="${flow.task}"]`);
 
     // 1. The bidder submits wages and completion
@@ -39,11 +39,13 @@ for (const flow of FLOWS) {
     await pin.fill('1234');
     await page.getByTestId('confirm-release').click();
 
-    // 3. The job is complete and every step of the escrow is done
+    // 3. The job is complete, but the money has not left escrow: an admin still has to pay it out
     const card = job('[data-testid="job-card"]');
     await expect(card).toHaveAttribute('data-job-status', 'COMPLETED');
-    await expect(card.getByTestId('escrow-step-paid_out')).toHaveAttribute('data-state', 'done');
-    await expect(card.getByTestId('open-dispute')).toHaveCount(0); // nothing left to dispute once released
+    await expect(card.getByTestId('escrow-timeline')).toHaveAttribute('data-status', 'release_requested');
+    await expect(card.getByTestId('escrow-step-completion')).toHaveAttribute('data-state', 'done');
+    await expect(card.getByTestId('escrow-step-paid_out')).toHaveAttribute('data-state', 'current');
+    await expect(card).toContainText(/payment is being sent/i);
   });
 }
 

@@ -648,6 +648,8 @@ const initialNicSubmissions: NicSubmission[] = [
   }
 ];
 
+export type PayoutError = 'unauthorized' | 'not-found' | 'not-awaiting-payout' | 'reference-required';
+export type ResolveDisputeError = 'unauthorized' | 'not-found' | 'not-open' | 'not-an-escrow-dispute' | 'notes-required';
 export type DisputeError = 'unauthorized' | 'not-found' | 'not-party' | 'not-disputable' | 'description-too-short';
 
 export interface AppState {
@@ -1447,16 +1449,18 @@ class StoreService {
     job.status = 'COMPLETED';
 
     // Release Escrow Funds!
+    // The owner's sign-off requests the release. The money only leaves escrow when an admin
+    // records the bank transfer (recordPayout), as in the real Functions.
     const award = this.state.awards.find(a => a.job_id === jobId);
     if (award) {
-      award.escrow_status = 'released';
+      award.escrow_status = 'release_requested';
       this.logAudit(
         'system',
         'Coconnect Escrow Engine',
-        'escrow.released',
+        'escrow.release_requested',
         'award',
         award.id,
-        `Dual confirmation verified with PIN signature. Released LKR ${award.escrow_amount.toLocaleString()} from escrow to Supervisor & Worker accounts.`
+        `Completion confirmed with PIN signature. Release of LKR ${award.escrow_amount.toLocaleString()} requested; awaiting the admin payout.`
       );
     }
 
@@ -1705,6 +1709,72 @@ class StoreService {
 
     this.notify();
     return true;
+  }
+
+  /** An admin pays a confirmed job out by bank transfer and records the reference: the escrow is then released. */
+  public recordPayout(
+    awardId: string,
+    bankTransferRef: string
+  ): { success: true } | { success: false; error: PayoutError } {
+    const admin = this.state.currentUser;
+    if (!admin || admin.active_role !== 'admin') return { success: false, error: 'unauthorized' };
+    const award = this.state.awards.find(a => a.id === awardId);
+    if (!award) return { success: false, error: 'not-found' };
+    if (award.escrow_status !== 'release_requested') return { success: false, error: 'not-awaiting-payout' };
+    if (bankTransferRef.trim().length < 4) return { success: false, error: 'reference-required' };
+
+    award.escrow_status = 'released';
+    award.payout_ref = bankTransferRef.trim();
+    award.payout_at = new Date().toISOString();
+    this.logAudit(
+      admin.id,
+      admin.name,
+      'escrow.payout_recorded',
+      'award',
+      award.id,
+      `Paid out LKR ${award.escrow_amount.toLocaleString()} to ${award.supervisor_name}; transfer ref ${award.payout_ref}`
+    );
+    this.notify();
+    return { success: true };
+  }
+
+  /** An admin decides a dispute over an award: refund the payment or release it. Either ends the freeze. */
+  public adminResolveDispute(data: {
+    exception_id: string;
+    outcome: 'refunded' | 'released';
+    notes: string;
+  }): { success: true } | { success: false; error: ResolveDisputeError } {
+    const admin = this.state.currentUser;
+    if (!admin || admin.active_role !== 'admin') return { success: false, error: 'unauthorized' };
+    const dispute = this.state.exceptions.find(e => e.id === data.exception_id);
+    if (!dispute) return { success: false, error: 'not-found' };
+    if (dispute.status === 'resolved') return { success: false, error: 'not-open' };
+    const award = this.state.awards.find(a => a.id === dispute.subject_id);
+    if (dispute.subject_type !== 'award' || !award || award.escrow_status !== 'disputed') {
+      return { success: false, error: 'not-an-escrow-dispute' };
+    }
+    if (data.notes.trim().length < 5) return { success: false, error: 'notes-required' };
+
+    const job = this.state.jobs.find(j => j.id === award.job_id);
+    award.escrow_status = data.outcome;
+    if (job) job.status = data.outcome === 'refunded' ? 'CLOSED_DISPUTED' : 'COMPLETED';
+
+    dispute.status = 'resolved';
+    dispute.outcome = data.outcome;
+    dispute.resolution = data.notes.trim();
+    dispute.resolved_by = admin.name;
+    dispute.resolved_at = new Date().toISOString();
+
+    this.logAudit(
+      admin.id,
+      admin.name,
+      data.outcome === 'refunded' ? 'dispute.refunded' : 'dispute.released',
+      'award',
+      award.id,
+      `Resolved dispute #${dispute.id} (${data.outcome}): ${dispute.resolution}`
+    );
+    this.notify();
+    return { success: true };
   }
 
   /**

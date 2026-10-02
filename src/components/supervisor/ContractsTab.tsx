@@ -9,7 +9,7 @@ import { DollarSign } from 'lucide-react';
 interface ContractsTabProps {
   state: AppState;
   currentLang: Language;
-  /** Awarded jobs that are running or awaiting sign-off. */
+  /** Awarded jobs: running, awaiting sign-off, frozen by a dispute, or completed and awaiting payout. */
   jobs: LabourJob[];
   awards: Award[];
   onSubmitCompletion: (job: LabourJob) => void;
@@ -76,7 +76,11 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ state, currentLang, 
               )}
 
               <div className="mt-5 pt-3 border-t border-slate-800">
-                {comp ? (
+                {job.status === 'COMPLETED' ? (
+                  <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-emerald-300 text-xs">
+                    {award?.escrow_status === 'released' ? t.job_completed_released : t.job_completed_release_pending}
+                  </div>
+                ) : job.status === 'EXCEPTION_OPEN' || job.status === 'CLOSED_DISPUTED' ? null : comp ? (
                   <div className="p-3 rounded-xl bg-yellow-950/40 border border-yellow-800 text-yellow-300 text-xs">
                     {fmt(t.wages_submitted_await, { amount: (comp.total_wages + comp.supervisor_fee).toLocaleString() })}
                   </div>

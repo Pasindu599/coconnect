@@ -28,9 +28,9 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S2-12 | 7B | 7 | Escrow timeline + contact gate from server state | S2-11 | | todo |
 | S2-13 | 7C | 7–8 | Playwright setup + e2e happy path | S2-11 | SP6 (S1-10) | todo |
 | S2-14 | 8B | 8 | Completion + dispute UI; worker consent; payout bank details | S2-12 | S1-11 | done on the mock store: dispute modal, completion sign-off with escrow outcome, consent statement + required confirmation, structured bank details (worker, roster edit, worker view, contractor payout account); wiring to the S1-11 Functions is a swap in `store.ts` |
-| S2-15 | 8C (e2e) | 8 | e2e: completion + dispute | S2-13, S2-14 | S1-11 | todo |
+| S2-15 | 8C (e2e) | 8 | e2e: completion + dispute | S2-13, S2-14 | S1-11 | done: 6 e2e covering completion + payout request, payout by admin, no-account case, dispute freeze, refund and release |
 | S2-16 | 9B | 9 | Admin portal: payouts queue, disputes, NIC review | S2-14 | S1-12 | done on the mock store: dispute modal, completion sign-off with escrow outcome, consent statement + required confirmation, structured bank details (worker, roster edit, worker view, contractor payout account); wiring to the S1-11 Functions is a swap in `store.ts` |
-| S2-17 | 10B | 10 | Bug fixes; responsive + i18n pass (si/ta) | S2-16 | SP7 (S1-13) | todo |
+| S2-17 | 10B | 10 | Bug fixes; responsive + i18n pass (si/ta) | S2-16 | SP7 (S1-13) | partial: payout queue and dispute decisions done (AdminPortal split 691 -> 148 lines); NIC review keeps the current preview until S1-08 provides Storage URLs |
 | — | 10C | 10 | **Final `/code-review` + `/security-review`, docs, retro (humans, both sessions)** | | | todo |
 
 ---

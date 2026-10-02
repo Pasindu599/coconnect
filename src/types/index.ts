@@ -165,6 +165,9 @@ export interface Award {
   escrow_amount: number;
   contacts_released_at?: string;
   fee_payment_ref?: string;
+  /** The bank transfer reference an admin recorded when paying the bidder out. */
+  payout_ref?: string;
+  payout_at?: string;
 }
 
 export interface AttendanceDay {
@@ -266,6 +269,8 @@ export interface ExceptionIssue {
   status: 'open' | 'under_review' | 'resolved';
   response_deadline: string;
   resolution?: string;
+  /** For a dispute over an award: what the admin decided to do with the money. */
+  outcome?: 'refunded' | 'released';
   resolved_by?: string;
   resolved_at?: string;
 }
