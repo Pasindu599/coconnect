@@ -14,7 +14,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | ID | Roadmap | Day | Task | Depends on | Unblocks S2 | Status |
 |---|---|---|---|---|---|---|
 | S1-01 | 2C-1 (pulled forward) | 1 | Vitest + CI + Node 22 pin. **Merge first.** | — | SP1 | done |
-| S1-02 | 1A-1 | 1 | Specs: data model, auth, payments | — | | todo |
+| S1-02 | 1A-1 | 1 | Specs: data model, auth, payments | — | | doing (drafted, pending human review) |
 | S1-03 | 1A-2 | 1 | Firebase project + Emulator Suite | S1-01 | | todo |
 | S1-04 | 2A-1, 2C-3, 3C-1 | 2–3 | Firestore + Storage rules, with rules tests | S1-02, S1-03 | | todo |
 | S1-05 | 3A-1 | 3 | Phone OTP auth, `auth.ts`, custom-claims Functions | S1-04 | SP2 | todo |
