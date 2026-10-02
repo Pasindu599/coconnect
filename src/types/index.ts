@@ -151,8 +151,10 @@ export interface Award {
   /** Optional, see Estate.category. */
   category?: CategoryId;
   job_id: string;
-  /** Denormalized, same reason as Bid.owner_id above. */
+  /** Denormalized, same reason as Bid.owner_id above. owner_phone/owner_name close the "supervisor can't see who to call" gap (S1-11) — the supervisor can read the award but not users/{owner_id} directly. */
   owner_id?: string;
+  owner_name?: string;
+  owner_phone?: string;
   bid_id: string;
   supervisor_id: string;
   supervisor_name: string;
@@ -212,6 +214,23 @@ export interface Completion {
   total_wages: number;
   supervisor_fee: number;
   notes?: string;
+}
+
+/** New in S1-11 — see .claude/docs/specs/payments.md's dispute/resolveDispute section. */
+export interface Dispute {
+  id: string;
+  category?: CategoryId;
+  job_id: string;
+  award_id: string;
+  owner_id: string;
+  supervisor_id: string;
+  opened_by: string;
+  reason: string;
+  opened_at: string;
+  status: 'open' | 'resolved';
+  resolution?: 'refunded' | 'released';
+  resolved_by?: string;
+  resolved_at?: string;
 }
 
 export interface RatingSubmission {

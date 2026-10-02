@@ -68,6 +68,8 @@ export const awardBid = onCall<AwardBidInput>(async (request) => {
     }
 
     const otherBidsSnap = await tx.get(db.collection('bids').where('job_id', '==', bid.job_id));
+    const ownerSnap = await tx.get(db.collection('users').doc(job.owner_id));
+    const owner = ownerSnap.data();
 
     tx.update(bidRef, { status: 'accepted' });
     otherBidsSnap.docs.forEach((doc: FirebaseFirestore.QueryDocumentSnapshot<DocumentData>) => {
@@ -82,6 +84,8 @@ export const awardBid = onCall<AwardBidInput>(async (request) => {
       category: job.category ?? 'coconut',
       job_id: bid.job_id,
       owner_id: job.owner_id,
+      owner_name: job.owner_name ?? owner?.name ?? null,
+      owner_phone: owner?.phone ?? null,
       bid_id: bidId,
       supervisor_id: bid.supervisor_id,
       supervisor_name: bid.supervisor_name,

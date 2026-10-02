@@ -21,6 +21,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { DATABASE_ID } from '../functions/src/db';
+import { hashPin } from '../functions/src/escrow/pin';
 
 const PROJECT_ID = process.env.GCLOUD_PROJECT ?? 'demo-coconnect';
 
@@ -52,6 +53,8 @@ interface SeedUser {
   active_category?: 'coconut' | 'construction';
   admin?: boolean;
   nic_status?: 'unverified' | 'pending' | 'verified' | 'rejected';
+  /** Demo completion-confirmation PIN (S1-11's confirmCompletion) — hashed before writing, never stored plain. */
+  completionPin?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +69,7 @@ const coconutUsers: SeedUser[] = [
     memberships: [{ category: 'coconut', role: 'owner' }, { category: 'coconut', role: 'broker' }],
     active_category: 'coconut',
     nic_status: 'verified',
+    completionPin: '1234',
   },
   {
     uid: 'user-sup-1',
@@ -230,12 +234,12 @@ const coconutBids = [
 
 const coconutAwards = [
   {
-    id: 'award-302', category: 'coconut' as const, owner_id: 'user-owner-1', job_id: 'job-102', bid_id: 'bid-202', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
+    id: 'award-302', category: 'coconut' as const, owner_id: 'user-owner-1', owner_name: 'Sunil Perera', owner_phone: '+94771234567', job_id: 'job-102', bid_id: 'bid-202', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
     awarded_at: iso('2026-09-17T09:00:00Z'), escrow_status: 'held', escrow_amount: 35000,
     contacts_released_at: iso('2026-09-17T09:05:00Z'), fee_payment_ref: 'PAYHERE-ESCROW-882910',
   },
   {
-    id: 'award-303', category: 'coconut' as const, owner_id: 'user-owner-1', job_id: 'job-103', bid_id: 'bid-203', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
+    id: 'award-303', category: 'coconut' as const, owner_id: 'user-owner-1', owner_name: 'Sunil Perera', owner_phone: '+94771234567', job_id: 'job-103', bid_id: 'bid-203', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
     awarded_at: iso('2026-09-15T10:00:00Z'), escrow_status: 'held', escrow_amount: 38000,
     contacts_released_at: iso('2026-09-15T10:02:00Z'), fee_payment_ref: 'PAYHERE-ESCROW-773019',
   },
@@ -262,6 +266,7 @@ const constructionUsers: SeedUser[] = [
     memberships: [{ category: 'construction', role: 'client' }],
     active_category: 'construction',
     nic_status: 'verified',
+    completionPin: '1234',
   },
   {
     uid: 'user-contractor-1',
@@ -380,7 +385,7 @@ const constructionBids = [
 
 const constructionAwards = [
   {
-    id: 'award-c302', category: 'construction' as const, owner_id: 'user-client-1', job_id: 'job-c102', bid_id: 'bid-c202', supervisor_id: 'user-subcontractor-1', supervisor_name: 'Ruwanthi Electrical Services',
+    id: 'award-c302', category: 'construction' as const, owner_id: 'user-client-1', owner_name: 'Priya Jayawardena', owner_phone: '+94772223344', job_id: 'job-c102', bid_id: 'bid-c202', supervisor_id: 'user-subcontractor-1', supervisor_name: 'Ruwanthi Electrical Services',
     awarded_at: iso('2026-09-23T09:00:00Z'), escrow_status: 'held', escrow_amount: 115000,
     contacts_released_at: iso('2026-09-23T09:05:00Z'), fee_payment_ref: 'PAYHERE-ESCROW-559012',
   },
@@ -406,6 +411,7 @@ async function seedUser(u: SeedUser) {
     nic_status: u.nic_status ?? 'unverified',
     preferred_language: 'en',
     trust_score: 0,
+    pin_hash: u.completionPin ? await hashPin(u.completionPin) : null,
     created_at: Timestamp.now(),
   });
 }
@@ -440,6 +446,7 @@ async function main() {
   console.log('  construction client     : phone +94772223344 (user-client-1)');
   console.log('  construction contractor : phone +94773334455 (user-contractor-1)');
   console.log('  admin (staff)   : niluka.fernando@coconnect.gov.lk / coconnect-admin-demo-pw');
+  console.log('  completion PIN (both posters): 1234');
   console.log('  Use the Auth emulator UI (http://127.0.0.1:4000/auth) to read the SMS verification code for phone sign-in.');
 }
 

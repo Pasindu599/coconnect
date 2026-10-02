@@ -30,6 +30,7 @@ async function seedJobAndBids(ownerId: string) {
   const otherBidId = `bid-${randomUUID()}`;
 
   await db.collection('jobs').doc(jobId).set({ owner_id: ownerId, owner_name: 'Owner', status: 'OPEN', category: 'coconut' });
+  await db.collection('users').doc(ownerId).set({ name: 'Owner', phone: '+94770000001', memberships: [] });
   await db.collection('bids').doc(winningBidId).set({ job_id: jobId, supervisor_id: 'sup-1', supervisor_name: 'Sup One', price: 1000, status: 'pending' });
   await db.collection('bids').doc(otherBidId).set({ job_id: jobId, supervisor_id: 'sup-2', supervisor_name: 'Sup Two', price: 1200, status: 'pending' });
 
@@ -68,6 +69,8 @@ describe('awardBid', () => {
     expect(award.exists).toBe(true);
     expect(award.data()).toMatchObject({
       job_id: jobId,
+      owner_name: 'Owner',
+      owner_phone: '+94770000001',
       bid_id: winningBidId,
       supervisor_id: 'sup-1',
       escrow_status: 'pending',

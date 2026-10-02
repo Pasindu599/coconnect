@@ -23,6 +23,14 @@ export interface CheckoutParams {
   customer: CheckoutCustomer;
 }
 
+export interface RefundParams {
+  providerRef: string;
+  amount: number;
+  currency: 'LKR';
+}
+
 export interface PaymentProvider {
   buildCheckout(params: CheckoutParams): object;
+  /** Rejects on any failure — resolveDispute leaves the dispute `open` and surfaces the error rather than guessing at a partial success. */
+  refund(params: RefundParams): Promise<void>;
 }

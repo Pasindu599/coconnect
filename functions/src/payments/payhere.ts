@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { CheckoutParams, PaymentProvider } from './provider.js';
+import type { CheckoutParams, PaymentProvider, RefundParams } from './provider.js';
 
 function md5(input: string): string {
   return createHash('md5').update(input).digest('hex');
@@ -90,5 +90,20 @@ export class PayHereProvider implements PaymentProvider {
       city: params.customer.city,
       country: params.customer.country,
     };
+  }
+
+  /**
+   * Deliberately not implemented: PayHere's refund API shape (endpoint,
+   * auth, request/response fields) isn't in payments.md because nobody has
+   * been able to read PayHere's actual docs for it yet (1C-4 is still
+   * open). Guessing at an HTTP call here would be worse than refusing
+   * outright — resolveDispute.ts's 'refunded' path expects this to throw
+   * and leaves the dispute `open` for a human, exactly as
+   * .claude/docs/specs/payments.md's failure-case table describes.
+   */
+  async refund(_params: RefundParams): Promise<void> {
+    throw new Error(
+      'PayHereProvider.refund is not implemented — PayHere refund API credentials/docs are not available yet (1C-4). Resolve the dispute manually once a real refund has been issued outside the app.'
+    );
   }
 }

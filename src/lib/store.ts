@@ -1156,6 +1156,8 @@ class StoreService {
       category: job.category ?? 'coconut',
       job_id: job.id,
       owner_id: job.owner_id,
+      owner_name: job.owner_name,
+      owner_phone: this.state.currentUser.phone,
       bid_id: bid.id,
       supervisor_id: bid.supervisor_id,
       supervisor_name: bid.supervisor_name,
