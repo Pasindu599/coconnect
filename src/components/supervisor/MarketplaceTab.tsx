@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatMoney } from '../../lib/money';
 import { AppState } from '../../lib/store';
 import { LabourJob } from '../../types';
 import { Language, tReviewStatus, tSkill, tTaskType } from '../../lib/i18n';
@@ -41,7 +42,7 @@ export const MarketplaceTab: React.FC<MarketplaceTabProps> = ({ state, currentLa
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-slate-400">{t.owner_budget}</div>
-                    <div className="text-sm font-bold text-emerald-400">LKR {job.wage_budget.toLocaleString()}</div>
+                    <div className="text-sm font-bold text-emerald-400">{formatMoney(job.wage_budget, currentLang)}</div>
                   </div>
                 </div>
 
@@ -65,7 +66,7 @@ export const MarketplaceTab: React.FC<MarketplaceTabProps> = ({ state, currentLa
                 {myBid ? (
                   <div className="w-full flex items-center justify-between">
                     <span className="text-xs text-amber-300 font-medium">
-                      {t.your_bid}: LKR {myBid.price.toLocaleString()} ({tReviewStatus(myBid.status, currentLang)})
+                      {t.your_bid}: {formatMoney(myBid.price, currentLang)} ({tReviewStatus(myBid.status, currentLang)})
                     </span>
                     <span className="text-[11px] text-slate-400">{myBid.crew_member_ids.length} {t.crew_selected}</span>
                   </div>

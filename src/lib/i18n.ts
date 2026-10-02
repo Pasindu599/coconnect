@@ -2591,6 +2591,16 @@ const AUDIT_ACTION = buildLookup({
   'admin.verification.approved': { en: 'Document Approved', si: 'ලේඛනය අනුමත විය', ta: 'ஆவணம் ஒப்புதல்' },
   'admin.verification.rejected': { en: 'Document Rejected', si: 'ලේඛනය ප්‍රතික්ෂේප විය', ta: 'ஆவணம் நிராகரிப்பு' },
   'admin.exception.resolved': { en: 'Dispute Resolved', si: 'ආරවුල විසඳිණි', ta: 'சர்ச்சை தீர்க்கப்பட்டது' },
+  'auth.admin_login': { en: 'Staff Sign-in', si: 'කාර්යමණ්ඩල පිවිසීම', ta: 'ஊழியர் உள்நுழைவு' },
+  'auth.admin_login_failed': { en: 'Failed Staff Sign-in', si: 'අසාර්ථක කාර්යමණ්ඩල පිවිසුම', ta: 'தோல்வியடைந்த ஊழியர் உள்நுழைவு' },
+  'auth.membership_added': { en: 'Role Added', si: 'භූමිකාව එක් කළා', ta: 'பங்கு சேர்க்கப்பட்டது' },
+  'escrow.release_requested': { en: 'Release Requested', si: 'නිදහස් කිරීම ඉල්ලා ඇත', ta: 'விடுவிப்பு கோரப்பட்டது' },
+  'escrow.payout_recorded': { en: 'Payout Recorded', si: 'ගෙවීම සටහන් විය', ta: 'கட்டணம் பதிவு செய்யப்பட்டது' },
+  'dispute.opened': { en: 'Dispute Opened', si: 'ආරවුල ඉදිරිපත් විය', ta: 'சர்ச்சை தொடங்கப்பட்டது' },
+  'dispute.refunded': { en: 'Dispute: Refunded', si: 'ආරවුල: ආපසු ගෙවන ලදී', ta: 'சர்ச்சை: திருப்பி வழங்கப்பட்டது' },
+  'dispute.released': { en: 'Dispute: Released', si: 'ආරවුල: නිදහස් කරන ලදී', ta: 'சர்ச்சை: விடுவிக்கப்பட்டது' },
+  'worker.bank_updated': { en: 'Worker Bank Details Updated', si: 'ශ්‍රමිකයාගේ බැංකු විස්තර යාවත්කාලීන විය', ta: 'தொழிலாளர் வங்கி விவரங்கள் புதுப்பிக்கப்பட்டன' },
+  'user.payout_bank_updated': { en: 'Payout Account Updated', si: 'ගෙවීම් ගිණුම යාවත්කාලීන විය', ta: 'கட்டணக் கணக்கு புதுப்பிக்கப்பட்டது' },
 });
 
 const SUBJECT_TYPE = buildLookup({

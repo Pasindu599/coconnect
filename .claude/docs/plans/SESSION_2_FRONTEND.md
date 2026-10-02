@@ -19,18 +19,18 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S2-04 | 2C-2 | 2 | Final construction content (registry + `categories.md`) | S2-01 | | done |
 | S2-05 | 2B-2 | 2–3 | Replace hardcoded coconut values with registry lookups | S2-01 | | done |
 | S2-06 | 3B-1 | 3 | Split `OwnerDashboard` + `SupervisorDashboard` | S2-05 | | done |
-| S2-07 | 4B-1 | 4 | Login/registration with category + role; staff login | S2-04 | SP2 (S1-05) | done |
-| S2-08 | — | 4 | `App.tsx`: use `store.startSync()` | S2-02 | SP3 (S1-07) | done |
-| S2-09 | 4C-1 | 4–5 | UI tests: registry, router, picker, login | S2-03, S2-07 | SP1 (S1-01) | partial: registry, router, i18n and store tests done (80 tests); component tests pending |
-| S2-10 | 5B-1 | 5 | Construction landing/dashboard variants; NIC upload to Storage | S2-06, S2-04 | S1-08 for NIC | partial: sites form, totals and map done; NIC upload to Storage waits for S1-08 |
+| S2-07 | 4B-1 | 4 | Login/registration with category + role; staff login | S2-04 | SP2 (S1-05) | done on the demo sign-in; real auth is wired behind `VITE_AUTH_MODE=firebase` with every error code translated; switching it on waits for the S1-07 follow-up in CONTRACTS.md |
+| S2-08 | — | 4 | `App.tsx`: use `store.startSync()` | S2-02 | SP3 (S1-07) | done: `store.startSync()` replaces the old listeners (real-auth mode only) and sync errors show in a banner |
+| S2-09 | 4C-1 | 4–5 | UI tests: registry, router, picker, login | S2-03, S2-07 | SP1 (S1-01) | done: 310 unit tests (registry, router, i18n, store, auth, payments, money, bank, audit labels) and component tests for the picker, landing, sign-in, join, timeline, payment, dispute, consent/bank, payout and admin tabs; mutation-checked |
+| S2-10 | 5B-1 | 5 | Construction landing/dashboard variants; NIC upload to Storage | S2-06, S2-04 | S1-08 for NIC | partial: sites form, totals and map done; the NIC upload to Storage waits for S1-08 |
 | — | 5C-1 | 5 | **SP4: week-1 demo + reviews (humans, both sessions)** | | | todo |
-| S2-11 | 6B | 6 | Payment UI: award → fee breakdown → PayHere checkout | S2-06 | SP5 (S1-09) | done |
-| S2-12 | 7B | 7 | Escrow timeline + contact gate from server state | S2-11 | | todo |
-| S2-13 | 7C | 7–8 | Playwright setup + e2e happy path | S2-11 | SP6 (S1-10) | todo |
-| S2-14 | 8B | 8 | Completion + dispute UI; worker consent; payout bank details | S2-12 | S1-11 | done on the mock store: dispute modal, completion sign-off with escrow outcome, consent statement + required confirmation, structured bank details (worker, roster edit, worker view, contractor payout account); wiring to the S1-11 Functions is a swap in `store.ts` |
+| S2-11 | 6B | 6 | Payment UI: award → fee breakdown → PayHere checkout | S2-06 | SP5 (S1-09) | done against the C4 contract with a sandbox stand-in; switching to the real `createPayment` is a change request for S1-09 (CONTRACTS.md) |
+| S2-12 | 7B | 7 | Escrow timeline + contact gate from server state | S2-11 | | done: escrow timeline on owner jobs/escrow tabs and bidder contracts; one `contactsUnlocked()` rule for every screen and the store |
+| S2-13 | 7C | 7–8 | Playwright setup + e2e happy path | S2-11 | SP6 (S1-10) | done: 23 Playwright e2e (hiring flow for both categories, navigation, admin, completion, payouts, disputes); not in CI yet (CONTRACTS.md) |
+| S2-14 | 8B | 8 | Completion + dispute UI; worker consent; payout bank details | S2-12 | S1-11 | done on the mock store: dispute modal, completion sign-off, consent statement + required confirmation, structured bank details (worker, roster edit, worker view, contractor payout account); wiring to the S1-11 Functions is a swap in `store.ts` |
 | S2-15 | 8C (e2e) | 8 | e2e: completion + dispute | S2-13, S2-14 | S1-11 | done: 6 e2e covering completion + payout request, payout by admin, no-account case, dispute freeze, refund and release |
-| S2-16 | 9B | 9 | Admin portal: payouts queue, disputes, NIC review | S2-14 | S1-12 | done on the mock store: dispute modal, completion sign-off with escrow outcome, consent statement + required confirmation, structured bank details (worker, roster edit, worker view, contractor payout account); wiring to the S1-11 Functions is a swap in `store.ts` |
-| S2-17 | 10B | 10 | Bug fixes; responsive + i18n pass (si/ta) | S2-16 | SP7 (S1-13) | partial: payout queue and dispute decisions done (AdminPortal split 691 -> 148 lines); NIC review keeps the current preview until S1-08 provides Storage URLs |
+| S2-16 | 9B | 9 | Admin portal: payouts queue, disputes, NIC review | S2-14 | S1-12 | partial: payout queue and dispute decisions done (AdminPortal split 691 -> 148 lines); NIC review keeps the current preview until S1-08 provides Storage URLs |
+| S2-17 | 10B | 10 | Bug fixes; responsive + i18n pass (si/ta) | S2-16 | SP7 (S1-13) | done except the staging pass: responsive audit at 390/768px (fixed overflowing tab bars), translation audit in si/ta (currency localised, audit actions translated); bug fixing on staging waits for SP7 (S1-13) |
 | — | 10C | 10 | **Final `/code-review` + `/security-review`, docs, retro (humans, both sessions)** | | | todo |
 
 ---

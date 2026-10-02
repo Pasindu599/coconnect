@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatMoney } from '../../lib/money';
 import { AppState } from '../../lib/store';
 import { LabourJob } from '../../types';
 import { Language, fmt, tTaskType, tPaymentSchedule } from '../../lib/i18n';
@@ -22,7 +23,7 @@ export const BidsModal: React.FC<BidsModalProps> = ({ state, currentLang, job, o
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-white">{t.bids_for} {tTaskType(job.task_type, currentLang)}</h3>
-            <p className="text-xs text-slate-400">{t.job_budget}: LKR {job.wage_budget.toLocaleString()}</p>
+            <p className="text-xs text-slate-400">{t.job_budget}: {formatMoney(job.wage_budget, currentLang)}</p>
           </div>
           <button 
             onClick={() => onClose()}
@@ -59,7 +60,7 @@ export const BidsModal: React.FC<BidsModalProps> = ({ state, currentLang, job, o
 
                   <div className="text-right">
                     <div className="text-xs text-slate-400">{t.bid_total}</div>
-                    <div className="text-base font-bold text-emerald-400">LKR {bid.price.toLocaleString()}</div>
+                    <div className="text-base font-bold text-emerald-400">{formatMoney(bid.price, currentLang)}</div>
                     <div className="text-[10px] text-slate-500">{fmt(t.includes_commission, { amount: bid.supervisor_fee.toLocaleString() })}</div>
                   </div>
                 </div>

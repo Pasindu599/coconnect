@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatMoney } from '../../lib/money';
 import { store, AppState } from '../../lib/store';
 import { LabourJob } from '../../types';
 import { Language, tReviewTag } from '../../lib/i18n';
@@ -80,16 +81,16 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ state, current
                 {comp.wage_records.map(r => (
                   <div key={r.worker_id} className="flex justify-between text-slate-400">
                     <span>{r.worker_name} ({r.days_worked} {t.common_days})</span>
-                    <span className="font-mono text-white">LKR {r.amount.toLocaleString()}</span>
+                    <span className="font-mono text-white">{formatMoney(r.amount, currentLang)}</span>
                   </div>
                 ))}
                 <div className="flex justify-between text-slate-400">
                   <span>{t.supervisor_commission}</span>
-                  <span className="font-mono text-white">LKR {comp.supervisor_fee.toLocaleString()}</span>
+                  <span className="font-mono text-white">{formatMoney(comp.supervisor_fee, currentLang)}</span>
                 </div>
                 <div className="pt-1.5 border-t border-slate-800 flex justify-between font-bold text-emerald-400">
                   <span>{t.total_escrow_release}</span>
-                  <span>LKR {(comp.total_wages + comp.supervisor_fee).toLocaleString()}</span>
+                  <span>{formatMoney((comp.total_wages + comp.supervisor_fee), currentLang)}</span>
                 </div>
               </div>
             );

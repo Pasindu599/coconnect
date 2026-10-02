@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatMoney } from '../../lib/money';
 import { Language } from '../../lib/i18n';
 import { AppState } from '../../lib/store';
 import { useCategory, useT } from '../../config/CategoryContext';
@@ -182,7 +183,7 @@ export const CategoryLanding: React.FC<CategoryLandingProps> = ({
 
         <div className="bg-slate-900 border border-slate-800/90 p-5 rounded-2xl text-center space-y-1 shadow-sm">
           <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">
-            Rs. {jobs.reduce((acc, j) => acc + (j.wage_budget || 0), 0).toLocaleString()}
+            {formatMoney(jobs.reduce((acc, j) => acc + (j.wage_budget || 0), 0), currentLang)}
           </div>
           <div className="text-xs text-slate-400 font-medium">{t.stat_escrow}</div>
         </div>

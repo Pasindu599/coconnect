@@ -4,6 +4,7 @@ import { Award } from '../../types';
 import { Language, fmt } from '../../lib/i18n';
 import { useT } from '../../config/CategoryContext';
 import { contactsUnlocked } from '../../config/escrow';
+import { formatMoney } from '../../lib/money';
 import { usePaymentFlow } from './usePaymentFlow';
 import { CheckCircle2, CreditCard, Loader2, ShieldCheck, X } from 'lucide-react';
 
@@ -13,8 +14,6 @@ interface EscrowPaymentModalProps {
   award: Award;
   onClose: () => void;
 }
-
-const lkr = (amount: number) => `LKR ${amount.toLocaleString()}`;
 
 /**
  * Pays an award into escrow: fee breakdown, PayHere checkout, then a waiting state that ends
@@ -70,15 +69,15 @@ export const EscrowPaymentModal: React.FC<EscrowPaymentModalProps> = ({ state, c
                   </div>
                   <div className="flex justify-between text-slate-300">
                     <span>{t.pay_bid_price}</span>
-                    <span className="font-mono">{lkr(fees.bidPrice)}</span>
+                    <span className="font-mono">{formatMoney(fees.bidPrice, currentLang)}</span>
                   </div>
                   <div className="flex justify-between text-slate-300" data-testid="payment-fee">
                     <span>{t.pay_platform_fee}</span>
-                    <span className="font-mono">{lkr(fees.platformFee)}</span>
+                    <span className="font-mono">{formatMoney(fees.platformFee, currentLang)}</span>
                   </div>
                   <div className="flex justify-between text-slate-100 font-bold text-sm pt-2 border-t border-slate-800">
                     <span>{t.pay_total}</span>
-                    <span className="text-emerald-400 font-mono" data-testid="payment-total">{lkr(fees.total)}</span>
+                    <span className="text-emerald-400 font-mono" data-testid="payment-total">{formatMoney(fees.total, currentLang)}</span>
                   </div>
                   <p className="text-[11px] text-slate-500 pt-1">{t.pay_fee_note}</p>
                 </>

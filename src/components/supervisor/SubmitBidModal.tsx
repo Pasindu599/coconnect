@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatMoney } from '../../lib/money';
 import { store } from '../../lib/store';
 import { LabourJob, Worker } from '../../types';
 import { Language, fmt, tSkill, tTaskType } from '../../lib/i18n';
@@ -60,7 +61,7 @@ export const SubmitBidModal: React.FC<SubmitBidModalProps> = ({ currentLang, job
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-white">{t.submit_bid}</h3>
-            <p className="text-xs text-slate-400">{tTaskType(job.task_type, currentLang)} • {t.job_budget}: LKR {job.wage_budget.toLocaleString()}</p>
+            <p className="text-xs text-slate-400">{tTaskType(job.task_type, currentLang)} • {t.job_budget}: {formatMoney(job.wage_budget, currentLang)}</p>
           </div>
           <button onClick={() => onClose()} className="text-slate-400 hover:text-white">
             <X className="w-5 h-5" />

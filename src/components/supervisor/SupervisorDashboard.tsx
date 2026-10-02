@@ -94,11 +94,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       )}
 
       {/* Tabs */}
-      <div className="border-b border-slate-800 flex items-center space-x-2">
+      <div className="border-b border-slate-800 flex items-center space-x-2 overflow-x-auto">
         <button
           data-testid="tab-roster"
           onClick={() => setActiveTab('roster')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'roster' 
               ? 'border-amber-500 text-amber-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -111,7 +111,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         <button
           data-testid="tab-marketplace"
           onClick={() => setActiveTab('marketplace')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'marketplace' 
               ? 'border-amber-500 text-amber-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -124,7 +124,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         <button
           data-testid="tab-attendance"
           onClick={() => setActiveTab('attendance')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'attendance' 
               ? 'border-amber-500 text-amber-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -137,7 +137,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         <button
           data-testid="tab-completions"
           onClick={() => setActiveTab('completions')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'completions' 
               ? 'border-amber-500 text-amber-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'

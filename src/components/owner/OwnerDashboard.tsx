@@ -95,11 +95,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-800 flex items-center space-x-2">
+      <div className="border-b border-slate-800 flex items-center space-x-2 overflow-x-auto">
         <button
           data-testid="tab-jobs"
           onClick={() => setActiveTab('jobs')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'jobs' 
               ? 'border-emerald-500 text-emerald-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -112,7 +112,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         <button
           data-testid="tab-lands"
           onClick={() => setActiveTab('lands')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'lands' 
               ? 'border-emerald-500 text-emerald-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -125,7 +125,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         <button
           data-testid="tab-escrow"
           onClick={() => setActiveTab('escrow')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'escrow' 
               ? 'border-emerald-500 text-emerald-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -138,7 +138,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         <button
           data-testid="tab-attendance"
           onClick={() => setActiveTab('attendance')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'attendance' 
               ? 'border-emerald-500 text-emerald-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatMoney } from '../../lib/money';
 import { useCategory, useT } from '../../config/CategoryContext';
 import { CategoryIcon } from '../../config/CategoryIcon';
 import { categoryOf, formatSiteFieldValue, hasCapabilityIn, l10n } from '../../config/categories';
@@ -226,7 +227,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                   >
                     <div className="group cursor-pointer transform hover:scale-110 transition flex flex-col items-center">
                       <div className="px-2 py-0.5 rounded-md bg-amber-900/90 text-amber-200 text-[10px] font-bold border border-amber-500/50 shadow-md whitespace-nowrap mb-1">
-                        LKR {job.wage_budget.toLocaleString()} • {job.worker_count} {t.map_climbers_short}
+                        {formatMoney(job.wage_budget, currentLang)} • {job.worker_count} {t.map_climbers_short}
                       </div>
                       <div className="w-9 h-9 rounded-xl bg-amber-600 text-slate-950 flex items-center justify-center border-2 border-amber-300 shadow-lg shadow-amber-500/30">
                         <Briefcase className="w-5 h-5 text-slate-900 font-bold" />
@@ -302,7 +303,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
                   <div className="grid grid-cols-2 gap-2 my-2 py-1.5 border-y border-slate-200 text-xs">
                     <div>
                       <span className="text-slate-500 block text-[10px]">{t.map_wage_escrow}</span>
-                      <span className="font-bold text-emerald-700">LKR {selectedJob.wage_budget.toLocaleString()}</span>
+                      <span className="font-bold text-emerald-700">{formatMoney(selectedJob.wage_budget, currentLang)}</span>
                     </div>
                     <div>
                       <span className="text-slate-500 block text-[10px]">{t.map_crew_required}</span>

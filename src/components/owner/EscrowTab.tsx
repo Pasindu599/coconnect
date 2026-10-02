@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatMoney } from '../../lib/money';
 import { AppState } from '../../lib/store';
 import { Award } from '../../types';
 import { Language, tEscrowStatus, tTaskType } from '../../lib/i18n';
@@ -61,7 +62,7 @@ export const EscrowTab: React.FC<EscrowTabProps> = ({ state, currentLang, awards
               <div className="flex items-center space-x-4">
                 <div className="text-right">
                   <div className="text-xs text-slate-400">{t.secured_amount}</div>
-                  <div className="text-base font-bold text-emerald-400">LKR {award.escrow_amount.toLocaleString()}</div>
+                  <div className="text-base font-bold text-emerald-400">{formatMoney(award.escrow_amount, currentLang)}</div>
                 </div>
 
                 {contactsUnlocked(status) ? (

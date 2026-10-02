@@ -6,14 +6,13 @@ import { Language, fmt, tTaskType } from '../../lib/i18n';
 import { useT } from '../../config/CategoryContext';
 import { categoryOf, getCategory, l10n } from '../../config/categories';
 import { bankName, parseBankRef } from '../../lib/bank';
+import { formatMoney } from '../../lib/money';
 import { NoticeBanner } from '../common/NoticeBanner';
 
 interface PayoutsTabProps {
   state: AppState;
   currentLang: Language;
 }
-
-const lkr = (amount: number) => `LKR ${amount.toLocaleString()}`;
 
 interface PayoutRowProps {
   state: AppState;
@@ -67,7 +66,7 @@ const PayoutRow: React.FC<PayoutRowProps> = ({ state, currentLang, award, onPaid
         </div>
         <div className="text-right">
           <div className="text-xs text-slate-400">{t.payout_amount}</div>
-          <div className="text-lg font-bold text-emerald-400 font-mono" data-testid="payout-amount">{lkr(award.escrow_amount)}</div>
+          <div className="text-lg font-bold text-emerald-400 font-mono" data-testid="payout-amount">{formatMoney(award.escrow_amount, currentLang)}</div>
         </div>
       </div>
 
@@ -167,7 +166,7 @@ export const PayoutsTab: React.FC<PayoutsTabProps> = ({ state, currentLang }) =>
                   </span>
                 </div>
                 <div className="text-right text-slate-400 flex-shrink-0 pl-3">
-                  <div className="font-mono text-slate-200">{lkr(award.escrow_amount)}</div>
+                  <div className="font-mono text-slate-200">{formatMoney(award.escrow_amount, currentLang)}</div>
                   <div className="text-[10px]">
                     {fmt(t.payout_paid_on, { date: new Date(award.payout_at ?? '').toLocaleDateString(), ref: award.payout_ref ?? '' })}
                   </div>

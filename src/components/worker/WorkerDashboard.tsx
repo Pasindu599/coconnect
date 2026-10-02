@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatMoney } from '../../lib/money';
 import { useCategory, useT } from '../../config/CategoryContext';
 import { CategoryIcon } from '../../config/CategoryIcon';
 import { categoryOf } from '../../config/categories';
@@ -138,7 +139,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
           <div className="text-xs font-medium text-slate-400">{t.total_wages_paid}</div>
           <div className="text-2xl font-bold text-emerald-400 mt-1">
-            LKR {totalEarnedReleased.toLocaleString()}
+            {formatMoney(totalEarnedReleased, currentLang)}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">{t.disbursed_note}</div>
         </div>
@@ -146,7 +147,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
           <div className="text-xs font-medium text-slate-400">{t.secured_in_escrow}</div>
           <div className="text-2xl font-bold text-amber-400 mt-1">
-            LKR {totalInEscrow.toLocaleString()}
+            {formatMoney(totalInEscrow, currentLang)}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">{t.release_on_signoff}</div>
         </div>
@@ -165,10 +166,10 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
       {workerRecord.id !== 'no-worker-record' && <WorkerPayoutCard currentLang={currentLang} worker={workerRecord} />}
 
       {/* Tabs */}
-      <div className="border-b border-slate-800 flex items-center space-x-2">
+      <div className="border-b border-slate-800 flex items-center space-x-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('assignments')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'assignments' 
               ? 'border-teal-500 text-teal-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -180,7 +181,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
 
         <button
           onClick={() => setActiveTab('attendance')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'attendance' 
               ? 'border-teal-500 text-teal-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -192,7 +193,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
 
         <button
           onClick={() => setActiveTab('wages')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'wages' 
               ? 'border-teal-500 text-teal-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -318,7 +319,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                     <h4 className="text-sm font-bold text-white">{tTaskType(r.job_task, currentLang)}</h4>
                     <p className="text-slate-400">{r.estate_name}</p>
                     <div className="text-[11px] text-slate-500 mt-1">
-                      {t.calculation_label}: {r.days_worked} {t.common_days} @ LKR {r.daily_rate.toLocaleString()} {t.per_day}
+                      {t.calculation_label}: {r.days_worked} {t.common_days} @ {formatMoney(r.daily_rate, currentLang)} {t.per_day}
                     </div>
                   </div>
 
@@ -326,7 +327,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                     <div className="text-right">
                       <div className="text-[11px] text-slate-400">{t.net_wage}</div>
                       <div className="text-base font-bold text-emerald-400 font-mono">
-                        LKR {r.amount.toLocaleString()}
+                        {formatMoney(r.amount, currentLang)}
                       </div>
                     </div>
 

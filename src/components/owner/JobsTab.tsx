@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatMoney } from '../../lib/money';
 import { AppState } from '../../lib/store';
 import { LabourJob, Award } from '../../types';
 import { Language, tJobStatus, tSkill, tTaskType } from '../../lib/i18n';
@@ -61,7 +62,7 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
 
                   <div className="text-right">
                     <div className="text-xs text-slate-400">{t.job_budget}</div>
-                    <div className="text-sm font-bold text-emerald-400">LKR {job.wage_budget.toLocaleString()}</div>
+                    <div className="text-sm font-bold text-emerald-400">{formatMoney(job.wage_budget, currentLang)}</div>
                   </div>
                 </div>
 
@@ -128,7 +129,7 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
                       onClick={() => onPayEscrow(award)}
                       className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md animate-pulse"
                     >
-                      {t.pay_into_escrow} (LKR {award.escrow_amount.toLocaleString()}) →
+                      {t.pay_into_escrow} ({formatMoney(award.escrow_amount, currentLang)}) →
                     </button>
                   </div>
                 )}

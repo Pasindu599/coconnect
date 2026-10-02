@@ -4,7 +4,7 @@ Labour-hiring marketplace for Sri Lanka. People who need work done (land owners,
 
 The product is expanding from coconut-only into a **multi-category platform**. The first two categories are **Coconut** and **Construction**. The user picks a category on the home page and continues into that category's flow.
 
-> Status (Oct 2026): front-end prototype. Data lives in `localStorage`; OTP, PIN, admin login and payments are mocked. The 2-week plan to make it real is in [.claude/docs/ROADMAP.md](.claude/docs/ROADMAP.md).
+> Status (Oct 2026): the frontend (both categories, payments UI, disputes, payouts, admin) is built and tested against mocks. The backend (Firebase auth/data, PayHere, escrow Functions) is Session 1's work; the swap points are listed in [.claude/docs/plans/CONTRACTS.md](.claude/docs/plans/CONTRACTS.md). Plan: [.claude/docs/ROADMAP.md](.claude/docs/ROADMAP.md).
 
 ## Shared team context — read these first
 | File | What's in it |
@@ -54,15 +54,18 @@ Env vars are declared in `src/vite-env.d.ts` — add new `VITE_*` vars there or 
 will not type-check. See [.claude/docs/runbooks/google-maps-key.md](.claude/docs/runbooks/google-maps-key.md).
 
 ## Code map
-- `src/App.tsx`: top-level view switching (no router yet) + Firestore sync
-- `src/lib/store.ts`: mock in-memory/localStorage store, seed data, all business logic (to be replaced by `src/lib/data/*` repositories + Cloud Functions)
-- `src/lib/firebase.ts`: Firebase init, Google sign-in, Firestore helpers
-- `src/types/index.ts`: domain types (`LabourJob`, `Bid`, `Award`, `EscrowStatus`, ...)
-- `src/components/<role>/`: dashboards per role (`owner`, `supervisor` = broker, `worker`, `admin`)
-- `src/components/home/LandingWebsite.tsx`: public home page
+- `src/App.tsx`: route-driven shell (hash router) inside `CategoryProvider`; starts `store.startSync()` when real auth is on
+- `src/lib/router.ts`: `#/`, `#/:category[/login|dashboard|map|profile|workspace]`, `#/admin`; remembers the last category
+- `src/config/categories.ts`: **the category registry** (roles + capabilities, task types, skills, tags, site fields, location presets, map centre) and helpers (`membershipsOf`, `formatSiteSummary`, `buildSitePayload`, ...); `vocab.construction.ts` is the construction wording; `CategoryContext.tsx` gives `useCategory()` / `useT()`; `escrow.ts` is the one rule for what an escrow status means in the UI
+- `src/lib/i18n.ts`: en / si / ta dictionaries; `getCategoryT()` applies a category's vocabulary over the base text. `src/lib/money.ts` formats LKR / රු. / ரூ.
+- `src/lib/store.ts`: the store: demo data and business logic (mock of the Functions) plus Firestore sync from S1; `src/lib/seed/construction.ts` is the construction demo data
+- `src/lib/authApi.ts`, `paymentsApi.ts`: the seams the UI calls (demo by default; real Firebase auth / PayHere when wired). `src/lib/bank.ts`: payout bank details
+- `src/types/`: domain types; `category.ts` (C1) and `payments.ts` (C4) are shared contracts
+- `src/components/<area>/`: `home` (picker + category landing), `auth`, `owner` (poster), `supervisor` (bidder), `worker` (crew), `admin` (tabs), `profile`, `maps`, `common` (timeline, disputes, bank fields)
+- `e2e/`: Playwright tests; `src/**/__tests__/`: Vitest unit and component tests
 
 ## Conventions (follow these in new code)
-- **Category config is the single source of truth.** Task types, skills, roles, rating tags and site fields come from `src/config/categories.ts` (being built). Don't hardcode coconut-specific values in components.
+- **Category config is the single source of truth.** Task types, skills, roles, rating tags and site fields come from `src/config/categories.ts`. Don't hardcode coconut- or construction-specific values in components; wording that differs per category goes in the category's `vocab`.
 - **The job engine is generic.** Check role *capabilities* (`poster`, `bidder`, `crew`), not role names like `'owner'`.
 - **Money is only changed server-side.** Escrow status, payments and ledger entries are written by Cloud Functions, never by the client. The PayHere merchant secret never goes into front-end code.
 - **No secrets in git.** Keep `.env.example` placeholder-only.

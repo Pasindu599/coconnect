@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatMoney } from '../../lib/money';
 import { AppState } from '../../lib/store';
 import { LabourJob, Award } from '../../types';
 import { Language, fmt, tJobStatus, tTaskType } from '../../lib/i18n';
@@ -37,10 +38,10 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ state, currentLang, 
                     <h3 className="text-base font-bold text-white mt-2">{tTaskType(job.task_type, currentLang)}</h3>
                     <p className="text-xs text-slate-400">{job.estate_name} • {job.estate_location}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex-shrink-0 pl-3">
                     <div className="text-xs text-slate-400">{t.escrow_held_label}</div>
-                    <div className="text-sm font-bold text-amber-400 font-mono">
-                      LKR {award?.escrow_amount.toLocaleString()}
+                    <div className="text-sm font-bold text-amber-400 font-mono whitespace-nowrap">
+                      {formatMoney(award?.escrow_amount ?? 0, currentLang)}
                     </div>
                   </div>
                 </div>
