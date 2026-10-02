@@ -55,3 +55,9 @@ export const firebaseAuthApi: AuthApi = {
 };
 
 export const authApi: AuthApi = import.meta.env.VITE_AUTH_MODE === 'firebase' ? firebaseAuthApi : mockAuthApi;
+
+/**
+ * Whether the app talks to the Firebase backend. Firestore rules need a signed-in user, so data
+ * sync only runs with real auth; in demo mode everything stays in the browser.
+ */
+export const usesBackend: boolean = !authApi.isMock;

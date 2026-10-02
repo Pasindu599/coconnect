@@ -14,7 +14,8 @@ import { UserProfilePage } from './components/profile/UserProfilePage';
 import { AdminPortal } from './components/admin/AdminPortal';
 import { EstateMapView } from './components/maps/EstateMapView';
 import { WorkspaceHub } from './components/workspace/WorkspaceHub';
-import { subscribeToEstates, subscribeToJobs } from './lib/firebase';
+import { usesBackend } from './lib/authApi';
+import { SyncErrorBanner } from './components/common/SyncErrorBanner';
 import { CategoryProvider } from './config/CategoryContext';
 import { DEFAULT_CATEGORY, activeLegacyRoleIn, capabilityOfLegacyRole } from './config/categories';
 import { HOME, lastCategory, navigate, rememberCategory, routeCategory, useRoute } from './lib/router';
@@ -52,35 +53,12 @@ export default function App() {
       navigate({ page: 'admin' }, { replace: true });
     }
 
-    // Real-time Firestore synchronization
-    const unsubEstates = subscribeToEstates((remoteEstates) => {
-      if (remoteEstates && remoteEstates.length > 0) {
-        const currentIds = new Set(store.getState().estates.map((e) => e.id));
-        remoteEstates.forEach((re) => {
-          if (!currentIds.has(re.id)) {
-            store.getState().estates.unshift(re);
-          }
-        });
-        setState({ ...store.getState() });
-      }
-    });
-
-    const unsubJobs = subscribeToJobs((remoteJobs) => {
-      if (remoteJobs && remoteJobs.length > 0) {
-        const currentIds = new Set(store.getState().jobs.map((j) => j.id));
-        remoteJobs.forEach((rj) => {
-          if (!currentIds.has(rj.id)) {
-            store.getState().jobs.unshift(rj);
-          }
-        });
-        setState({ ...store.getState() });
-      }
-    });
+    // Live Firestore sync (users, estates, jobs, bids) once real auth is on; see authApi.usesBackend
+    const stopSync = usesBackend ? store.startSync() : undefined;
 
     return () => {
       unsubscribe();
-      if (typeof unsubEstates === 'function') unsubEstates();
-      if (typeof unsubJobs === 'function') unsubJobs();
+      stopSync?.();
     };
   }, []);
 
@@ -248,6 +226,8 @@ export default function App() {
   return (
     <CategoryProvider categoryId={category}>
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+        {usesBackend && <SyncErrorBanner syncError={state.syncError} currentLang={currentLang} />}
+
         <Navbar
           state={state}
           currentLang={currentLang}

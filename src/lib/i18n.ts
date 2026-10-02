@@ -11,6 +11,9 @@ export type Language = 'en' | 'si' | 'ta';
 const en = {
   app_title: 'Coconnect',
   tagline: 'Coconut Sector Labour Hiring & Escrow Platform',
+  // ------------------------------------------------ Sync errors
+  sync_error: 'Could not sync with the server ({action}). Recent changes may not be saved. Check your connection.',
+  sync_error_dismiss: 'Dismiss',
   // ------------------------------------------------ Admin: payouts and dispute decisions
   admin_tab_payouts: 'Payout Queue',
   payouts_title: 'Payout queue',
@@ -773,6 +776,9 @@ export type TranslationDict = typeof en;
 const si: TranslationDict = {
   app_title: 'කොකොනෙක්ට් (Coconnect)',
   tagline: 'පොල් වගා ශ්‍රම බඳවාගැනීම් සහ එස්ක්‍රෝ ගෙවීම් පද්ධතිය',
+  // ------------------------------------------------ Sync errors
+  sync_error: 'සේවාදායකය සමඟ සමමුහුර්ත කළ නොහැකි විය ({action}). මෑත වෙනස්කම් සුරැකී නොතිබිය හැක. ඔබේ සම්බන්ධතාව පරීක්ෂා කරන්න.',
+  sync_error_dismiss: 'ඉවත් කරන්න',
   // ------------------------------------------------ Admin: payouts and dispute decisions
   admin_tab_payouts: 'ගෙවීම් පෝලිම',
   payouts_title: 'ගෙවීම් පෝලිම',
@@ -1522,6 +1528,9 @@ const si: TranslationDict = {
 const ta: TranslationDict = {
   app_title: 'கொகனெக்ட் (Coconnect)',
   tagline: 'தென்னை துறை தொழிலாளர் நியமனம் மற்றும் எஸ்க்ரோ தளம்',
+  // ------------------------------------------------ Sync errors
+  sync_error: 'சேவையகத்துடன் ஒத்திசைக்க முடியவில்லை ({action}). சமீபத்திய மாற்றங்கள் சேமிக்கப்படாமல் இருக்கலாம். உங்கள் இணைப்பைச் சரிபார்க்கவும்.',
+  sync_error_dismiss: 'மூடுக',
   // ------------------------------------------------ Admin: payouts and dispute decisions
   admin_tab_payouts: 'கட்டண வரிசை',
   payouts_title: 'கட்டண வரிசை',
