@@ -11,6 +11,8 @@ export type Language = 'en' | 'si' | 'ta';
 const en = {
   app_title: 'Coconnect',
   tagline: 'Coconut Sector Labour Hiring & Escrow Platform',
+  // ------------------------------------------------ Worker registration
+  worker_skills_label: 'Skills',
   // ------------------------------------------------ Join a category
   join_title: 'Join {category}',
   join_desc: 'You are signed in, but you have no role in this category yet. Choose how you want to take part.',
@@ -693,6 +695,8 @@ export type TranslationDict = typeof en;
 const si: TranslationDict = {
   app_title: 'කොකොනෙක්ට් (Coconnect)',
   tagline: 'පොල් වගා ශ්‍රම බඳවාගැනීම් සහ එස්ක්‍රෝ ගෙවීම් පද්ධතිය',
+  // ------------------------------------------------ Worker registration
+  worker_skills_label: 'කුසලතා',
   // ------------------------------------------------ Join a category
   join_title: '{category} හි එක්වන්න',
   join_desc: 'ඔබ පිවිස සිටින නමුත් මෙම ප්‍රවර්ගයේ ඔබට තවම කිසිදු භූමිකාවක් නැත. ඔබට සහභාගී වීමට අවශ්‍ය ආකාරය තෝරන්න.',
@@ -1362,6 +1366,8 @@ const si: TranslationDict = {
 const ta: TranslationDict = {
   app_title: 'கொகனெக்ட் (Coconnect)',
   tagline: 'தென்னை துறை தொழிலாளர் நியமனம் மற்றும் எஸ்க்ரோ தளம்',
+  // ------------------------------------------------ Worker registration
+  worker_skills_label: 'திறன்கள்',
   // ------------------------------------------------ Join a category
   join_title: '{category} பிரிவில் இணையுங்கள்',
   join_desc: 'நீங்கள் உள்நுழைந்துள்ளீர்கள், ஆனால் இந்தப் பிரிவில் உங்களுக்கு இன்னும் பங்கு இல்லை. எவ்வாறு பங்கேற்க விரும்புகிறீர்கள் என்பதைத் தேர்ந்தெடுக்கவும்.',

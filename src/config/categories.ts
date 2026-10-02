@@ -69,7 +69,7 @@ export interface CategoryConfig {
   taskTypes: string[];
   skills: string[];
   ratingTags: string[];
-  defaults: { taskType: string; skills: string[]; ratingTags: string[] };
+  defaults: { taskType: string; skills: string[]; ratingTags: string[]; wageBudget: string };
   siteFields: SiteField[];
   pricingUnit: PricingUnit;
   /** What the first landing-page stat counts: palms (coconut) or registered sites. */
@@ -169,6 +169,7 @@ const COCONUT: CategoryConfig = {
     taskType: 'Coconut Harvesting & Bunch Lowering',
     skills: ['Tree Climbing', 'Coconut Plucking'],
     ratingTags: ['Punctual Crew', 'Safe Tree Climbing', 'Clean Estate'],
+    wageBudget: '42000',
   },
   siteFields: [
     {
@@ -311,6 +312,7 @@ const CONSTRUCTION: CategoryConfig = {
     taskType: 'Foundation & Masonry Work',
     skills: ['Mason', 'Helper (Labourer)'],
     ratingTags: ['On Schedule', 'Quality Workmanship', 'Clean Site'],
+    wageBudget: '150000',
   },
   siteFields: [
     {
