@@ -4,7 +4,7 @@ Status: draft, for team review (S1-02). Builds on [ARCHITECTURE.md](../ARCHITECT
 
 ## Conventions
 
-- All documents carry `category: CategoryId` (`'coconut' | 'construction'`) except `users` and top-level `audit_logs`, so rules and queries can scope by category.
+- All documents carry `category: CategoryId` (`'coconut' | 'construction'`) except `users` and top-level `audit_logs`, so rules and queries can scope by category. In the actual TS types (`Estate`, `LabourJob`, `Bid`, `Worker`, `Award`), `category` is typed optional (`category?: CategoryId`) since it's a field added onto pre-existing interfaces (ADR-007) — but every write path sets it (hardcoded to `'coconut'` in `store.ts`'s `addEstate`/`createJob`/`submitBid` until a category-aware posting UI exists), and every rule that checks capability (`isPoster`/`isBidder`) depends on it actually being present on the document.
 - Timestamps are Firestore `Timestamp`, not strings (the current prototype uses ISO strings in `localStorage`; the migration in S1-07/08 converts on read for existing UI code, see C2).
 - IDs are Firestore auto-IDs. No document ever stores another collection's data inline except small denormalized display fields already present in the current types (`owner_name`, `estate_name`, ...) — kept for now to avoid a UI rewrite; may be dropped later.
 - Every collection below lists: fields, who **writes**, who **reads**. "Functions only" means the client has no `create`/`update`/`delete` rule at all — only a Cloud Function using the Admin SDK (which bypasses rules) can write it.

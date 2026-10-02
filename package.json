@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-coconnect-test \"vitest run --config vitest.rules.config.ts\"",
+    "test:integration": "firebase emulators:exec --only auth,firestore --project gen-lang-client-0417035030 \"vitest run --config vitest.integration.config.ts\"",
     "emulators": "firebase emulators:start",
     "seed": "tsx scripts/seed.ts"
   },

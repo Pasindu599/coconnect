@@ -73,6 +73,8 @@ export interface NicSubmission {
 
 export interface Estate {
   id: string;
+  /** Optional, defaults to 'coconut' at write time (see store.ts) until a category-aware posting UI sets it explicitly. Required by firestore.rules' isPoster() check. */
+  category?: CategoryId;
   owner_id: string;
   name: string;
   area_acres: number;
@@ -86,6 +88,8 @@ export interface Estate {
 
 export interface Worker {
   id: string;
+  /** Optional, see Estate.category. */
+  category?: CategoryId;
   supervisor_id: string;
   name: string;
   phone: string;
@@ -101,6 +105,8 @@ export interface Worker {
 
 export interface LabourJob {
   id: string;
+  /** Optional, see Estate.category. */
+  category?: CategoryId;
   owner_id: string;
   owner_name: string;
   estate_id: string;
@@ -122,6 +128,8 @@ export interface LabourJob {
 
 export interface Bid {
   id: string;
+  /** Optional, see Estate.category. */
+  category?: CategoryId;
   job_id: string;
   supervisor_id: string;
   supervisor_name: string;
@@ -138,6 +146,8 @@ export interface Bid {
 
 export interface Award {
   id: string;
+  /** Optional, see Estate.category. */
+  category?: CategoryId;
   job_id: string;
   bid_id: string;
   supervisor_id: string;

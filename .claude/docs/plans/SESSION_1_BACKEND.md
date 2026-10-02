@@ -19,7 +19,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-04 | 2A-1, 2C-3, 3C-1 | 2–3 | Firestore + Storage rules, with rules tests | S1-02, S1-03 | | done |
 | S1-05 | 3A-1 | 3 | Phone OTP auth, `auth.ts`, custom-claims Functions | S1-04 | SP2 | done — **SP2 delivered** |
 | S1-06 | 3C-2 | 3 | Emulator seed script | S1-03 | | done |
-| S1-07 | 4A-1 | 4 | Repositories: users, sites, jobs, bids + `store.startSync()` | S1-04, S1-06 | SP3 | todo |
+| S1-07 | 4A-1 | 4 | Repositories: users, sites, jobs, bids + `store.startSync()` | S1-04, S1-06 | SP3 | done — **SP3 delivered** |
 | S1-08 | 5A-1 | 5 | Repositories: workers, awards, attendance, completions; NIC images → Storage | S1-07 | | todo |
 | — | 5C-1 | 5 | **SP4: week-1 demo + reviews (humans, both sessions)** | | | todo |
 | S1-09 | 6A, 6C | 6 | `createPayment` Function + `payments.ts` + fee calc, with tests | S1-08, 1C-4 | SP5 | todo |
@@ -74,15 +74,19 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 - **Done when:** ✅ `npm run seed` (wrapped in `firebase emulators:exec --only auth,firestore --project demo-coconnect "npm run seed"` for a clean one-shot run, or just `npm run seed` against an already-running `npm run emulators`) fills an empty emulator with both categories. Verified: the `jobs` collection has the right shape, and the admin account signs in with the real custom claim set (checked via the Auth/Firestore REST APIs directly, not just script exit code).
 - Did **not** seed `attendance_days`/`attendance_entries`/`completions`/`ratings`/`nic_submissions`/`audit_logs` — those are either Functions-written in normal operation or not yet needed for a browsing/bidding demo. Add them here later if a specific demo flow needs pre-seeded state for them.
 
-### S1-07: Repositories, part 1 (delivers SP3)
-- **Files:** `src/lib/data/{users,sites,jobs,bids}.ts`, `src/lib/store.ts`.
-- The store keeps its public API (CONTRACTS C2). Internally, reads come from Firestore listeners and writes go to Firestore. Add `store.startSync()`.
-- Write errors must surface to the caller (no more silent `console.warn`): KNOWN_ISSUES #11.
-- **Done when:** jobs posted in one browser appear in another; edits and deletes sync, not only adds. Closes #10 for these collections.
+### S1-07: Repositories, part 1 (delivers SP3) — done
+- **Files:** `src/lib/data/{firestoreSync,users,estates,jobs,bids}.ts` (named `estates` not `sites` — ADR-007), `src/lib/store.ts`, `src/types/index.ts` (added optional `category` to `Estate`/`LabourJob`/`Bid`/`Worker`/`Award`), `tests/integration/sync.test.ts` + `vitest.integration.config.ts` + `package.json` `test:integration` script + CI step.
+- The store's public API is unchanged (CONTRACTS C2): `addEstate`/`createJob`/`submitBid` still return synchronously (optimistic local update, same as before) and now **also** fire-and-forget a Firestore write through the new repositories, with failures landing in `state.syncError` rather than changing the method's signature to a Promise — that would have meant updating every caller in `src/components/**`, which this session doesn't own (see ADR-007's reasoning, same constraint). `store.startSync()` starts all four listeners and returns one combined unsubscribe.
+- Write errors surface via `state.syncError` (closes KNOWN_ISSUES #11 for these paths).
+- **Done when:** ✅ verified against the real Auth+Firestore emulators (not just the rules-unit-testing harness) — a write from one authenticated client reaches a listener as `added`, a direct Firestore edit reaches it as `modified`, and a delete reaches it as `removed`, proving this isn't an add-only sync. Closes #10 for users/estates/jobs/bids.
+- **Found and fixed along the way:** the `category` field my own rules check (`isPoster`/`isBidder`) didn't exist anywhere on the real `Estate`/`LabourJob`/`Bid` types or any existing write path — added it as an optional field, defaulted to `'coconut'` in the three write methods above. Without this, every real write would have failed permission-denied.
+- **Scope note:** `addWorker`/`awardBid`/`payEscrow`/etc. (workers, awards) are untouched, still pure local/localStorage — that's S1-08. `awardBid` in particular can't write through yet even for the `bids`/`jobs` fields it touches: moving a job to `AWARDED_PENDING_FEE` is Functions-only by rules, and no `awardBid` Function exists yet — needed as part of S1-08's awards work, flagged there.
+- Told Session 2: **SP3 is delivered.** S2-08 can replace the ad-hoc `subscribeToEstates`/`subscribeToJobs` block in `App.tsx` with `store.startSync()`.
 
 ### S1-08: Repositories, part 2
-- **Files:** `src/lib/data/{workers,awards,attendance,completions,nic}.ts`, `src/lib/store.ts`.
+- **Files:** `src/lib/data/{workers,awards,attendance,completions,nic}.ts`, `src/lib/store.ts`, `functions/src/jobs/awardBid.ts` (new, see below).
 - Add `uploadNicImage(file: File, side: 'front' | 'back'): Promise<string>` (returns a Storage path). Fill in CONTRACTS C5 with the exact signature in the same PR, so Session 2 can switch the NIC modal to it.
+- **Found during S1-07:** `store.ts`'s `awardBid()` can't become a pure client Firestore write — `firestore.rules` only lets a job's `status` move client-side within `{DRAFT, OPEN, CANCELLED}`, and `awards` is Functions-only entirely (by design, since escrow starts there). Needs a small `awardBid` callable Function that, in one transaction: accepts the bid, rejects the job's other bids, moves the job to `AWARDED_PENDING_FEE`, and creates the `awards/{id}` doc with `escrow_status: 'pending'`. `store.awardBid()` then calls this callable instead of mutating local arrays directly (same "keep the sync signature, surface errors via `state.syncError`" pattern as S1-07 — or decide here if awaiting the callable is worth a signature change, with an S2 reviewer).
 - **Done when:** nothing business-related is read from `localStorage` anymore (only UI preferences such as language). Closes #8 once S2-10 uses the upload.
 
 ### S1-09: createPayment (delivers SP5)

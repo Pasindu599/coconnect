@@ -20,6 +20,11 @@ import {
 } from '../types';
 import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
 import { saveNicSubmissionToFirestore, updateNicSubmissionInFirestore } from './firebase';
+import { createEstate as createEstateRemote, subscribeToEstates } from './data/estates';
+import { createJob as createJobRemote, subscribeToJobs } from './data/jobs';
+import { createBid as createBidRemote, subscribeToBids } from './data/bids';
+import { subscribeToUsers } from './data/users';
+import { reconcile, type RemoteChanges } from './data/firestoreSync';
 
 const STORAGE_KEY = 'coconnect_app_state_v1';
 
@@ -663,6 +668,13 @@ export interface AppState {
     queuedAt: string;
   }>;
   isOfflineSimulated: boolean;
+  /**
+   * The most recent Firestore write failure, surfaced through normal
+   * subscribe()/notify() re-renders rather than a silent console.warn
+   * (closes KNOWN_ISSUES #11). Cleared by the next successful write of the
+   * same kind; callers that want a toast/banner read this field.
+   */
+  syncError: { action: string; message: string; at: string } | null;
 }
 
 function loadInitialState(): AppState {
@@ -679,6 +691,7 @@ function loadInitialState(): AppState {
       if (!parsed.nicSubmissions) {
         parsed.nicSubmissions = initialNicSubmissions;
       }
+      parsed.syncError = null;
       return parsed;
     } catch {
       // ignore
@@ -703,7 +716,8 @@ function loadInitialState(): AppState {
     auditLogs: initialAuditLogs,
     scoringRule: initialScoringRules,
     offlineQueue: [],
-    isOfflineSimulated: false
+    isOfflineSimulated: false,
+    syncError: null
   };
 }
 
@@ -724,6 +738,55 @@ class StoreService {
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
     };
+  }
+
+  /**
+   * Starts Firestore listeners for users, estates, jobs and bids (CONTRACTS
+   * C2). Each one reconciles adds, modifications AND removals into state —
+   * the previous ad-hoc sync in App.tsx only ever merged in adds (closes
+   * KNOWN_ISSUES #10 for these four collections; workers/awards/attendance/
+   * completions follow in S1-08). Returns one combined unsubscribe.
+   */
+  public startSync(): () => void {
+    const unsubscribers = [
+      subscribeToUsers(
+        (changes) => this.applyRemoteChanges('users', changes),
+        (err) => this.reportSyncError('users.sync', err)
+      ),
+      subscribeToEstates(
+        (changes) => this.applyRemoteChanges('estates', changes),
+        (err) => this.reportSyncError('estates.sync', err)
+      ),
+      subscribeToJobs(
+        (changes) => this.applyRemoteChanges('jobs', changes),
+        (err) => this.reportSyncError('jobs.sync', err)
+      ),
+      subscribeToBids(
+        (changes) => this.applyRemoteChanges('bids', changes),
+        (err) => this.reportSyncError('bids.sync', err)
+      ),
+    ];
+
+    return () => unsubscribers.forEach((unsub) => unsub());
+  }
+
+  private applyRemoteChanges<K extends 'users' | 'estates' | 'jobs' | 'bids'>(
+    key: K,
+    changes: RemoteChanges<AppState[K][number]>
+  ) {
+    type Item = AppState[K][number] & { id: string };
+    (this.state[key] as unknown as Item[]) = reconcile(this.state[key] as unknown as Item[], changes);
+    this.notify();
+  }
+
+  private reportSyncError(action: string, err: unknown) {
+    console.error(`Firestore sync error (${action}):`, err);
+    this.state.syncError = {
+      action,
+      message: err instanceof Error ? err.message : 'Unknown sync error',
+      at: new Date().toISOString(),
+    };
+    this.notify();
   }
 
   private notify() {
@@ -846,6 +909,9 @@ class StoreService {
     if (!this.state.currentUser) throw new Error('Unauthorized');
     const newEstate: Estate = {
       id: `est-${Date.now()}`,
+      // Hardcoded until a category-aware posting UI exists (Session 2); every
+      // estate created through this flow today is a coconut estate.
+      category: 'coconut',
       owner_id: this.state.currentUser.id,
       name: data.name,
       area_acres: Number(data.area_acres),
@@ -859,6 +925,7 @@ class StoreService {
     this.state.estates.unshift(newEstate);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'estate.created', 'estate', newEstate.id, `Registered land "${data.name}" (${data.area_acres} acres)`);
     this.notify();
+    createEstateRemote(newEstate).catch((err) => this.reportSyncError('estate.created', err));
     return newEstate;
   }
 
@@ -910,6 +977,7 @@ class StoreService {
 
     const newJob: LabourJob = {
       id: `job-${Date.now()}`,
+      category: 'coconut',
       owner_id: this.state.currentUser.id,
       owner_name: this.state.currentUser.name,
       estate_id: estate.id,
@@ -932,6 +1000,7 @@ class StoreService {
     this.state.jobs.unshift(newJob);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'job.published', 'labour_job', newJob.id, `Owner published job "${data.task_type}" at ${estate.name}`);
     this.notify();
+    createJobRemote(newJob).catch((err) => this.reportSyncError('job.published', err));
     return newJob;
   }
 
@@ -974,6 +1043,7 @@ class StoreService {
 
     const newBid: Bid = {
       id: `bid-${Date.now()}`,
+      category: 'coconut',
       job_id: data.job_id,
       supervisor_id: this.state.currentUser.id,
       supervisor_name: this.state.currentUser.name,
@@ -990,6 +1060,7 @@ class StoreService {
     this.state.bids.unshift(newBid);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'bid.submitted', 'bid', newBid.id, `Supervisor bid LKR ${data.price} with ${data.crew_member_ids.length} crew members`);
     this.notify();
+    createBidRemote(newBid).catch((err) => this.reportSyncError('bid.submitted', err));
     return { success: true, bid: newBid };
   }
 
