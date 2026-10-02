@@ -17,6 +17,13 @@ The product is expanding from coconut-only into a **multi-category platform**. T
 | [.claude/docs/AI_SDLC.md](.claude/docs/AI_SDLC.md) | How the team uses Claude Code across the SDLC |
 | `.claude/docs/specs/` | One spec per feature, written before building it |
 
+## Parallel sessions
+The remaining roadmap runs as **two Claude Code sessions in parallel**, each in its own git worktree:
+- **Session 1, Backend & Platform:** [.claude/docs/plans/SESSION_1_BACKEND.md](.claude/docs/plans/SESSION_1_BACKEND.md)
+- **Session 2, Frontend & Categories:** [.claude/docs/plans/SESSION_2_FRONTEND.md](.claude/docs/plans/SESSION_2_FRONTEND.md)
+
+Read [.claude/docs/plans/README.md](.claude/docs/plans/README.md) (file ownership, sync points) and [CONTRACTS.md](.claude/docs/plans/CONTRACTS.md) (shared interfaces) first. Only edit files your session owns; ask the other session through a change request in CONTRACTS.md.
+
 **Keep these up to date.** After you finish a task, update its status in `ROADMAP.md`. When the team decides something, add an entry to `DECISIONS.md`. When you find or fix an issue, update `KNOWN_ISSUES.md`. These files are how every teammate's Claude session shares the same context; personal Claude memory is not shared.
 
 ## Stack
