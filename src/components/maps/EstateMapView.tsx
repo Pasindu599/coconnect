@@ -31,6 +31,25 @@ interface EstateMapViewProps {
   onLocationPicked?: (lat: number, lng: number) => void;
 }
 
+/**
+ * Shown instead of the map when `VITE_GOOGLE_MAPS_API_KEY` is not set, so a
+ * missing key degrades to a readable panel rather than a blank grey canvas.
+ */
+const MapKeyMissing: React.FC<{ t: ReturnType<typeof getT> }> = ({ t }) => (
+  <div className="w-full h-full flex items-center justify-center p-6">
+    <div className="max-w-md text-center space-y-3">
+      <div className="w-12 h-12 mx-auto rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/30">
+        <MapPin className="w-6 h-6" />
+      </div>
+      <h3 className="text-sm font-semibold text-white">{t.map_key_missing_title}</h3>
+      <p className="text-xs text-slate-400 leading-relaxed">{t.map_key_missing_desc}</p>
+      <code className="inline-block text-[11px] text-slate-300 bg-slate-900 border border-slate-800 rounded-md px-2 py-1">
+        VITE_GOOGLE_MAPS_API_KEY
+      </code>
+    </div>
+  </div>
+);
+
 export const EstateMapView: React.FC<EstateMapViewProps> = ({
   state,
   currentLang,
@@ -40,7 +59,11 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
   onLocationPicked,
 }) => {
   const t = getT(currentLang);
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBv9If5RVuxomzcSFyz5Z9KBVTC5-WTRVc';
+  // Browser key, injected at build time. It is public by design and is only safe
+  // because of the HTTP-referrer + API restrictions set on it in Google Cloud
+  // Console, so there is deliberately no fallback key in the source.
+  // See .claude/docs/runbooks/google-maps-key.md
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   
   const [filter, setFilter] = useState<'all' | 'estates' | 'jobs'>('all');
   const [selectedEstate, setSelectedEstate] = useState<Estate | null>(null);
@@ -138,6 +161,9 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
 
       {/* Main Map Canvas */}
       <div className="relative flex-1 w-full h-full bg-slate-950">
+        {!apiKey ? (
+          <MapKeyMissing t={t} />
+        ) : (
         <APIProvider apiKey={apiKey}>
           <Map
             mapId="COCONNECT_ESTATE_MAP"
@@ -289,6 +315,7 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
             )}
           </Map>
         </APIProvider>
+        )}
 
         {/* Floating Quick Region Jump Controls */}
         <div className="absolute top-4 left-4 z-10 flex flex-col space-y-1.5 bg-slate-900/90 backdrop-blur p-2 rounded-xl border border-slate-800 shadow-lg text-xs">

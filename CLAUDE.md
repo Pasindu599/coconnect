@@ -16,6 +16,7 @@ The product is expanding from coconut-only into a **multi-category platform**. T
 | [.claude/docs/categories.md](.claude/docs/categories.md) | Roles, tasks, skills per category |
 | [.claude/docs/AI_SDLC.md](.claude/docs/AI_SDLC.md) | How the team uses Claude Code across the SDLC |
 | `.claude/docs/specs/` | One spec per feature, written before building it |
+| `.claude/docs/runbooks/` | Operational runbooks (key rotation, deploys) |
 
 ## Parallel sessions
 The remaining roadmap runs as **two Claude Code sessions in parallel**, each in its own git worktree:
@@ -36,11 +37,21 @@ Read [.claude/docs/plans/README.md](.claude/docs/plans/README.md) (file ownershi
 ## Commands
 ```bash
 npm install
+cp .env.example .env.local   # then fill in the values (see below)
 npm run dev      # http://localhost:3000
 npm run lint     # tsc --noEmit (type check)
 npm run build
 ```
 Planned: `npm test` (Vitest), `firebase emulators:start`, `npx playwright test`.
+
+### Local environment
+`.env.local` is gitignored; `.env.example` holds placeholders only. Ask the team
+for a **dev** Google Maps key (referrer-restricted to `http://localhost:3000/*` —
+we do not share one key across environments) and put it in
+`VITE_GOOGLE_MAPS_API_KEY`. Without it the app runs fine and the map area shows a
+"map unavailable" panel; there is deliberately no fallback key in the source.
+Env vars are declared in `src/vite-env.d.ts` — add new `VITE_*` vars there or they
+will not type-check. See [.claude/docs/runbooks/google-maps-key.md](.claude/docs/runbooks/google-maps-key.md).
 
 ## Code map
 - `src/App.tsx`: top-level view switching (no router yet) + Firestore sync
