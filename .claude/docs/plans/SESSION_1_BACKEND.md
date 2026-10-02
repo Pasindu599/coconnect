@@ -17,7 +17,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-02 | 1A-1 | 1 | Specs: data model, auth, payments | — | | doing (drafted, pending human review) |
 | S1-03 | 1A-2 | 1 | Firebase project + Emulator Suite | S1-01 | | done |
 | S1-04 | 2A-1, 2C-3, 3C-1 | 2–3 | Firestore + Storage rules, with rules tests | S1-02, S1-03 | | done |
-| S1-05 | 3A-1 | 3 | Phone OTP auth, `auth.ts`, custom-claims Functions | S1-04 | SP2 | todo |
+| S1-05 | 3A-1 | 3 | Phone OTP auth, `auth.ts`, custom-claims Functions | S1-04 | SP2 | done — **SP2 delivered** |
 | S1-06 | 3C-2 | 3 | Emulator seed script | S1-03 | | todo |
 | S1-07 | 4A-1 | 4 | Repositories: users, sites, jobs, bids + `store.startSync()` | S1-04, S1-06 | SP3 | todo |
 | S1-08 | 5A-1 | 5 | Repositories: workers, awards, attendance, completions; NIC images → Storage | S1-07 | | todo |
@@ -59,13 +59,14 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 - Deviated from the data-model spec draft in one place: `users` reads are self+admin only, not "any authenticated user" — see ADR-006 for why, and `data-model.md` is updated to match.
 - **Local env note:** the Firestore/Storage emulators need a JDK ≥21; see the S1-03 note above for the `JAVA_HOME` workaround on this machine. CI installs Java via `actions/setup-java`.
 
-### S1-05: Auth (delivers SP2)
-- **Files:** `src/lib/auth.ts` (exactly the API in CONTRACTS C3), `functions/src/auth/*` (`onUserCreate`, `addMembership`, `setAdmin`), `src/lib/firebase.ts`.
-- Roles and admin are **custom claims set by Functions only**. `addMembership` rejects `admin`.
-- Staff sign in through `signInStaff(email, password)` (Firebase email/password) and must have the `admin` claim.
-- Remove the full `drive` scope from Google sign-in (KNOWN_ISSUES #9).
-- **Done when:** sign-in works with Firebase test phone numbers on the emulator; Functions have unit tests; the CONTRACTS C3 API matches. This closes #3. #18 is closed once S2-07 switches the admin form to `signInStaff`.
-- When merged, tell Session 2 (SP2).
+### S1-05: Auth (delivers SP2) — done
+- **Files:** `src/lib/auth.ts` (CONTRACTS C3), `functions/src/auth/{onUserCreate,addMembership,setAdmin,roles}.ts` + `__tests__/*`, `src/lib/firebase.ts` (Drive scope), `functions/package.json` (+`@google-cloud/firestore`, `@google-cloud/storage` as explicit deps — see local-env note), `functions/.npmrc`, `.github/workflows/ci.yml` (functions job now also runs `npm test`, needs Java).
+- Roles and admin are **custom claims set by Functions only**, mirrored from `users/{uid}.memberships` (ADR-006). `addMembership` rejects `admin` and validates the role against the category (`functions/src/auth/roles.ts`, hand-kept in sync with CONTRACTS C1 — Functions never import frontend config).
+- Staff sign in through `signInStaff(email, password)` (Firebase email/password) and must have the `admin` claim; `setAdmin` is itself admin-gated (no public path to the first admin — see specs/auth.md's bootstrap note, resolved by S1-06's seed script for the emulator).
+- Dropped the two redundant Drive scopes (KNOWN_ISSUES #9) — see that row for why the full `drive` scope itself stays, as a product question rather than a quick fix.
+- **Done when:** ✅ 13 Functions unit tests pass against the emulator (`npm test` in `functions/`); ✅ manually verified the *full* OTP flow end-to-end against the real HTTP/Auth emulator stack (not just `.run()` calls) — sent a real verification code via the Auth emulator's REST API, signed in, confirmed `onUserCreate` fired and `users/{uid}` rules correctly allow/deny by ID token, then called `addMembership` over real HTTP and confirmed both the Firestore array and the Auth custom claim updated; ✅ `auth.ts` matches CONTRACTS C3 exactly, with its own error-mapping unit tests at the root level. Partially closes #3 (OTP) and #18 (admin) — both fully close once S2 switches its login/admin UI to call this instead of the `store.ts` mocks.
+- **Local env note:** `firebase-admin`'s `getFirestore()`/`getStorage()` need `@google-cloud/firestore`/`@google-cloud/storage`, which `firebase-admin` lists as *optional* dependencies — on this machine's Node 20 they silently failed their own engine check and got skipped, breaking the build with a confusing `MODULE_NOT_FOUND`. Added both as explicit direct dependencies instead of chasing the engine mismatch. Separately, installing `vitest` inside `functions/` hit a reproducible `npm` bug (`TypeError: Cannot read properties of null (reading 'edgesOut')` in `@npmcli/arborist`) during dependency resolution — worked around with `legacy-peer-deps=true` in `functions/.npmrc` (the repo root already had this same setting for the same reason).
+- Told Session 2: **SP2 is delivered.** S2-07 can switch login from the mock to `sendOtp`/`confirmOtp`/`addMembership`/`signInStaff` in `src/lib/auth.ts`.
 
 ### S1-06: Seed script
 - **Files:** `scripts/seed.ts`, `package.json` script `seed`.

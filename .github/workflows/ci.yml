@@ -23,9 +23,6 @@ jobs:
 
   functions:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: functions
     steps:
       - uses: actions/checkout@v4
 
@@ -35,8 +32,22 @@ jobs:
           cache: 'npm'
           cache-dependency-path: functions/package-lock.json
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # The functions/ test script shells out to the `firebase` CLI, resolved
+      # from the repo root's node_modules/.bin (npm walks up the directory
+      # tree for this) rather than duplicating firebase-tools as a functions/
+      # dependency too.
       - run: npm ci
+      - run: npm ci
+        working-directory: functions
       - run: npm run build
+        working-directory: functions
+      - run: npm test
+        working-directory: functions
 
   rules:
     runs-on: ubuntu-latest

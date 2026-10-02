@@ -56,11 +56,18 @@ if (import.meta.env.VITE_USE_EMULATORS === 'true' && !emulatorsConnected) {
 // Configure Google Auth Provider with Google Drive Scopes (Calendar and Chat removed)
 export const googleProvider = new GoogleAuthProvider();
 
-// Scopes for Google Drive cloud file backup & export
+// Scope for the Drive file browser/backup feature (WorkspaceHub): it lists,
+// uploads to and deletes arbitrary files anywhere in the user's Drive
+// (src/lib/workspaceApi.ts), which genuinely needs the full `drive` scope —
+// `drive.file` only sees files this app itself created, which would silently
+// empty the file list. KNOWN_ISSUES #9 flagged the full scope as excessive;
+// it is, but narrowing it means redesigning the feature (e.g. the Google
+// Picker API) rather than a scope swap, which is a product decision, not a
+// one-line fix — see the note added to KNOWN_ISSUES #9. The only change here
+// is dropping `drive.file`/`drive.readonly`: both are strict subsets of
+// `drive`, so requesting all three asked for nothing extra.
 const WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/drive',
-  'https://www.googleapis.com/auth/drive.file',
-  'https://www.googleapis.com/auth/drive.readonly'
 ];
 
 WORKSPACE_SCOPES.forEach((scope) => {
