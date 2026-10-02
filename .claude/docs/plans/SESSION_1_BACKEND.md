@@ -21,7 +21,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-06 | 3C-2 | 3 | Emulator seed script | S1-03 | | done |
 | S1-07 | 4A-1 | 4 | Repositories: users, sites, jobs, bids + `store.startSync()` | S1-04, S1-06 | SP3 | done — **SP3 delivered** |
 | S1-08 | 5A-1 | 5 | Repositories: workers, awards, attendance, completions; NIC images → Storage | S1-07 | | done |
-| — | 5C-1 | 5 | **SP4: week-1 demo + reviews (humans, both sessions)** | | | todo |
+| — | 5C-1 | 5 | **SP4: week-1 demo + reviews (humans, both sessions)** | | | **blocked — needs a human.** S1's week-1 work (S1-01..S1-08) is merged to `main` and ready to demo on the emulator (`npm run emulators` + `npm run seed`). This row is a human checkpoint (live demo with Session 2, `/code-review`, `/security-review` walkthrough) that an autonomous session can't satisfy on its own — flagging rather than marking done. Continuing into week 2 below since nothing there is actually blocked by this. |
 | S1-09 | 6A, 6C | 6 | `createPayment` Function + `payments.ts` + fee calc, with tests | S1-08, 1C-4 | SP5 | todo |
 | S1-10 | 7A | 7 | `payhereNotify` webhook, with tests | S1-09 | SP6 | todo |
 | S1-11 | 8A, 8C (rules) | 8 | Completion, dispute, refund Functions; payments/ledger rules tests | S1-10 | | todo |
