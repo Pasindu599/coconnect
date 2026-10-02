@@ -9,6 +9,8 @@
 | **B: Frontend** | Router, category registry, home category picker, config-driven dashboards, construction UI, i18n |
 | **C: QA / DevOps / Security + domain** | CI, emulators, tests (rules, functions, e2e), security fixes, construction domain content, keeping `.claude/docs` current |
 
+> **Since day 1, the work runs as two parallel Claude sessions.** Status for every task below is tracked in [plans/SESSION_1_BACKEND.md](plans/SESSION_1_BACKEND.md) and [plans/SESSION_2_FRONTEND.md](plans/SESSION_2_FRONTEND.md); this file stays as the overview. 1C-4 is handled by a person outside both sessions.
+
 Status values: `todo` · `doing` · `done` · `blocked`. Update the row when you start or finish a task.
 
 ## Week 1: Foundations + categories
@@ -29,9 +31,9 @@ Tasks are arranged so A, B and C can all work in parallel. "Depends on" lists ta
 | ID | Owner | Task | Depends on | Status |
 |---|---|---|---|---|
 | 1C-1 | C | Clean deps (remove unused `@google/genai`, `express`, `dotenv`), keep one lockfile, rename package. **Merge by mid-morning.** | — | done |
-| 1C-2 | C | Rotate the Google Maps key, restrict by referrer, placeholder in `.env.example` | — | todo |
+| 1C-2 | C | Rotate the Google Maps key, restrict by referrer, placeholder in `.env.example` | — | done |
 | 1C-3 | C | Remove `switchRole` role escalation + fake admin login (`store.ts`, `AdminLogin.tsx`) | — | done |
-| 1C-4 | C | Contact PayHere: sandbox account + whether escrow/marketplace holding is allowed | — | todo |
+| 1C-4 | C | Contact PayHere: sandbox account + whether escrow/marketplace holding is allowed | — | doing |
 | 1A-1 | A | Specs in `.claude/docs/specs/`: data model, auth, payments | — | todo |
 | 1A-2 | A | Firebase project + Emulator Suite (`firebase.json`, `firebase-tools`) | 1C-1 (rebase only) | todo |
 | 1B-1 | B | Category UX spec + `src/config/categories.ts` registry + `CategoryContext` (use the drafts in `categories.md`) | — | todo |
