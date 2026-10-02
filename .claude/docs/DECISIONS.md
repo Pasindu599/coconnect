@@ -23,3 +23,8 @@ Add a new entry at the bottom when the team decides something that affects more 
 **Decision:** Root `CLAUDE.md` plus `.claude/docs/` hold the plan, architecture, issues and decisions, and are committed.
 **Why:** Claude Code loads `CLAUDE.md` automatically for every teammate, so all three sessions share the same context. Personal Claude memory is not shared.
 **Consequences:** Updating these docs is part of finishing a task. `.claude/settings.local.json` stays personal and is not committed.
+
+## ADR-005: Client-side keys are restricted, never hidden (2026-10-02)
+**Decision:** Any key shipped to the browser (`VITE_*`, the Firebase web config) is treated as public. It is secured by provider-side restrictions — HTTP referrer + API allowlist + quota caps — and by one key per environment, not by keeping it out of the bundle. Secrets that must stay secret (the PayHere merchant secret, service accounts) never get a `VITE_` prefix and live only in Cloud Functions config.
+**Why:** Vite inlines `VITE_*` at build time, so "hiding" such a key is not achievable and pretending otherwise leads to unrestricted keys. The leaked Maps key (KNOWN_ISSUES #2) was unrestricted, which made it a billing liability.
+**Consequences:** No fallback keys in source — a missing key degrades to a visible "not configured" state rather than falling back to a shared one. `.env.example` holds placeholders only. Rotation steps live in [`runbooks/google-maps-key.md`](runbooks/google-maps-key.md). CI gets a secret scan with 2C-1. The Firebase web API key in `firebase-applet-config.json` is public by design and is **not** rotated; Firestore/Storage rules are what protect that data.

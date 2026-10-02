@@ -7,7 +7,7 @@ Found during the code review on 2026-10-02. Update the **Status** column as issu
 | # | Issue | Where | Fix | Status |
 |---|---|---|---|---|
 | 1 | Firestore rules allow anyone to read and write everything, including NIC (national ID) records | `firestore.rules`, `firebase-blueprint.json` | Per-collection rules by owner/role; money collections written only by Functions | open |
-| 2 | A real Google Maps API key is committed | `.env.example` (line 12) | Rotate the key, restrict it by HTTP referrer, keep a placeholder | open |
+| 2 | A real Google Maps API key is committed | `.env.example`, hardcoded fallback in `EstateMapView.tsx` | Rotate the key, restrict it by HTTP referrer, keep a placeholder | **code done, key rotation pending** — both copies removed and `.env.example` is a placeholder; the key is still in git history, so it must be deleted in Google Cloud Console per [runbooks/google-maps-key.md](runbooks/google-maps-key.md) |
 | 3 | OTP hardcoded to `123456`/`654321`; new users get PIN `1234`; PINs stored and compared in plaintext | `src/lib/store.ts` (`requestOtp`, `verifyOtp`, `confirmCompletion`) | Firebase phone auth; hash PINs server-side | open |
 | 4 | Admin login lets anyone in without checking the email or PIN; default PIN prefilled; "quick admin" button | `src/components/admin/AdminLogin.tsx` (lines 37-63) | Admin via Firebase custom claim only | open |
 | 5 | `switchRole()` grants any requested role, including `admin`, to the current user | `src/lib/store.ts` (`switchRole`) | Only switch among roles the user actually has; roles assigned server-side | open |

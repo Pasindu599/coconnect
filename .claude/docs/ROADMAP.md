@@ -29,7 +29,7 @@ Tasks are arranged so A, B and C can all work in parallel. "Depends on" lists ta
 | ID | Owner | Task | Depends on | Status |
 |---|---|---|---|---|
 | 1C-1 | C | Clean deps (remove unused `@google/genai`, `express`, `dotenv`), keep one lockfile, rename package. **Merge by mid-morning.** | — | todo |
-| 1C-2 | C | Rotate the Google Maps key, restrict by referrer, placeholder in `.env.example` | — | todo |
+| 1C-2 | C | Rotate the Google Maps key, restrict by referrer, placeholder in `.env.example` | — | doing — code done (placeholder + hardcoded fallback removed + [runbook](runbooks/google-maps-key.md)); blocked on the console rotation, which needs a GCP project owner |
 | 1C-3 | C | Remove `switchRole` role escalation + fake admin login (`store.ts`, `AdminLogin.tsx`) | — | todo |
 | 1C-4 | C | Contact PayHere: sandbox account + whether escrow/marketplace holding is allowed | — | todo |
 | 1A-1 | A | Specs in `.claude/docs/specs/`: data model, auth, payments | — | todo |
