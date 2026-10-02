@@ -25,7 +25,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-09 | 6A, 6C | 6 | `createPayment` Function + `payments.ts` + fee calc, with tests | S1-08, 1C-4 | SP5 | done (sandbox hash unverified, see note) — **SP5 delivered** |
 | S1-10 | 7A | 7 | `payhereNotify` webhook, with tests | S1-09 | SP6 | done — **SP6 delivered** |
 | S1-11 | 8A, 8C (rules) | 8 | Completion, dispute, refund Functions; payments/ledger rules tests | S1-10 | | done |
-| S1-12 | 9A | 9 | Admin payout recording + ledger reconciliation | S1-11 | | todo |
+| S1-12 | 9A | 9 | Admin payout recording + ledger reconciliation | S1-11 | | done |
 | S1-13 | 9C | 9 | Staging deploy (Hosting + Functions) via CI; error monitoring | S1-01, S1-10 | SP7 | todo |
 | S1-14 | 10A | 10 | Bug fixes from staging | S1-13 | | todo |
 | — | 10C | 10 | **Final `/code-review` + `/security-review`, docs, retro (humans, both sessions)** | | | todo |
@@ -116,10 +116,12 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 - **Tests:** ✅ every legal transition (PIN confirm → `release_requested`; `held`/`release_requested` → `disputed`; `disputed` → `released`), every illegal one (wrong PIN, double-confirm, rate limit, disputing `pending`/`released` escrow, non-admin resolving, re-resolving a resolved dispute, the refund path's expected failure). `payments`/`ledger` client-write-denied rules tests already existed from S1-04/08 and still pass; no rules changes were needed for `disputes` (S1-08 already wrote its rules).
 - **Tests:** every state transition and every illegal one. Rules tests prove clients can't write `payments` or `ledger`.
 
-### S1-12: Admin payouts
-- **Files:** `functions/src/escrow/recordPayout.ts`, reconciliation query helper in `src/lib/data/`.
-- Admin records the bank-transfer reference. Escrow moves to `released`, and a ledger entry is written.
-- Reconciliation: for each award, money in = held + released + refunded.
+### S1-12: Admin payouts — done
+- **Files:** `functions/src/escrow/recordPayout.ts`, `src/lib/data/reconciliation.ts` (`reconcileAwards()`).
+- **Found and fixed a real bug while building this:** `award.escrow_amount` was set once at award time (`bid.price` only, no fee — the fee isn't known until `createPayment` runs later) and never updated, while the `hold` ledger entry `payhereNotify` writes uses the full charged total (`payment.amount` = bid price + platform fee). Those two numbers didn't match, so the reconciliation invariant below could never balance. Fixed: `payhereNotify`'s success transaction now overwrites `escrow_amount` to the real, authoritative `payment.amount` the moment a payment is confirmed — the award-time value was always just a provisional estimate anyway, since no payment exists yet at award time to know the fee from.
+- Admin records the bank-transfer reference (`recordPayout`, admin-claim only, requires `release_requested`). Escrow moves to `released`; a `ledger` `release` entry is written for the **full** `escrow_amount` (matching the `hold` entry exactly, so the reconciliation sum balances) — the platform's fee cut isn't a separate ledger line, it shows up as `award.payout_amount` (the net bank-transfer amount) being smaller than `escrow_amount`, which is new on `Award`.
+- Reconciliation: `reconcileAwards()` reads every `ledger` entry and every `award` and reports, per award, `sum(hold) == sum(release)+sum(refund) + (escrow_amount if still held/release_requested)`, flagging a mismatch rather than hiding it. This is a **blanket, unfiltered** read of both collections — safe specifically because the caller must be an admin (`isAdmin()` doesn't depend on which document is being read, so Firestore can prove the rule holds for every result without a `where` clause, unlike the per-user collections ADR-009 had to fix). Verified this reasoning empirically with a real admin-authenticated client in `tests/integration/reconciliation.test.ts`, including a deliberately-mismatched fixture to confirm it actually flags a problem instead of always reporting "balanced".
+- No admin UI built here (post-MVP per the spec) — this is the data layer a future dashboard calls.
 
 ### S1-13: Staging deploy
 - **Files:** `.github/workflows/deploy-staging.yml`.

@@ -163,6 +163,8 @@ export interface Award {
   escrow_amount: number;
   contacts_released_at?: string;
   fee_payment_ref?: string;
+  /** Set by recordPayout (S1-12): the net amount wired to the supervisor's bank (escrow_amount minus the platform fee). */
+  payout_amount?: number;
 }
 
 export interface AttendanceDay {

@@ -120,7 +120,12 @@ async function handleSuccess(
     const now = new Date().toISOString();
 
     tx.update(paymentRef, { status: 'paid', paid_at: now });
-    tx.update(awardRef, { escrow_status: 'held', contacts_released_at: now });
+    // escrow_amount is overwritten here to the real, authoritative charged
+    // total (bid price + platform fee) — at award time it was only ever a
+    // provisional bid-price estimate (no payment existed yet to know the
+    // fee from). This is what S1-12's reconciliation balances against, so
+    // it must equal exactly what the 'hold' ledger entry below records.
+    tx.update(awardRef, { escrow_status: 'held', contacts_released_at: now, escrow_amount: payment.amount });
     tx.update(jobRef, { status: 'ACTIVE' });
 
     const ledgerRef = db.collection('ledger').doc();
