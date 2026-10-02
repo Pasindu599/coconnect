@@ -13,30 +13,61 @@ Status values: `todo` · `doing` · `done` · `blocked`. Update the row when you
 
 ## Week 1: Foundations + categories
 
-| Day | Owner | Task | Status |
-|---|---|---|---|
-| 1 | A | Write specs in `.claude/docs/specs/` (categories, payments, auth) | todo |
-| 1 | A | Firebase project setup + Emulator Suite (`firebase.json`) | todo |
-| 1 | B | Spec the category UX; add a hash router (`#/`, `#/:category`, `#/:category/dashboard`, `#/admin`) | todo |
-| 1 | C | Rotate the Google Maps key, restrict by referrer, placeholder in `.env.example` | todo |
-| 1 | C | Clean deps (`@google/genai`, `express`, `dotenv` unused), pick one lockfile, rename package | todo |
-| 1 | C | GitHub Actions: typecheck + build; Vitest setup | todo |
-| 1 | C | Contact PayHere: sandbox account + whether escrow/marketplace holding is allowed | todo |
-| 2 | A | Firestore data model + security rules (per role; money fields read-only to clients) | todo |
-| 2 | B | `src/config/categories.ts` registry + `CategoryContext` | todo |
-| 2 | B | Home page category picker (Coconut / Construction cards, trilingual) | todo |
-| 2 | C | Rules unit tests (`@firebase/rules-unit-testing`) | todo |
-| 2 | C | Remove `switchRole` role escalation and the fake admin login | todo |
-| 3 | A | Firebase phone OTP auth + `onUserCreate` / `setRoles` Functions (custom claims) | todo |
-| 3 | B | Replace hardcoded coconut task types/skills/tags with registry lookups | todo |
-| 3 | B | Split `OwnerDashboard.tsx` into smaller components | todo |
-| 3 | C | Construction domain content in `categories.md` (roles, trades, tasks, tags, site fields) | todo |
-| 4 | A | `src/lib/data/*` repositories: users, sites, jobs, bids (replace localStorage) | todo |
-| 4 | B | Login/registration with category + role selection (incl. construction roles) | todo |
-| 4 | C | Emulator seed script (move mock data out of `store.ts`) | todo |
-| 5 | A | Repositories: workers, awards, attendance, completions; NIC images → Storage | todo |
-| 5 | B | Construction landing/dashboard variants (Site instead of Estate, dynamic site fields) | todo |
-| 5 | C | Week-1 demo, `/code-review`, `/security-review`, update KNOWN_ISSUES | todo |
+Tasks are arranged so A, B and C can all work in parallel. "Depends on" lists task IDs that must be **merged** first; `—` means it can start right away. When a dependency is someone else's task, it's always from an earlier day.
+
+### File ownership (avoids merge conflicts in week 1)
+| File(s) | Owner | Others |
+|---|---|---|
+| `package.json`, lockfile | C merges the cleanup (1C-1) first thing on day 1 | A and B rebase on it before adding deps |
+| `src/App.tsx`, routing | B | A and C don't edit it in week 1; ask B for routing changes |
+| `src/lib/store.ts` | C (days 1–3) | A takes over from day 4 (repositories) |
+| `src/components/admin/AdminLogin.tsx` | C | |
+| `src/config/categories.ts` | B owns the structure | C edits only the construction data (2C-2) |
+| `firebase.json`, `firestore.rules`, `storage.rules`, `functions/` | A | C adds tests under `tests/rules/` |
+
+### Day 1: everyone starts at once, no cross-dependencies
+| ID | Owner | Task | Depends on | Status |
+|---|---|---|---|---|
+| 1C-1 | C | Clean deps (remove unused `@google/genai`, `express`, `dotenv`), keep one lockfile, rename package. **Merge by mid-morning.** | — | todo |
+| 1C-2 | C | Rotate the Google Maps key, restrict by referrer, placeholder in `.env.example` | — | todo |
+| 1C-3 | C | Remove `switchRole` role escalation + fake admin login (`store.ts`, `AdminLogin.tsx`) | — | todo |
+| 1C-4 | C | Contact PayHere: sandbox account + whether escrow/marketplace holding is allowed | — | todo |
+| 1A-1 | A | Specs in `.claude/docs/specs/`: data model, auth, payments | — | todo |
+| 1A-2 | A | Firebase project + Emulator Suite (`firebase.json`, `firebase-tools`) | 1C-1 (rebase only) | todo |
+| 1B-1 | B | Category UX spec + `src/config/categories.ts` registry + `CategoryContext` (use the drafts in `categories.md`) | — | todo |
+| 1B-2 | B | Hash router: `#/`, `#/:category`, `#/:category/dashboard`, `#/admin` | — | todo |
+
+### Day 2
+| ID | Owner | Task | Depends on | Status |
+|---|---|---|---|---|
+| 2A-1 | A | Firestore data model + security rules (per role; money fields read-only to clients) + `storage.rules` | 1A-1, 1A-2 | todo |
+| 2B-1 | B | Home page category picker (Coconut / Construction cards, trilingual) wired to `#/:category` | 1B-1, 1B-2 | todo |
+| 2B-2 | B | Replace hardcoded coconut task types/skills/tags with registry lookups | 1B-1 | todo |
+| 2C-1 | C | GitHub Actions (typecheck + build) + Vitest setup | 1C-1 | todo |
+| 2C-2 | C | Finalize construction content (roles, trades, tasks, tags, site fields) in `categories.md` and in the registry data | 1B-1 | todo |
+| 2C-3 | C | Rules tests, written test-first from the spec, running on the emulator | 1A-1, 1A-2, 2C-1 | todo |
+
+### Day 3
+| ID | Owner | Task | Depends on | Status |
+|---|---|---|---|---|
+| 3A-1 | A | Firebase phone OTP auth + `onUserCreate` / `setRoles` Functions (custom claims) | 2A-1 | todo |
+| 3B-1 | B | Split `OwnerDashboard.tsx` + `SupervisorDashboard.tsx` into smaller components | 2B-2 | todo |
+| 3C-1 | C | Finish rules tests against A's merged rules; add to CI | 2A-1, 2C-3 | todo |
+| 3C-2 | C | Emulator seed script (move mock data out of `store.ts`) | 1A-2 | todo |
+
+### Day 4
+| ID | Owner | Task | Depends on | Status |
+|---|---|---|---|---|
+| 4A-1 | A | `src/lib/data/*` repositories: users, sites, jobs, bids (replace localStorage) | 2A-1, 3C-2 | todo |
+| 4B-1 | B | Login/registration with category + role selection (incl. construction roles) | 2C-2; uses 3A-1 auth | todo |
+| 4C-1 | C | Vitest + React Testing Library tests for registry, router and category picker | 2B-1, 2C-1 | todo |
+
+### Day 5
+| ID | Owner | Task | Depends on | Status |
+|---|---|---|---|---|
+| 5A-1 | A | Repositories: workers, awards, attendance, completions; NIC images → Storage | 4A-1 | todo |
+| 5B-1 | B | Construction landing/dashboard variants (Site instead of Estate, dynamic site fields) | 3B-1, 2C-2 | todo |
+| 5C-1 | C | Week-1 demo, `/code-review`, `/security-review`, update KNOWN_ISSUES and this roadmap | all week-1 tasks | todo |
 
 ## Week 2: Payments + hardening
 
