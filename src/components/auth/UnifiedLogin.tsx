@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { store } from '../../lib/store';
 import { Language, fmt } from '../../lib/i18n';
+import { authApi, RECAPTCHA_CONTAINER_ID } from '../../lib/authApi';
+import { authErrorMessage } from '../../lib/authErrors';
 import { useCategory, useT } from '../../config/CategoryContext';
 import { CategoryIcon } from '../../config/CategoryIcon';
 import { CategoryRole, l10n } from '../../config/categories';
@@ -67,41 +68,52 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
   const startRole = category.roles.some(r => r.id === initialRoleId) ? (initialRoleId as CategoryRoleId) : firstRole;
 
   const [selectedRoleId, setSelectedRoleId] = useState<CategoryRoleId>(startRole);
-  const [phone, setPhone] = useState(DEMO_PHONES[category.id][startRole] ?? '+94 7');
+  // Demo numbers and the demo code only exist in demo mode; real sign-in starts blank
+  const [phone, setPhone] = useState(authApi.isMock ? DEMO_PHONES[category.id][startRole] ?? '+94 7' : '+94 ');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [otpCode, setOtpCode] = useState('123456');
+  const [otpCode, setOtpCode] = useState(authApi.isMock ? '123456' : '');
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const handleRoleSelect = (roleId: CategoryRoleId) => {
     setSelectedRoleId(roleId);
-    setPhone(DEMO_PHONES[category.id][roleId] ?? phone);
+    if (authApi.isMock) setPhone(DEMO_PHONES[category.id][roleId] ?? phone);
   };
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!phone || phone.length < 9) {
       setError(t.login_err_phone);
       return;
     }
-    const res = store.requestOtp(phone);
-    if (res.success) {
+    setBusy(true);
+    try {
+      const { demoCode } = await authApi.sendOtp(phone);
       setStep('otp');
-      setOtpCode(res.code);
-      setInfoMessage(fmt(t.login_otp_mock, { code: res.code }));
+      if (demoCode) {
+        setOtpCode(demoCode);
+        setInfoMessage(fmt(t.login_otp_mock, { code: demoCode }));
+      }
+    } catch (err) {
+      setError(authErrorMessage(err, t));
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const role = category.roles.find(r => r.id === selectedRoleId);
-    const res = store.verifyOtp(phone, otpCode, role?.legacyRole, { category: category.id, role: selectedRoleId });
-    if (res.success && res.user) {
+    setBusy(true);
+    try {
+      await authApi.confirmOtp(phone, otpCode, { category: category.id, role: selectedRoleId });
       onLoginSuccess();
-    } else {
-      setError(res.error || t.login_err_verify);
+    } catch (err) {
+      setError(authErrorMessage(err, t));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -213,7 +225,8 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md transition flex items-center justify-center space-x-2"
+                disabled={busy}
+                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-bold text-sm shadow-md transition flex items-center justify-center space-x-2"
               >
                 <span>{t.send_otp}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -256,7 +269,8 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="w-2/3 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md flex items-center justify-center space-x-1.5"
+                  disabled={busy}
+                  className="w-2/3 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold shadow-md flex items-center justify-center space-x-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{t.verify_continue}</span>
@@ -266,6 +280,9 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
           )}
 
         </div>
+
+        {/* Invisible reCAPTCHA anchor for real phone sign-in */}
+        {!authApi.isMock && <div id={RECAPTCHA_CONTAINER_ID} />}
       </div>
     </div>
   );

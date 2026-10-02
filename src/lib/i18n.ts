@@ -11,6 +11,14 @@ export type Language = 'en' | 'si' | 'ta';
 const en = {
   app_title: 'Coconnect',
   tagline: 'Coconut Sector Labour Hiring & Escrow Platform',
+  // ------------------------------------------------ Sign-in errors (AuthError codes)
+  auth_err_invalid_phone: 'That phone number does not look right. Use the format +94 7X XXX XXXX.',
+  auth_err_invalid_code: 'That code is not correct. Check the SMS and try again.',
+  auth_err_code_expired: 'That code has expired. Go back and request a new one.',
+  auth_err_too_many: 'Too many attempts. Please wait a few minutes and try again.',
+  auth_err_staff_account: 'Staff accounts cannot sign in here. Use the staff portal.',
+  auth_err_network: 'Could not reach the server. Check your connection and try again.',
+  auth_err_unknown: 'Something went wrong. Please try again.',
   // ------------------------------------------------ Escrow timeline
   tl_heading: 'Escrow progress',
   tl_awarded: 'Awarded',
@@ -701,6 +709,14 @@ export type TranslationDict = typeof en;
 const si: TranslationDict = {
   app_title: 'කොකොනෙක්ට් (Coconnect)',
   tagline: 'පොල් වගා ශ්‍රම බඳවාගැනීම් සහ එස්ක්‍රෝ ගෙවීම් පද්ධතිය',
+  // ------------------------------------------------ Sign-in errors (AuthError codes)
+  auth_err_invalid_phone: 'එම දුරකථන අංකය නිවැරදි නොවේ. +94 7X XXX XXXX ආකෘතිය භාවිතා කරන්න.',
+  auth_err_invalid_code: 'එම කේතය නිවැරදි නොවේ. SMS පරීක්ෂා කර නැවත උත්සාහ කරන්න.',
+  auth_err_code_expired: 'එම කේතය කල් ඉකුත් වී ඇත. ආපසු ගොස් නව කේතයක් ඉල්ලන්න.',
+  auth_err_too_many: 'උත්සාහයන් වැඩිය. කරුණාකර මිනිත්තු කිහිපයක් රැඳී සිට නැවත උත්සාහ කරන්න.',
+  auth_err_staff_account: 'කාර්යමණ්ඩල ගිණුම්වලට මෙතැනින් පිවිසිය නොහැක. කාර්යමණ්ඩල පිවිසුම භාවිතා කරන්න.',
+  auth_err_network: 'සේවාදායකයට ළඟා විය නොහැකි විය. ඔබේ සම්බන්ධතාව පරීක්ෂා කර නැවත උත්සාහ කරන්න.',
+  auth_err_unknown: 'යම් දෝෂයක් සිදු විය. කරුණාකර නැවත උත්සාහ කරන්න.',
   // ------------------------------------------------ Escrow timeline
   tl_heading: 'එස්ක්‍රෝ ප්‍රගතිය',
   tl_awarded: 'පවරා ඇත',
@@ -1378,6 +1394,14 @@ const si: TranslationDict = {
 const ta: TranslationDict = {
   app_title: 'கொகனெக்ட் (Coconnect)',
   tagline: 'தென்னை துறை தொழிலாளர் நியமனம் மற்றும் எஸ்க்ரோ தளம்',
+  // ------------------------------------------------ Sign-in errors (AuthError codes)
+  auth_err_invalid_phone: 'அந்த தொலைபேசி எண் சரியாக இல்லை. +94 7X XXX XXXX வடிவத்தைப் பயன்படுத்தவும்.',
+  auth_err_invalid_code: 'அந்த குறியீடு சரியில்லை. SMS ஐச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.',
+  auth_err_code_expired: 'அந்த குறியீடு காலாவதியாகிவிட்டது. திரும்பிச் சென்று புதியதைக் கோரவும்.',
+  auth_err_too_many: 'பல முயற்சிகள். சில நிமிடங்கள் காத்திருந்து மீண்டும் முயற்சிக்கவும்.',
+  auth_err_staff_account: 'ஊழியர் கணக்குகள் இங்கு உள்நுழைய முடியாது. ஊழியர் தளத்தைப் பயன்படுத்தவும்.',
+  auth_err_network: 'சேவையகத்தை அடைய முடியவில்லை. உங்கள் இணைப்பைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.',
+  auth_err_unknown: 'ஏதோ தவறு நடந்தது. மீண்டும் முயற்சிக்கவும்.',
   // ------------------------------------------------ Escrow timeline
   tl_heading: 'எஸ்க்ரோ முன்னேற்றம்',
   tl_awarded: 'ஒதுக்கப்பட்டது',

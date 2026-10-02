@@ -33,4 +33,11 @@ interface ImportMetaEnv {
    * instead of the real project. Unset (falsy) talks to the real project.
    */
   readonly VITE_USE_EMULATORS?: string;
+
+  /**
+   * "firebase" signs people in with real Firebase phone / staff auth (src/lib/auth.ts). Anything
+   * else uses the in-browser demo sign-in (code 123456). Keep it unset until the data layer
+   * moves to Firestore (S1-07): the signed-in user is still read from the local store.
+   */
+  readonly VITE_AUTH_MODE?: string;
 }
