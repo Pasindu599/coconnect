@@ -369,15 +369,17 @@ export const EstateMapView: React.FC<EstateMapViewProps> = ({
               <span className="text-[11px] text-slate-400">
                 {t.map_gps}: {selectedEstate.lat || 7.4344}, {selectedEstate.lng || 80.2181}
               </span>
-              <button
-                onClick={() => {
-                  store.switchRole('owner');
-                  if (onSelectEstate) onSelectEstate(selectedEstate);
-                }}
-                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition"
-              >
-                {t.map_manage_land}
-              </button>
+              {state.currentUser?.roles.includes('owner') && (
+                <button
+                  onClick={() => {
+                    store.switchRole('owner');
+                    if (onSelectEstate) onSelectEstate(selectedEstate);
+                  }}
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold shadow-sm transition"
+                >
+                  {t.map_manage_land}
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -81,7 +81,6 @@ const en = {
   admin_email_label: 'Staff ID / Official Email',
   admin_pin_label: '6-Digit Security Passcode',
   admin_login_btn: 'Authenticate & Open Admin Portal',
-  admin_quick_auth: 'Quick Auth (Niluka Fernando • Staff Officer)',
   back_to_home: '← Return to Public Home Website',
   admin_title: 'Coconnect Staff Admin Control',
   verification_queue: 'Identity Verification Queue',
@@ -192,9 +191,6 @@ const en = {
   admin_route_badge: 'ROUTE /admin • RESTRICTED ACCESS',
   admin_pin_hint: 'Authorized staff hardware token or registered biometric authentication.',
   admin_authenticating: 'Authenticating...',
-  admin_divider_label: 'Authorized Staff Credentials',
-  admin_officer_title: 'Senior KYC & Dispute Officer (Admin)',
-  admin_sign_in: 'Sign In →',
   admin_audit_footer: 'Official audit logs are cryptographically hashed and immutable.',
   admin_err_credentials: 'Administrative credentials rejected. Access is strictly audited.',
 
@@ -422,7 +418,6 @@ const en = {
   // --------------------------------------------------------------- Admin portal
   admin_403_title: '403 Forbidden: Isolated Admin System',
   admin_403_desc: 'Strict separation enforced. Standard users (Owners, Brokers, Workers) have no visibility or routing into the Coconnect administrative backend.',
-  admin_403_btn: 'Sign In as Coconnect Staff Admin (Niluka Fernando) →',
   admin_panel_title: 'Coconnect Internal Control Panel',
   admin_role_badge: 'ADMIN ROLE',
   staff_officer: 'Staff Officer',
@@ -752,7 +747,6 @@ const si: TranslationDict = {
   admin_email_label: 'කාර්යමණ්ඩල හැඳුනුම් අංකය / විද්‍යුත් තැපෑල',
   admin_pin_label: 'ඉලක්කම් 6ක ආරක්ෂක මුරපදය',
   admin_login_btn: 'තහවුරු කර පරිපාලක පුවරුව විවෘත කරන්න',
-  admin_quick_auth: 'ක්ෂණික පිවිසුම (නිලූකා ප්‍රනාන්දු • ජ්‍යෙෂ්ඨ නිලධාරී)',
   back_to_home: '← ප්‍රධාන වෙබ් අඩවියට ආපසු යන්න',
   admin_title: 'කොකොනෙක්ට් කාර්යමණ්ඩල පරිපාලන පාලනය',
   verification_queue: 'හැඳුනුම්පත් සත්‍යාපන පෝලිම',
@@ -858,9 +852,6 @@ const si: TranslationDict = {
   admin_route_badge: 'මාර්ගය /admin • සීමිත පිවිසුම',
   admin_pin_hint: 'බලයලත් කාර්යමණ්ඩල දෘඪාංග ටෝකනය හෝ ලියාපදිංචි ජීවමිතික සත්‍යාපනය.',
   admin_authenticating: 'තහවුරු කරමින්...',
-  admin_divider_label: 'බලයලත් කාර්යමණ්ඩල අක්තපත්‍ර',
-  admin_officer_title: 'ජ්‍යෙෂ්ඨ KYC සහ ආරවුල් නිලධාරී (පරිපාලක)',
-  admin_sign_in: 'ඇතුල් වන්න →',
   admin_audit_footer: 'නිල විගණන වාර්තා ගුප්තකේතනය කර ඇති අතර වෙනස් කළ නොහැක.',
   admin_err_credentials: 'පරිපාලන අක්තපත්‍ර ප්‍රතික්ෂේප විය. පිවිසුම් සියල්ල විගණනය කෙරේ.',
 
@@ -1088,7 +1079,6 @@ const si: TranslationDict = {
   // Admin portal
   admin_403_title: '403 තහනම්: වෙන් කළ පරිපාලක පද්ධතිය',
   admin_403_desc: 'දැඩි වෙන්කිරීමක් ක්‍රියාත්මකයි. සාමාන්‍ය පරිශීලකයන්ට (හිමිකරුවන්, තැරැව්කරුවන්, ශ්‍රමිකයන්) කොකොනෙක්ට් පරිපාලන පද්ධතියට පිවිසීමට හෝ එය දැකීමට නොහැක.',
-  admin_403_btn: 'කොකොනෙක්ට් කාර්යමණ්ඩල පරිපාලක ලෙස ඇතුල් වන්න (නිලූකා ප්‍රනාන්දු) →',
   admin_panel_title: 'කොකොනෙක්ට් අභ්‍යන්තර පාලන පුවරුව',
   admin_role_badge: 'පරිපාලක භූමිකාව',
   staff_officer: 'කාර්යමණ්ඩල නිලධාරී',
@@ -1416,7 +1406,6 @@ const ta: TranslationDict = {
   admin_email_label: 'ஊழியர் அடையாள எண் / உத்தியோகபூர்வ மின்னஞ்சல்',
   admin_pin_label: '6 இலக்க பாதுகாப்பு கடவுச்சொல்',
   admin_login_btn: 'உறுதிசெய்து நிர்வாக போர்ட்டலை திறக்கவும்',
-  admin_quick_auth: 'உடனடி உள்நுழைவு (நிலுகா பெர்னாண்டோ • சிரேஷ்ட அதிகாரி)',
   back_to_home: '← பொது வலைத்தளத்திற்கு திரும்புக',
   admin_title: 'கொகனெக்ட் ஊழியர் நிர்வாக கட்டுப்பாடு',
   verification_queue: 'அடையாள அட்டை சரிபார்ப்பு வரிசை',
@@ -1522,9 +1511,6 @@ const ta: TranslationDict = {
   admin_route_badge: 'பாதை /admin • கட்டுப்படுத்தப்பட்ட அணுகல்',
   admin_pin_hint: 'அங்கீகரிக்கப்பட்ட ஊழியர் வன்பொருள் டோக்கன் அல்லது பதிவு செய்யப்பட்ட உயிரியல் அடையாளம்.',
   admin_authenticating: 'சரிபார்க்கிறது...',
-  admin_divider_label: 'அங்கீகரிக்கப்பட்ட ஊழியர் சான்றுகள்',
-  admin_officer_title: 'சிரேஷ்ட KYC மற்றும் சர்ச்சை அதிகாரி (நிர்வாகி)',
-  admin_sign_in: 'உள்நுழைக →',
   admin_audit_footer: 'உத்தியோகபூர்வ தணிக்கை பதிவுகள் மறையாக்கம் செய்யப்பட்டு மாற்ற முடியாதவை.',
   admin_err_credentials: 'நிர்வாக சான்றுகள் நிராகரிக்கப்பட்டன. அணுகல்கள் கண்டிப்பாக தணிக்கை செய்யப்படுகின்றன.',
 
@@ -1752,7 +1738,6 @@ const ta: TranslationDict = {
   // Admin portal
   admin_403_title: '403 தடை: தனிமைப்படுத்தப்பட்ட நிர்வாக அமைப்பு',
   admin_403_desc: 'கண்டிப்பான பிரிப்பு அமல்படுத்தப்பட்டுள்ளது. சாதாரண பயனர்களுக்கு (உரிமையாளர்கள், தரகர்கள், தொழிலாளர்கள்) கொகனெக்ட் நிர்வாக அமைப்பை அணுகவோ பார்க்கவோ முடியாது.',
-  admin_403_btn: 'கொகனெக்ட் ஊழியர் நிர்வாகியாக உள்நுழைக (நிலுகா பெர்னாண்டோ) →',
   admin_panel_title: 'கொகனெக்ட் உள்ளக கட்டுப்பாட்டு பலகை',
   admin_role_badge: 'நிர்வாக பதவி',
   staff_officer: 'ஊழியர் அதிகாரி',

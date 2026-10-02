@@ -10,7 +10,6 @@ import {
   AlertCircle, 
   CheckCircle2, 
   ArrowLeft,
-  UserCheck,
   Building2
 } from 'lucide-react';
 
@@ -22,15 +21,14 @@ interface AdminLoginProps {
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({
-  state,
   currentLang,
   onLoginSuccess,
   onBackToHome,
 }) => {
   const t = getT(currentLang);
   
-  const [email, setEmail] = useState('niluka.fernando@coconnect.gov.lk');
-  const [pin, setPin] = useState('998877');
+  const [email, setEmail] = useState('');
+  const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -40,26 +38,15 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
     setLoading(true);
 
     setTimeout(() => {
-      // Find admin user or authenticate
-      const adminUser = state.users.find(u => u.roles.includes('admin'));
-      if (adminUser) {
-        store.switchActiveUser(adminUser.id);
-        store.switchRole('admin');
+      const result = store.adminLogin(email, pin);
+      if (result.success) {
         onLoginSuccess();
       } else {
+        setPin('');
         setError(t.admin_err_credentials);
       }
       setLoading(false);
     }, 400);
-  };
-
-  const handleQuickAdminAuth = () => {
-    const adminUser = state.users.find(u => u.roles.includes('admin')) || state.users[3];
-    if (adminUser) {
-      store.switchActiveUser(adminUser.id);
-      store.switchRole('admin');
-      onLoginSuccess();
-    }
   };
 
   return (
@@ -155,40 +142,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({
               <span>{loading ? t.admin_authenticating : t.admin_login_btn}</span>
             </button>
           </form>
-
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-800" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-slate-900 px-2 text-slate-500 font-mono text-[10px]">
-                {t.admin_divider_label}
-              </span>
-            </div>
-          </div>
-
-          {/* Quick Demo Staff Login */}
-          <button
-            onClick={handleQuickAdminAuth}
-            className="w-full p-3 rounded-xl bg-purple-950/40 hover:bg-purple-950/70 border border-purple-800/80 text-xs flex items-center justify-between transition group"
-          >
-            <div className="flex items-center space-x-2.5 text-left">
-              <div className="w-8 h-8 rounded-lg bg-purple-900/60 border border-purple-700 text-purple-200 flex items-center justify-center">
-                <UserCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-bold text-white group-hover:text-purple-300 transition">
-                  Niluka Fernando
-                </div>
-                <div className="text-[11px] text-slate-400">
-                  {t.admin_officer_title}
-                </div>
-              </div>
-            </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-900 text-purple-200 border border-purple-700">
-              {t.admin_sign_in}
-            </span>
-          </button>
         </div>
 
         {/* Compliance Footer */}

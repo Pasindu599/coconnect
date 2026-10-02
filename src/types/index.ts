@@ -23,6 +23,7 @@ export type ReconciliationStatus = 'MATCH' | 'MISMATCH' | 'AWAITING_COUNTERPARTY
 export interface User {
   id: string;
   phone: string;
+  email?: string;
   name: string;
   roles: Role[];
   active_role: Role;
