@@ -18,7 +18,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-03 | 1A-2 | 1 | Firebase project + Emulator Suite | S1-01 | | done |
 | S1-04 | 2A-1, 2C-3, 3C-1 | 2–3 | Firestore + Storage rules, with rules tests | S1-02, S1-03 | | done |
 | S1-05 | 3A-1 | 3 | Phone OTP auth, `auth.ts`, custom-claims Functions | S1-04 | SP2 | done — **SP2 delivered** |
-| S1-06 | 3C-2 | 3 | Emulator seed script | S1-03 | | todo |
+| S1-06 | 3C-2 | 3 | Emulator seed script | S1-03 | | done |
 | S1-07 | 4A-1 | 4 | Repositories: users, sites, jobs, bids + `store.startSync()` | S1-04, S1-06 | SP3 | todo |
 | S1-08 | 5A-1 | 5 | Repositories: workers, awards, attendance, completions; NIC images → Storage | S1-07 | | todo |
 | — | 5C-1 | 5 | **SP4: week-1 demo + reviews (humans, both sessions)** | | | todo |
@@ -68,10 +68,11 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 - **Local env note:** `firebase-admin`'s `getFirestore()`/`getStorage()` need `@google-cloud/firestore`/`@google-cloud/storage`, which `firebase-admin` lists as *optional* dependencies — on this machine's Node 20 they silently failed their own engine check and got skipped, breaking the build with a confusing `MODULE_NOT_FOUND`. Added both as explicit direct dependencies instead of chasing the engine mismatch. Separately, installing `vitest` inside `functions/` hit a reproducible `npm` bug (`TypeError: Cannot read properties of null (reading 'edgesOut')` in `@npmcli/arborist`) during dependency resolution — worked around with `legacy-peer-deps=true` in `functions/.npmrc` (the repo root already had this same setting for the same reason).
 - Told Session 2: **SP2 is delivered.** S2-07 can switch login from the mock to `sendOtp`/`confirmOtp`/`addMembership`/`signInStaff` in `src/lib/auth.ts`.
 
-### S1-06: Seed script
-- **Files:** `scripts/seed.ts`, `package.json` script `seed`.
-- Move the demo data currently hardcoded in `store.ts` (users, estates, jobs, bids, workers, ...) into the seed script, for **both** categories. Use the construction content from `categories.md`.
-- **Done when:** `npm run seed` fills an empty emulator with a usable demo for coconut and construction.
+### S1-06: Seed script — done
+- **Files:** `scripts/seed.ts`, `package.json` script `seed` (+ `firebase-admin`, `@google-cloud/firestore` dev deps at root, needed for the same optional-dependency reason noted under S1-05).
+- Moved `store.ts`'s `initialUsers`/`initialEstates`/`initialWorkers`/`initialJobs`/`initialBids`/`initialAwards` into the script, renamed to the new schema (`site_id` not `estate_id`, `bidder_id`/`manager_id` not `supervisor_id`, per the data-model spec), plus a parallel construction set from `categories.md`'s draft content (client/contractor/subcontractor/worker roles, site-cum-renovation sites, foundation/electrical/carpentry jobs). Creates real Firebase Auth users too (phone for regular roles, email+password for the admin), with `memberships`/`admin` custom claims set directly via the Admin SDK — an emulator-only shortcut, documented in the script's header as never a pattern to reuse against a real project (see specs/auth.md's bootstrap note).
+- **Done when:** ✅ `npm run seed` (wrapped in `firebase emulators:exec --only auth,firestore --project demo-coconnect "npm run seed"` for a clean one-shot run, or just `npm run seed` against an already-running `npm run emulators`) fills an empty emulator with both categories. Verified: the `jobs` collection has the right shape, and the admin account signs in with the real custom claim set (checked via the Auth/Firestore REST APIs directly, not just script exit code).
+- Did **not** seed `attendance_days`/`attendance_entries`/`completions`/`ratings`/`nic_submissions`/`audit_logs` — those are either Functions-written in normal operation or not yet needed for a browsing/bidding demo. Add them here later if a specific demo flow needs pre-seeded state for them.
 
 ### S1-07: Repositories, part 1 (delivers SP3)
 - **Files:** `src/lib/data/{users,sites,jobs,bids}.ts`, `src/lib/store.ts`.
