@@ -18,7 +18,9 @@ import {
   ScoringRuleVersion,
   NicSubmission
 } from '../types';
-import type { CategoryId } from '../types/category';
+import type { CategoryId, Membership } from '../types/category';
+import { constructionSeed } from './seed/construction';
+import { getRole, membershipsOf } from '../config/categories';
 import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
 import { saveNicSubmissionToFirestore, updateNicSubmissionInFirestore } from './firebase';
 import { createEstate as createEstateRemote, subscribeToEstates } from './data/estates';
@@ -678,6 +680,12 @@ export interface AppState {
   syncError: { action: string; message: string; at: string } | null;
 }
 
+function mergeMissing<T extends { id: string }>(existing: T[] | undefined, seed: T[]): T[] {
+  const list = existing ?? [];
+  const ids = new Set(list.map(item => item.id));
+  return [...list, ...seed.filter(item => !ids.has(item.id))];
+}
+
 function loadInitialState(): AppState {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
@@ -693,6 +701,13 @@ function loadInitialState(): AppState {
         parsed.nicSubmissions = initialNicSubmissions;
       }
       parsed.syncError = null;
+      // Browsers with state saved before the Construction category existed get its demo data.
+      parsed.users = mergeMissing(parsed.users, constructionSeed.users);
+      parsed.estates = mergeMissing(parsed.estates, constructionSeed.estates);
+      parsed.workers = mergeMissing(parsed.workers, constructionSeed.workers);
+      parsed.jobs = mergeMissing(parsed.jobs, constructionSeed.jobs);
+      parsed.bids = mergeMissing(parsed.bids, constructionSeed.bids);
+      parsed.awards = mergeMissing(parsed.awards, constructionSeed.awards);
       return parsed;
     } catch {
       // ignore
@@ -701,12 +716,12 @@ function loadInitialState(): AppState {
 
   return {
     currentUser: null,
-    users: initialUsers,
-    estates: initialEstates,
-    workers: initialWorkers,
-    jobs: initialJobs,
-    bids: initialBids,
-    awards: initialAwards,
+    users: [...initialUsers, ...constructionSeed.users],
+    estates: [...initialEstates, ...constructionSeed.estates],
+    workers: [...initialWorkers, ...constructionSeed.workers],
+    jobs: [...initialJobs, ...constructionSeed.jobs],
+    bids: [...initialBids, ...constructionSeed.bids],
+    awards: [...initialAwards, ...constructionSeed.awards],
     attendanceDays: initialAttendanceDays,
     attendanceEntries: initialAttendanceEntries,
     completions: initialCompletions,
@@ -808,7 +823,17 @@ class StoreService {
     };
   }
 
-  public verifyOtp(phone: string, code: string, requestedRole?: Role): { success: boolean; user?: User; error?: string } {
+  /**
+   * Phone OTP sign-in (mock). `membership` is the category + role the person chose; a new
+   * user is registered with it, and an existing user who lacks it joins it. This stands in
+   * for Firebase phone auth + the `addMembership` Function (CONTRACTS C3).
+   */
+  public verifyOtp(
+    phone: string,
+    code: string,
+    requestedRole?: Role,
+    membership?: Membership
+  ): { success: boolean; user?: User; error?: string } {
     if (code !== '123456' && code !== '654321') {
       return { success: false, error: 'Invalid 6-digit OTP verification code' };
     }
@@ -817,6 +842,12 @@ class StoreService {
       return { success: false, error: 'Staff accounts cannot sign in here. Use the staff portal.' };
     }
 
+    const categoryRole = membership ? getRole(membership.category, membership.role) : undefined;
+    if (membership && !categoryRole) {
+      return { success: false, error: 'Unknown role for this category' };
+    }
+    const wantedRole: Role | undefined = categoryRole?.legacyRole ?? requestedRole;
+
     let user = this.state.users.find(u => u.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, ''));
 
     // Admins authenticate only through adminLogin(); the public demo OTP must never open a staff account.
@@ -824,9 +855,10 @@ class StoreService {
       return { success: false, error: 'Staff accounts cannot sign in here. Use the staff portal.' };
     }
 
+    let joined = false;
     if (!user) {
       // Auto register demo new user
-      const newRole = requestedRole || 'owner';
+      const newRole = wantedRole || 'owner';
       user = {
         id: `user-${Date.now()}`,
         name: `User (${phone.slice(-4)})`,
@@ -840,18 +872,52 @@ class StoreService {
         pin_hash: '1234',
         created_at: new Date().toISOString()
       };
+      if (membership) user.memberships = [membership];
       this.state.users.push(user);
+    } else if (membership) {
+      joined = this.grantMembership(user, membership);
     }
 
-    if (requestedRole && user.roles.includes(requestedRole)) {
-      user.active_role = requestedRole;
+    if (wantedRole && user.roles.includes(wantedRole)) {
+      user.active_role = wantedRole;
     }
+    if (membership) user.active_category = membership.category;
 
     this.state.currentUser = user;
     this.logAudit(user.id, user.name, 'auth.login_otp', 'user', user.id, `User logged in with verified OTP`);
+    if (joined && membership) {
+      this.logAudit(user.id, user.name, 'auth.membership_added', 'user', user.id, `Joined ${membership.category} as ${membership.role}`);
+    }
     this.notify();
 
     return { success: true, user };
+  }
+
+  /** Add a category role to the signed-in user (mock of the `addMembership` Function). Never grants admin. */
+  public addMembership(membership: Membership): { success: boolean; error?: string } {
+    const user = this.state.currentUser;
+    if (!user) return { success: false, error: 'Unauthorized' };
+    const role = getRole(membership.category, membership.role);
+    if (!role) return { success: false, error: 'Unknown role for this category' };
+
+    const added = this.grantMembership(user, membership);
+    user.active_role = role.legacyRole;
+    user.active_category = membership.category;
+    if (added) {
+      this.logAudit(user.id, user.name, 'auth.membership_added', 'user', user.id, `Joined ${membership.category} as ${membership.role}`);
+    }
+    this.notify();
+    return { success: true };
+  }
+
+  /** Returns true if the membership was new. Keeps the legacy `roles` list in step until S1-07 migrates it. */
+  private grantMembership(user: User, membership: Membership): boolean {
+    const existing = membershipsOf(user);
+    if (existing.some(m => m.category === membership.category && m.role === membership.role)) return false;
+    user.memberships = [...existing, membership];
+    const legacy = getRole(membership.category, membership.role)?.legacyRole;
+    if (legacy && !user.roles.includes(legacy)) user.roles.push(legacy);
+    return true;
   }
 
   // Staff sign-in. Interim client-side check against the seeded admin record until real

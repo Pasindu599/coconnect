@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { store, AppState } from './lib/store';
-import { Language, getT } from './lib/i18n';
+import { Language, getCategoryT } from './lib/i18n';
 import { Navbar } from './components/common/Navbar';
-import { LandingWebsite } from './components/home/LandingWebsite';
+import { HomePage } from './components/home/HomePage';
+import { CategoryLanding } from './components/home/CategoryLanding';
 import { UnifiedLogin } from './components/auth/UnifiedLogin';
+import { JoinCategory } from './components/auth/JoinCategory';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { OwnerDashboard } from './components/owner/OwnerDashboard';
 import { SupervisorDashboard } from './components/supervisor/SupervisorDashboard';
@@ -13,7 +15,10 @@ import { AdminPortal } from './components/admin/AdminPortal';
 import { EstateMapView } from './components/maps/EstateMapView';
 import { WorkspaceHub } from './components/workspace/WorkspaceHub';
 import { subscribeToEstates, subscribeToJobs } from './lib/firebase';
-import { Role } from './types';
+import { CategoryProvider } from './config/CategoryContext';
+import { DEFAULT_CATEGORY, activeLegacyRoleIn, capabilityOfLegacyRole } from './config/categories';
+import { HOME, lastCategory, navigate, rememberCategory, routeCategory, useRoute } from './lib/router';
+import type { CategoryRoleId } from './types/category';
 
 export default function App() {
   const [state, setState] = useState<AppState>(store.getState());
@@ -22,21 +27,13 @@ export default function App() {
     return saved === 'si' || saved === 'ta' || saved === 'en' ? saved : 'en';
   });
 
-  const [activeView, setActiveView] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname.toLowerCase();
-      const hash = window.location.hash.toLowerCase();
-      if (path === '/admin' || hash.includes('admin')) {
-        return 'admin_login';
-      }
-    }
-    // Default to public home website as requested
-    return 'home';
-  });
+  const route = useRoute();
+  const category = routeCategory(route);
 
-  const [preselectedRole, setPreselectedRole] = useState<Role>('owner');
+  // Role pre-selected by a landing-page card; used by the sign-in screen.
+  const [preselectedRoleId, setPreselectedRoleId] = useState<CategoryRoleId | undefined>();
 
-  const t = getT(currentLang);
+  const t = getCategoryT(currentLang, category);
 
   const handleLanguageChange = (newLang: Language) => {
     setCurrentLang(newLang);
@@ -50,24 +47,10 @@ export default function App() {
       setState({ ...store.getState() });
     });
 
-    // Handle hash navigation
-    const handleHashChange = () => {
-      const hash = window.location.hash.toLowerCase();
-      if (hash.includes('admin')) {
-        const user = store.getState().currentUser;
-        if (user && user.active_role === 'admin') {
-          setActiveView('admin');
-        } else {
-          setActiveView('admin_login');
-        }
-      } else if (hash.includes('login')) {
-        setActiveView('login');
-      } else if (hash === '#/' || hash === '' || hash === '#') {
-        // If logged in, can still stay or go to home
-      }
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
+    // Pre-category link: /admin (path, not hash) opens the staff sign-in.
+    if (window.location.pathname.toLowerCase() === '/admin' && !window.location.hash) {
+      navigate({ page: 'admin' }, { replace: true });
+    }
 
     // Real-time Firestore synchronization
     const unsubEstates = subscribeToEstates((remoteEstates) => {
@@ -96,143 +79,154 @@ export default function App() {
 
     return () => {
       unsubscribe();
-      window.removeEventListener('hashchange', handleHashChange);
       if (typeof unsubEstates === 'function') unsubEstates();
       if (typeof unsubJobs === 'function') unsubJobs();
     };
   }, []);
 
+  // Remember the last category so the pre-category #/login link and the navbar land somewhere sensible.
+  useEffect(() => {
+    if (category) rememberCategory(category);
+  }, [category]);
+
+  // Act in the role that belongs to the category being viewed (a user can be a client in
+  // construction and a landowner in coconut).
+  const user = state.currentUser;
+  const viewedRole = category ? activeLegacyRoleIn(user, category) : null;
+  useEffect(() => {
+    if (user && viewedRole && user.active_role !== viewedRole && user.active_role !== 'admin') {
+      store.switchRole(viewedRole);
+    }
+  }, [user?.id, user?.active_role, viewedRole]);
+
+  /** Section names used by the navbar and dashboards, resolved against the current category. */
   const handleNavigate = (view: string) => {
-    setActiveView(view);
-    if (view === 'admin_login' || view === 'admin') {
-      try { window.location.hash = '#/admin'; } catch (e) {}
-    } else if (view === 'home') {
-      try { window.location.hash = '#/'; } catch (e) {}
-    } else if (view === 'login') {
-      try { window.location.hash = '#/login'; } catch (e) {}
+    const target = category ?? lastCategory() ?? DEFAULT_CATEGORY;
+    switch (view) {
+      case 'home':
+        navigate(HOME);
+        break;
+      case 'admin':
+      case 'admin_login':
+        navigate({ page: 'admin' });
+        break;
+      case 'login':
+      case 'dashboard':
+      case 'map':
+      case 'profile':
+      case 'workspace':
+        navigate({ page: view, category: target });
+        break;
+      default:
+        navigate(HOME);
     }
   };
 
-  const handleLoginSuccess = (role: Role) => {
-    if (role === 'admin') {
-      setActiveView('admin');
-      try { window.location.hash = '#/admin'; } catch (e) {}
-    } else {
-      setActiveView('dashboard');
+  const openLogin = (roleId?: CategoryRoleId) => {
+    setPreselectedRoleId(roleId);
+    if (category) navigate({ page: 'login', category });
+  };
+
+  const renderRole = () => {
+    if (!user || !category) return null;
+    const capability = capabilityOfLegacyRole(viewedRole ?? undefined);
+    // `key` remounts the dashboard when the category changes so its form defaults reset.
+    switch (capability) {
+      case 'poster':
+        return <OwnerDashboard key={category} state={state} currentLang={currentLang} onNavigate={handleNavigate} />;
+      case 'bidder':
+        return <SupervisorDashboard key={category} state={state} currentLang={currentLang} />;
+      case 'crew':
+        return <WorkerDashboard key={category} state={state} currentLang={currentLang} />;
+      default:
+        return <JoinCategory currentLang={currentLang} />;
     }
   };
 
   const renderCurrentView = () => {
-    // 1. Separate Admin Login (/admin)
-    if (activeView === 'admin_login') {
-      return (
-        <AdminLogin
-          state={state}
-          currentLang={currentLang}
-          onLoginSuccess={() => {
-            setActiveView('admin');
-            try { window.location.hash = '#/admin'; } catch (e) {}
-          }}
-          onBackToHome={() => handleNavigate('home')}
-        />
-      );
-    }
-
-    // 2. Staff Admin Portal
-    if (activeView === 'admin') {
-      if (!state.currentUser || !state.currentUser.roles.includes('admin')) {
+    // Staff area: sign-in, or the portal once signed in as admin.
+    if (route.page === 'admin') {
+      if (!user || !user.roles.includes('admin') || user.active_role !== 'admin') {
         return (
           <AdminLogin
             state={state}
             currentLang={currentLang}
-            onLoginSuccess={() => setActiveView('admin')}
-            onBackToHome={() => handleNavigate('home')}
+            onLoginSuccess={() => navigate({ page: 'admin' })}
+            onBackToHome={() => navigate(HOME)}
           />
         );
       }
-      return (
-        <AdminPortal
-          state={state}
-          currentLang={currentLang}
-          onExitAdmin={() => handleNavigate('home')}
-        />
-      );
+      return <AdminPortal state={state} currentLang={currentLang} onExitAdmin={() => navigate(HOME)} />;
     }
 
-    // 3. Public Home Website (as default home page with login button)
-    if (activeView === 'home') {
+    // Public home: pick a category.
+    if (route.page === 'home') {
       return (
-        <LandingWebsite
-          state={state}
+        <HomePage
           currentLang={currentLang}
-          onOpenLogin={(role) => {
-            if (role) setPreselectedRole(role);
-            handleNavigate('login');
-          }}
-          onExploreMap={() => handleNavigate('map')}
+          onSelectCategory={(id) => navigate({ page: 'category', category: id })}
           onLanguageChange={handleLanguageChange}
         />
       );
     }
 
-    // 4. Standard User Login (Unified OTP)
-    if (activeView === 'login') {
+    // Everything below belongs to a category.
+    if (route.page === 'category') {
       return (
-        <UnifiedLogin
+        <CategoryLanding
+          state={state}
           currentLang={currentLang}
-          initialRole={preselectedRole}
-          onLoginSuccess={handleLoginSuccess}
-          onBackToHome={() => handleNavigate('home')}
+          onOpenLogin={openLogin}
+          onExploreMap={() => navigate({ page: 'map', category: route.category })}
+          onLanguageChange={handleLanguageChange}
+          onBack={() => navigate(HOME)}
         />
       );
     }
 
-    // Google Maps Estate & Job Map View
-    if (activeView === 'map') {
+    const loginScreen = (
+      <UnifiedLogin
+        currentLang={currentLang}
+        initialRoleId={preselectedRoleId}
+        onLoginSuccess={() => navigate({ page: 'dashboard', category: route.category })}
+        onBackToHome={() => navigate({ page: 'category', category: route.category })}
+        onSwitchCategory={() => navigate(HOME)}
+      />
+    );
+
+    if (route.page === 'login') {
+      return user && user.active_role !== 'admin' ? renderRole() : loginScreen;
+    }
+
+    // The map is public.
+    if (route.page === 'map') {
+      const leave = () =>
+        navigate(user ? { page: 'dashboard', category: route.category } : { page: 'category', category: route.category });
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <button
-              onClick={() => handleNavigate(state.currentUser ? 'dashboard' : 'home')}
-              className="text-xs text-slate-400 hover:text-white flex items-center space-x-1"
-            >
-              <span>← {state.currentUser ? t.back_to_dashboard : t.back_to_home_btn}</span>
+            <button onClick={leave} className="text-xs text-slate-400 hover:text-white flex items-center space-x-1">
+              <span>← {user ? t.back_to_dashboard : t.back_to_home_btn}</span>
             </button>
             <span className="text-xs font-semibold text-emerald-400">{t.map_api_note}</span>
           </div>
-          <EstateMapView
-            state={state}
-            currentLang={currentLang}
-            onSelectEstate={() => {
-              handleNavigate(state.currentUser ? 'dashboard' : 'home');
-            }}
-            onSelectJob={() => {
-              handleNavigate(state.currentUser ? 'dashboard' : 'home');
-            }}
-          />
+          <EstateMapView state={state} currentLang={currentLang} onSelectEstate={leave} onSelectJob={leave} />
         </div>
       );
     }
 
-    // If user is not logged in and navigated to a protected view, show login
-    if (!state.currentUser) {
-      return (
-        <UnifiedLogin
-          currentLang={currentLang}
-          initialRole={preselectedRole}
-          onLoginSuccess={handleLoginSuccess}
-          onBackToHome={() => handleNavigate('home')}
-        />
-      );
+    // Protected pages need a signed-in user.
+    if (!user) return loginScreen;
+    if (user.active_role === 'admin') {
+      return <AdminPortal state={state} currentLang={currentLang} onExitAdmin={() => navigate(HOME)} />;
     }
 
-    // Google Workspace & Drive Backup Hub
-    if (activeView === 'workspace') {
+    if (route.page === 'workspace') {
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <button
-              onClick={() => handleNavigate('dashboard')}
+              onClick={() => navigate({ page: 'dashboard', category: route.category })}
               className="text-xs text-slate-400 hover:text-white flex items-center space-x-1"
             >
               <span>← {t.back_to_dashboard}</span>
@@ -244,88 +238,44 @@ export default function App() {
       );
     }
 
-    // Shared Profile & NIC Page
-    if (activeView === 'profile') {
-      return (
-        <UserProfilePage
-          state={state}
-          currentLang={currentLang}
-        />
-      );
+    if (route.page === 'profile') {
+      return <UserProfilePage state={state} currentLang={currentLang} />;
     }
 
-    // Role-specific view routing for logged-in users
-    switch (state.currentUser.active_role) {
-      case 'owner':
-        return (
-          <OwnerDashboard
-            state={state}
-            currentLang={currentLang}
-            onNavigate={(view) => handleNavigate(view)}
-          />
-        );
-      case 'supervisor':
-        return (
-          <SupervisorDashboard
-            state={state}
-            currentLang={currentLang}
-          />
-        );
-      case 'worker':
-        return (
-          <WorkerDashboard
-            state={state}
-            currentLang={currentLang}
-          />
-        );
-      case 'admin':
-        return (
-          <AdminPortal
-            state={state}
-            currentLang={currentLang}
-            onExitAdmin={() => handleNavigate('home')}
-          />
-        );
-      default:
-        return (
-          <OwnerDashboard
-            state={state}
-            currentLang={currentLang}
-            onNavigate={(view) => handleNavigate(view)}
-          />
-        );
-    }
+    return renderRole();
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
-      <Navbar
-        state={state}
-        currentLang={currentLang}
-        onLanguageChange={handleLanguageChange}
-        onNavigate={handleNavigate}
-        showAccount={activeView !== 'home'}
-      />
+    <CategoryProvider categoryId={category}>
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-white">
+        <Navbar
+          state={state}
+          currentLang={currentLang}
+          onLanguageChange={handleLanguageChange}
+          onNavigate={handleNavigate}
+          showAccount={route.page !== 'home'}
+        />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {renderCurrentView()}
-      </main>
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {renderCurrentView()}
+        </main>
 
-      {/* Architectural Footer */}
-      <footer className="border-t border-slate-800 bg-slate-900/50 py-4 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center space-x-2">
-            <span>{t.footer_brand}</span>
+        {/* Architectural Footer */}
+        <footer className="border-t border-slate-800 bg-slate-900/50 py-4 text-center text-xs text-slate-500">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div className="flex items-center space-x-2">
+              <span>{t.footer_brand}</span>
+            </div>
+            <div className="flex items-center space-x-3 font-mono text-[11px]">
+              <span>{t.footer_escrow_gate}</span>
+              <span>•</span>
+              <span>{t.footer_dual_pin}</span>
+              <span>•</span>
+              <span>{t.footer_trilingual}</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-3 font-mono text-[11px]">
-            <span>{t.footer_escrow_gate}</span>
-            <span>•</span>
-            <span>{t.footer_dual_pin}</span>
-            <span>•</span>
-            <span>{t.footer_trilingual}</span>
-          </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </CategoryProvider>
   );
 }

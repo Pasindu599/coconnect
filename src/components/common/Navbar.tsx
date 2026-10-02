@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { useT } from '../../config/CategoryContext';
+import { useCategory, useT } from '../../config/CategoryContext';
+import { CategoryIcon } from '../../config/CategoryIcon';
+import { l10n } from '../../config/categories';
 import { store, AppState } from '../../lib/store';
 import { Language } from '../../lib/i18n';
 import { 
@@ -28,6 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const t = useT(currentLang);
+  const { categoryId, category } = useCategory();
   const user = state.currentUser;
 
   const langNames: Record<Language, { label: string; code: string }> = {
@@ -59,6 +62,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action Controls */}
           <div className="flex items-center space-x-2">
+            {/* Active category: shows where you are and takes you back to the picker */}
+            {categoryId && (
+              <button
+                onClick={() => onNavigate('home')}
+                data-testid="navbar-category"
+                title={t.category_switch}
+                className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-800 text-xs text-slate-200 hover:text-white border border-slate-700"
+              >
+                <CategoryIcon icon={category.icon} className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline">{l10n(category.label, currentLang)}</span>
+                <span className="sr-only sm:hidden">{l10n(category.label, currentLang)}</span>
+              </button>
+            )}
+
             {/* Trilingual Language Selector */}
             <div className="relative">
               <button

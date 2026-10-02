@@ -72,6 +72,8 @@ export interface CategoryConfig {
   defaults: { taskType: string; skills: string[]; ratingTags: string[] };
   siteFields: SiteField[];
   pricingUnit: PricingUnit;
+  /** What the first landing-page stat counts: palms (coconut) or registered sites. */
+  landingStat: 'tree_count' | 'site_count';
   vocab?: Vocab;
 }
 
@@ -187,6 +189,7 @@ const COCONUT: CategoryConfig = {
     },
   ],
   pricingUnit: 'per_palm',
+  landingStat: 'tree_count',
 };
 
 const CONSTRUCTION: CategoryConfig = {
@@ -340,6 +343,7 @@ const CONSTRUCTION: CategoryConfig = {
     },
   ],
   pricingUnit: 'per_day',
+  landingStat: 'site_count',
   vocab: CONSTRUCTION_VOCAB,
 };
 

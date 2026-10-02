@@ -50,6 +50,16 @@ export const CONSTRUCTION_VOCAB: Vocab = {
     si: 'සත්‍යාපිත ශිල්පීන්',
     ta: 'சரிபார்க்கப்பட்ட தொழிலாளர்கள்',
   },
+  features_title: {
+    en: 'Engineered for Trust on Every Building Site',
+    si: 'සෑම ඉදිකිරීම් ස්ථානයකම විශ්වාසය සඳහා සැලසුම් කළ',
+    ta: 'ஒவ்வொரு கட்டுமான இடத்திலும் நம்பிக்கைக்காக வடிவமைக்கப்பட்டது',
+  },
+  features_subtitle: {
+    en: 'Eliminating ghost workers, delayed wages and disputed work with securely tracked workflows from the first bid to the final payment.',
+    si: 'පළමු ලංසුවේ සිට අවසන් ගෙවීම දක්වා ආරක්ෂිතව නිරීක්ෂණය කරන ක්‍රියාවලි මගින් ව්‍යාජ කම්කරුවන්, වැටුප් ප්‍රමාදයන් සහ වැඩ පිළිබඳ ආරවුල් වැළැක්වීම.',
+    ta: 'முதல் ஏலத்திலிருந்து இறுதிக் கட்டணம் வரை பாதுகாப்பாகக் கண்காணிக்கப்படும் செயல்முறைகள் மூலம் போலி தொழிலாளர்கள், தாமதமான கூலி மற்றும் வேலை தொடர்பான சர்ச்சைகளை நீக்குகிறது.',
+  },
   feat_escrow_desc: {
     en: 'Clients deposit funds into escrow before work begins. Contact phone numbers stay masked until escrow is funded, to prevent circumvention.',
     si: 'වැඩ ආරම්භ කිරීමට පෙර ගනුදෙනුකරුවන් එස්ක්‍රෝ ගිණුමට මුදල් තැන්පත් කරයි. එස්ක්‍රෝ ගිණුම පිරවෙන තුරු දුරකථන අංක සඟවා තබනු ලැබේ.',
@@ -75,6 +85,10 @@ export const CONSTRUCTION_VOCAB: Vocab = {
     si: 'කොන්ත්‍රාත්කරුවන්ට අඩවියේ පැමිණීම නොබැඳිව සටහන් කළ හැක; සම්බන්ධතාව ලැබුණු විට ස්වයංක්‍රීයව සමමුහුර්ත වේ.',
     ta: 'ஒப்பந்ததாரர்கள் இணையமின்றி வருகையைப் பதிவு செய்யலாம்; இணைப்பு கிடைத்ததும் தானாக ஒத்திசைக்கப்படும்.',
   },
+
+  worker: { en: 'Tradesperson', si: 'ශිල්පියා', ta: 'தொழிலாளர்' },
+  required_skills_label: { en: 'Required Trades & Skills', si: 'අවශ්‍ය ශිල්ප සහ කුසලතා', ta: 'தேவையான தொழில்கள் மற்றும் திறன்கள்' },
+  default_task: { en: 'Construction Task', si: 'ඉදිකිරීම් කාර්යය', ta: 'கட்டுமானப் பணி' },
 
   // ---- Role vocabulary
   landowner: {
@@ -234,6 +248,12 @@ export const CONSTRUCTION_VOCAB: Vocab = {
   post_job_for_land: { en: 'Post Job for this Site →', si: 'මෙම ස්ථානය සඳහා රැකියාවක් පළ කරන්න →', ta: 'இந்த இடத்திற்கு வேலையை இடுகையிடுக →' },
 
   // ---- Map
+  nav_map: { en: 'Site GIS Map', si: 'ස්ථාන GIS සිතියම', ta: 'இட GIS வரைபடம்' },
+  map_title: {
+    en: 'Interactive Site & Labour Map',
+    si: 'අන්තර්ක්‍රියාකාරී ස්ථාන සහ ශ්‍රම සිතියම',
+    ta: 'ஊடாடும் இட மற்றும் தொழிலாளர் வரைபடம்',
+  },
   map_sub: {
     en: 'Construction sites across Sri Lanka',
     si: 'ශ්‍රී ලංකාව පුරා ඉදිකිරීම් ස්ථාන',
