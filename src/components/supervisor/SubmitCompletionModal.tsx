@@ -131,6 +131,7 @@ export const SubmitCompletionModal: React.FC<SubmitCompletionModalProps> = ({ st
             </button>
             <button
               type="submit"
+              data-testid="send-completion"
               className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md"
             >
               {t.send_to_owner}

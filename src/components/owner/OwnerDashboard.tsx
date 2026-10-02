@@ -14,6 +14,8 @@ import { BidsModal } from './BidsModal';
 import { EscrowPaymentModal } from './EscrowPaymentModal';
 import { ContactsModal } from './ContactsModal';
 import { CompletionModal } from './CompletionModal';
+import { OpenDisputeModal } from '../common/OpenDisputeModal';
+import { NoticeBanner } from '../common/NoticeBanner';
 import { Briefcase, CheckCircle2, PlusCircle, ShieldCheck } from 'lucide-react';
 
 interface OwnerDashboardProps {
@@ -40,6 +42,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   const [selectedAwardForEscrow, setSelectedAwardForEscrow] = useState<Award | null>(null);
   const [selectedJobForCompletion, setSelectedJobForCompletion] = useState<LabourJob | null>(null);
   const [viewContactsAwardId, setViewContactsAwardId] = useState<string | null>(null);
+  const [disputeAward, setDisputeAward] = useState<Award | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const ownerEstates = state.estates.filter(e => e.owner_id === user?.id && categoryOf(e) === category.id);
   const ownerJobs = state.jobs.filter(j => j.owner_id === user?.id && categoryOf(j) === category.id);
@@ -146,6 +150,8 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       </div>
 
 
+      {notice && <NoticeBanner message={notice} />}
+
       {activeTab === 'jobs' && (
         <JobsTab
           state={state}
@@ -155,6 +161,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           onPayEscrow={setSelectedAwardForEscrow}
           onViewContacts={setViewContactsAwardId}
           onVerifyCompletion={setSelectedJobForCompletion}
+          onOpenDispute={setDisputeAward}
         />
       )}
 
@@ -174,6 +181,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
           awards={ownerAwards}
           onPayEscrow={setSelectedAwardForEscrow}
           onViewContacts={setViewContactsAwardId}
+          onOpenDispute={setDisputeAward}
         />
       )}
 
@@ -209,6 +217,15 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
       {viewContactsAwardId && (
         <ContactsModal currentLang={currentLang} awardId={viewContactsAwardId} onClose={() => setViewContactsAwardId(null)} />
+      )}
+
+      {disputeAward && (
+        <OpenDisputeModal
+          currentLang={currentLang}
+          award={disputeAward}
+          onClose={() => setDisputeAward(null)}
+          onOpened={setNotice}
+        />
       )}
 
       {selectedJobForCompletion && (

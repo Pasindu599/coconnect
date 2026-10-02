@@ -1,18 +1,24 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { UnifiedLogin } from '../auth/UnifiedLogin';
 import { CategoryProvider } from '../../config/CategoryContext';
 import { store } from '../../lib/store';
+import { snapshotStore } from '../../test/storeSnapshot';
 import { authApi } from '../../lib/authApi';
 import { AuthError, type AuthErrorCode } from '../../lib/auth';
 import { translations } from '../../lib/i18n';
 import type { CategoryId, CategoryRoleId } from '../../types/category';
 
+let restore: () => void;
+beforeEach(() => {
+  restore = snapshotStore();
+});
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   store.logout();
+  restore();
 });
 
 const setup = (category: CategoryId, initialRoleId?: CategoryRoleId) => {

@@ -476,6 +476,12 @@ export const hasCapabilityIn = (
   capability: Capability
 ): boolean => membershipsInCategory(user, category).some(m => getRole(m.category, m.role)?.capability === capability);
 
+/** Whether the user holds a role with this capability in any category. */
+export const hasAnyCapability = (
+  user: Pick<User, 'roles' | 'memberships'> | null | undefined,
+  capability: Capability
+): boolean => membershipsOf(user).some(m => getRole(m.category, m.role)?.capability === capability);
+
 export const membershipsInCategory = (
   user: Pick<User, 'roles' | 'memberships'> | null | undefined,
   category: CategoryId

@@ -648,6 +648,8 @@ const initialNicSubmissions: NicSubmission[] = [
   }
 ];
 
+export type DisputeError = 'unauthorized' | 'not-found' | 'not-party' | 'not-disputable' | 'description-too-short';
+
 export interface AppState {
   currentUser: User | null;
   users: User[];
@@ -1031,6 +1033,30 @@ class StoreService {
     return newWorker;
   }
 
+  /** Set or change a worker's payout bank details. Only the person who registered the worker may. */
+  public updateWorkerBank(workerId: string, bankRef: string): { success: boolean; error?: 'unauthorized' | 'not-found' } {
+    const user = this.state.currentUser;
+    if (!user) return { success: false, error: 'unauthorized' };
+    const worker = this.state.workers.find(w => w.id === workerId);
+    if (!worker) return { success: false, error: 'not-found' };
+    if (worker.supervisor_id !== user.id) return { success: false, error: 'unauthorized' };
+
+    worker.bank_ref = bankRef;
+    this.logAudit(user.id, user.name, 'worker.bank_updated', 'worker', worker.id, `Updated payout bank details for ${worker.name}`);
+    this.notify();
+    return { success: true };
+  }
+
+  /** Set the signed-in person's own payout account (where an admin sends their payout). */
+  public updatePayoutBank(bankRef: string): { success: boolean; error?: 'unauthorized' } {
+    const user = this.state.currentUser;
+    if (!user) return { success: false, error: 'unauthorized' };
+    user.payout_bank_ref = bankRef;
+    this.logAudit(user.id, user.name, 'user.payout_bank_updated', 'user', user.id, 'Updated payout bank account');
+    this.notify();
+    return { success: true };
+  }
+
   // --- Labour Jobs & Bids ---
   public createJob(data: {
     estate_id: string;
@@ -1179,6 +1205,8 @@ class StoreService {
 
     const job = this.state.jobs.find(j => j.id === award.job_id);
     if (!job) return { success: false, error: 'Job not found' };
+    // Funding only applies to an award still waiting for payment; it must never undo a dispute or a release
+    if (award.escrow_status !== 'pending') return { success: false, error: 'Award is not awaiting payment' };
 
     award.escrow_status = 'held';
     award.contacts_released_at = new Date().toISOString();
@@ -1394,6 +1422,16 @@ class StoreService {
     if (!this.state.currentUser) return { success: false, error: 'Unauthorized' };
     const job = this.state.jobs.find(j => j.id === jobId);
     if (!job) return { success: false, error: 'Job not found' };
+    if (job.owner_id !== this.state.currentUser.id) {
+      return { success: false, error: 'Only the job owner can confirm completion' };
+    }
+    const heldAward = this.state.awards.find(a => a.job_id === jobId);
+    if (heldAward?.escrow_status === 'disputed') {
+      return { success: false, error: 'The escrow is frozen by an open dispute' };
+    }
+    if (!heldAward || (heldAward.escrow_status !== 'held' && heldAward.escrow_status !== 'release_requested')) {
+      return { success: false, error: 'There is no escrow held for this job' };
+    }
 
     // PIN check
     if (this.state.currentUser.pin_hash && this.state.currentUser.pin_hash !== pin) {
@@ -1667,6 +1705,48 @@ class StoreService {
 
     this.notify();
     return true;
+  }
+
+  /**
+   * Either party to an award can open a dispute while the money is in escrow. That freezes the
+   * escrow: nothing moves until an admin resolves it (mock of the `openDispute` Function).
+   */
+  public openDispute(data: {
+    award_id: string;
+    reason_code: ExceptionIssue['reason_code'];
+    description: string;
+  }): { success: true; dispute: ExceptionIssue } | { success: false; error: DisputeError } {
+    const user = this.state.currentUser;
+    if (!user) return { success: false, error: 'unauthorized' };
+    const award = this.state.awards.find(a => a.id === data.award_id);
+    const job = this.state.jobs.find(j => j.id === award?.job_id);
+    if (!award || !job) return { success: false, error: 'not-found' };
+    if (user.id !== job.owner_id && user.id !== award.supervisor_id) return { success: false, error: 'not-party' };
+    if (award.escrow_status !== 'held' && award.escrow_status !== 'release_requested') {
+      return { success: false, error: 'not-disputable' };
+    }
+    if (data.description.trim().length < 10) return { success: false, error: 'description-too-short' };
+
+    const dispute: ExceptionIssue = {
+      id: `exc-${Date.now()}`,
+      job_id: job.id,
+      subject_type: 'award',
+      subject_id: award.id,
+      raised_by: user.id,
+      raised_by_name: user.name,
+      reason_code: data.reason_code,
+      description: data.description.trim(),
+      evidence_blob_refs: [],
+      status: 'open',
+      response_deadline: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+    };
+    this.state.exceptions.unshift(dispute);
+    award.escrow_status = 'disputed';
+    job.status = 'EXCEPTION_OPEN';
+
+    this.logAudit(user.id, user.name, 'dispute.opened', 'award', award.id, `Opened a dispute (${data.reason_code}); escrow frozen`);
+    this.notify();
+    return { success: true, dispute };
   }
 
   public adminResolveException(exceptionId: string, resolution: string): boolean {

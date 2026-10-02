@@ -1,13 +1,19 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { JoinCategory } from '../auth/JoinCategory';
 import { CategoryProvider } from '../../config/CategoryContext';
 import { store } from '../../lib/store';
+import { snapshotStore } from '../../test/storeSnapshot';
 
+let restore: () => void;
+beforeEach(() => {
+  restore = snapshotStore();
+});
 afterEach(() => {
   cleanup();
   store.logout();
+  restore();
 });
 
 describe('JoinCategory', () => {

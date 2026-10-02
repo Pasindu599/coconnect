@@ -90,6 +90,22 @@ export const CONSTRUCTION_VOCAB: Vocab = {
   required_skills_label: { en: 'Required Trades & Skills', si: 'අවශ්‍ය ශිල්ප සහ කුසලතා', ta: 'தேவையான தொழில்கள் மற்றும் திறன்கள்' },
   default_task: { en: 'Construction Task', si: 'ඉදිකිරීම් කාර්යය', ta: 'கட்டுமானப் பணி' },
 
+  dispute_reason_access: {
+    en: 'Site access issue',
+    si: 'ස්ථානයට පිවිසීමේ ගැටළුව',
+    ta: 'இட அணுகல் சிக்கல்',
+  },
+  job_completed_release_pending: {
+    en: 'Completion confirmed. The payment is being sent to the contractor.',
+    si: 'නිමාව තහවුරු කළා. ගෙවීම කොන්ත්‍රාත්කරුට යවමින් පවතී.',
+    ta: 'முடிவு உறுதிசெய்யப்பட்டது. கட்டணம் ஒப்பந்ததாரருக்கு அனுப்பப்படுகிறது.',
+  },
+  worker_payout_none: {
+    en: 'Your contractor has not added your bank details yet. Ask them to add them so you can be paid.',
+    si: 'ඔබේ කොන්ත්‍රාත්කරු තවම ඔබේ බැංකු විස්තර එකතු කර නැත. ඔබට ගෙවීමට හැකි වන පරිදි ඒවා එකතු කරන ලෙස ඔහුගෙන් ඉල්ලන්න.',
+    ta: 'உங்கள் ஒப்பந்ததாரர் இன்னும் உங்கள் வங்கி விவரங்களைச் சேர்க்கவில்லை. உங்களுக்குக் கட்டணம் வழங்க அவற்றைச் சேர்க்கும்படி கேளுங்கள்.',
+  },
+
   // ---- Role vocabulary
   landowner: {
     en: 'Client (Site Owner)',

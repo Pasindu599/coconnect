@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useT } from '../../config/CategoryContext';
+import { hasAnyCapability } from '../../config/categories';
+import { PayoutAccountCard } from './PayoutAccountCard';
 import { store, AppState } from '../../lib/store';
 import { Language, fmt, tRole, tRoleLong, tReviewStatus, tDocType, tReviewTag } from '../../lib/i18n';
 import { Role } from '../../types';
@@ -428,6 +430,8 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
           </div>
         </div>
       </div>
+
+      {hasAnyCapability(user, 'bidder') && <PayoutAccountCard currentLang={currentLang} user={user} />}
 
       {/* Ratings & Reviews Received */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">

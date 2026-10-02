@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppState } from '../../lib/store';
-import { LabourJob } from '../../types';
+import { Award, LabourJob, Worker } from '../../types';
 import { Language } from '../../lib/i18n';
 import { useCategory, useT } from '../../config/CategoryContext';
 import { categoryOf } from '../../config/categories';
@@ -9,6 +9,9 @@ import { MarketplaceTab } from './MarketplaceTab';
 import { FieldAttendanceTab } from './FieldAttendanceTab';
 import { ContractsTab } from './ContractsTab';
 import { SubmitBidModal } from './SubmitBidModal';
+import { OpenDisputeModal } from '../common/OpenDisputeModal';
+import { NoticeBanner } from '../common/NoticeBanner';
+import { EditWorkerBankModal } from './EditWorkerBankModal';
 import { AddWorkerModal } from './AddWorkerModal';
 import { SubmitCompletionModal } from './SubmitCompletionModal';
 import { Users, PlusCircle, Briefcase, CheckCircle, Clock, DollarSign } from 'lucide-react';
@@ -33,6 +36,9 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   const [selectedJobForBid, setSelectedJobForBid] = useState<LabourJob | null>(null);
   const [selectedJobForCompletion, setSelectedJobForCompletion] = useState<LabourJob | null>(null);
   const [bidSuccess, setBidSuccess] = useState<string | null>(null);
+  const [disputeAward, setDisputeAward] = useState<Award | null>(null);
+  const [bankWorker, setBankWorker] = useState<Worker | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const supervisorWorkers = state.workers.filter(w => w.supervisor_id === user?.id && categoryOf(w) === category.id);
   const openJobs = state.jobs.filter(j => j.status === 'OPEN' && categoryOf(j) === category.id);
@@ -67,6 +73,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
 
         <div className="flex items-center space-x-3">
           <button
+            data-testid="add-worker"
             onClick={() => setIsAddWorkerOpen(true)}
             className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md transition"
           >
@@ -138,7 +145,11 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
         </button>
       </div>
 
-      {activeTab === 'roster' && <RosterTab currentLang={currentLang} workers={supervisorWorkers} />}
+      {notice && <NoticeBanner message={notice} />}
+
+      {activeTab === 'roster' && (
+        <RosterTab currentLang={currentLang} workers={supervisorWorkers} onEditBank={setBankWorker} />
+      )}
 
       {activeTab === 'marketplace' && (
         <MarketplaceTab state={state} currentLang={currentLang} jobs={openJobs} userId={user?.id} onBid={setSelectedJobForBid} />
@@ -155,6 +166,7 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
           jobs={activeJobs}
           awards={supervisorAwards}
           onSubmitCompletion={setSelectedJobForCompletion}
+          onOpenDispute={setDisputeAward}
         />
       )}
 
@@ -169,6 +181,24 @@ export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
       )}
 
       {isAddWorkerOpen && <AddWorkerModal currentLang={currentLang} onClose={() => setIsAddWorkerOpen(false)} />}
+
+      {bankWorker && (
+        <EditWorkerBankModal
+          currentLang={currentLang}
+          worker={bankWorker}
+          onClose={() => setBankWorker(null)}
+          onSaved={setNotice}
+        />
+      )}
+
+      {disputeAward && (
+        <OpenDisputeModal
+          currentLang={currentLang}
+          award={disputeAward}
+          onClose={() => setDisputeAward(null)}
+          onOpened={setNotice}
+        />
+      )}
 
       {selectedJobForCompletion && (
         <SubmitCompletionModal

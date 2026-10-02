@@ -49,6 +49,8 @@ export interface User {
   created_at: string;
   avatar_url?: string;
   location?: string;
+  /** Where Coconnect sends this person's payout, as "<bank code> <account>" (see src/lib/bank.ts). */
+  payout_bank_ref?: string;
 }
 
 export interface NicSubmission {

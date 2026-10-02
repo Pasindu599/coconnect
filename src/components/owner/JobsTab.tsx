@@ -16,9 +16,10 @@ interface JobsTabProps {
   onPayEscrow: (award: Award) => void;
   onViewContacts: (awardId: string) => void;
   onVerifyCompletion: (job: LabourJob) => void;
+  onOpenDispute: (award: Award) => void;
 }
 
-export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onReviewBids, onPayEscrow, onViewContacts, onVerifyCompletion }) => {
+export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onReviewBids, onPayEscrow, onViewContacts, onVerifyCompletion, onOpenDispute }) => {
   const t = useT(currentLang);
   const { category } = useCategory();
 
@@ -85,6 +86,18 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
               {award && (
                 <div className="mt-4 pt-3 border-t border-slate-800/80">
                   <EscrowTimeline status={award.escrow_status} currentLang={currentLang} />
+                  {(award.escrow_status === 'held' || award.escrow_status === 'release_requested') && (
+                    <div className="mt-2 text-right">
+                      <button
+                  type="button"
+                  data-testid="open-dispute"
+                  onClick={() => onOpenDispute(award)}
+                  className="text-[11px] text-rose-300 hover:text-rose-200 underline underline-offset-2"
+                >
+                  {t.dispute_open_btn}
+                </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -152,6 +165,7 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
                       {t.sup_submitted_completion}
                     </span>
                     <button
+                      data-testid="verify-release"
                       onClick={() => onVerifyCompletion(job)}
                       className="px-3 py-1.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-bold shadow-md"
                     >
@@ -164,7 +178,7 @@ export const JobsTab: React.FC<JobsTabProps> = ({ state, currentLang, jobs, onRe
                   <div className="w-full flex items-center justify-between text-xs text-emerald-400">
                     <span className="flex items-center space-x-1">
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>{t.job_completed_released}</span>
+                      <span>{award?.escrow_status === 'release_requested' ? t.job_completed_release_pending : t.job_completed_released}</span>
                     </span>
                     <span className="font-mono text-slate-400">{t.archived}</span>
                   </div>

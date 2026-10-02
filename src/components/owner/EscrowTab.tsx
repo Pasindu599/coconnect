@@ -13,9 +13,10 @@ interface EscrowTabProps {
   awards: Award[];
   onPayEscrow: (award: Award) => void;
   onViewContacts: (awardId: string) => void;
+  onOpenDispute: (award: Award) => void;
 }
 
-export const EscrowTab: React.FC<EscrowTabProps> = ({ state, currentLang, awards, onPayEscrow, onViewContacts }) => {
+export const EscrowTab: React.FC<EscrowTabProps> = ({ state, currentLang, awards, onPayEscrow, onViewContacts, onOpenDispute }) => {
   const t = useT(currentLang);
 
   return (
@@ -83,6 +84,18 @@ export const EscrowTab: React.FC<EscrowTabProps> = ({ state, currentLang, awards
               </div>
 
               <EscrowTimeline status={status} currentLang={currentLang} />
+              {(status === 'held' || status === 'release_requested') && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    data-testid="open-dispute"
+                    onClick={() => onOpenDispute(award)}
+                    className="text-[11px] text-rose-300 hover:text-rose-200 underline underline-offset-2"
+                  >
+                    {t.dispute_open_btn}
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}

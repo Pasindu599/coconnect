@@ -183,6 +183,7 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ state, current
             </button>
             <button
               type="submit"
+              data-testid="confirm-release"
               className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md flex items-center space-x-2"
             >
               <ShieldCheck className="w-4 h-4" />

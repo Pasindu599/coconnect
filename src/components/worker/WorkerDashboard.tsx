@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCategory, useT } from '../../config/CategoryContext';
 import { CategoryIcon } from '../../config/CategoryIcon';
 import { categoryOf } from '../../config/categories';
+import { WorkerPayoutCard } from './WorkerPayoutCard';
 import { Worker } from '../../types';
 import { store, AppState } from '../../lib/store';
 import { Language, tJobStatus, tEscrowStatus, tSkill, tTaskType, tParty } from '../../lib/i18n';
@@ -160,6 +161,8 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {workerRecord.id !== 'no-worker-record' && <WorkerPayoutCard currentLang={currentLang} worker={workerRecord} />}
 
       {/* Tabs */}
       <div className="border-b border-slate-800 flex items-center space-x-2">

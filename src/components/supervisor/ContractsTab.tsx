@@ -13,9 +13,10 @@ interface ContractsTabProps {
   jobs: LabourJob[];
   awards: Award[];
   onSubmitCompletion: (job: LabourJob) => void;
+  onOpenDispute: (award: Award) => void;
 }
 
-export const ContractsTab: React.FC<ContractsTabProps> = ({ state, currentLang, jobs, awards, onSubmitCompletion }) => {
+export const ContractsTab: React.FC<ContractsTabProps> = ({ state, currentLang, jobs, awards, onSubmitCompletion, onOpenDispute }) => {
   const t = useT(currentLang);
 
   return (
@@ -59,6 +60,18 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ state, currentLang, 
               {award && (
                 <div className="mt-4 pt-3 border-t border-slate-800">
                   <EscrowTimeline status={award.escrow_status} currentLang={currentLang} />
+                  {(award.escrow_status === 'held' || award.escrow_status === 'release_requested') && (
+                    <div className="mt-2 text-right">
+                      <button
+                        type="button"
+                        data-testid="open-dispute"
+                        onClick={() => onOpenDispute(award)}
+                        className="text-[11px] text-rose-300 hover:text-rose-200 underline underline-offset-2"
+                      >
+                        {t.dispute_open_btn}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -69,6 +82,7 @@ export const ContractsTab: React.FC<ContractsTabProps> = ({ state, currentLang, 
                   </div>
                 ) : (
                   <button
+                    data-testid="submit-completion"
                     onClick={() => onSubmitCompletion(job)}
                     className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md flex items-center justify-center space-x-1.5"
                   >
