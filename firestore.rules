@@ -4,6 +4,12 @@ rules_version = '2';
 // this implements, and .claude/docs/specs/auth.md for why authorization reads
 // request.auth.token.memberships (a custom claim) rather than doing a get()
 // on the caller's own user doc on every rule evaluation.
+//
+// Field names below match the EXISTING types in src/types/index.ts
+// (Estate, LabourJob, Bid, Worker, Award, ...) on purpose, "supervisor_id"
+// and "estate_id" included — those types are read by ~100+ call sites in
+// src/components/** (Session 2's files), so this spec does not rename them
+// even for non-coconut categories. See DECISIONS.md ADR-007.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -58,8 +64,10 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---- sites ----
-    match /sites/{siteId} {
+    // ---- estates (site label is "Estate" or "Site" per category, display
+    // only — src/config/categories.ts; the collection/field name stays
+    // "estates"/"estate_id" for every category, see ADR-007) ----
+    match /estates/{estateId} {
       allow read: if isSignedIn();
 
       allow create: if isSignedIn()
@@ -94,11 +102,11 @@ service cloud.firestore {
     match /bids/{bidId} {
       // Sealed-bid: only the bidder and the job's owner can read a bid.
       allow read: if isSignedIn()
-        && (resource.data.bidder_id == request.auth.uid
+        && (resource.data.supervisor_id == request.auth.uid
             || get(/databases/$(database)/documents/jobs/$(resource.data.job_id)).data.owner_id == request.auth.uid);
 
       allow create: if isSignedIn()
-        && request.resource.data.bidder_id == request.auth.uid
+        && request.resource.data.supervisor_id == request.auth.uid
         && isBidder(request.resource.data.category)
         && get(/databases/$(database)/documents/jobs/$(request.resource.data.job_id)).data.status == 'OPEN';
 
@@ -108,9 +116,9 @@ service cloud.firestore {
       // Awarding (which also touches jobs + awards atomically) goes through
       // the awardBid Function/transaction instead of relying on this alone.
       allow update: if isSignedIn() && (
-        (resource.data.bidder_id == request.auth.uid
+        (resource.data.supervisor_id == request.auth.uid
           && resource.data.status == 'pending'
-          && unchanged('bidder_id')
+          && unchanged('supervisor_id')
           && unchanged('job_id'))
         || (
           get(/databases/$(database)/documents/jobs/$(resource.data.job_id)).data.owner_id == request.auth.uid
@@ -128,13 +136,13 @@ service cloud.firestore {
       allow read: if isSignedIn();
 
       allow create: if isSignedIn()
-        && request.resource.data.manager_id == request.auth.uid
+        && request.resource.data.supervisor_id == request.auth.uid
         && isBidder(request.resource.data.category);
 
       // rating and jobs_completed are derived server-side; never client-writable.
       allow update: if isSignedIn()
-        && resource.data.manager_id == request.auth.uid
-        && unchanged('manager_id')
+        && resource.data.supervisor_id == request.auth.uid
+        && unchanged('supervisor_id')
         && unchanged('rating')
         && unchanged('jobs_completed');
 
@@ -145,7 +153,7 @@ service cloud.firestore {
     match /awards/{awardId} {
       allow read: if isSignedIn() && (
         isAdmin()
-        || resource.data.bidder_id == request.auth.uid
+        || resource.data.supervisor_id == request.auth.uid
         || get(/databases/$(database)/documents/jobs/$(resource.data.job_id)).data.owner_id == request.auth.uid
       );
       allow write: if false;
@@ -154,7 +162,7 @@ service cloud.firestore {
     match /payments/{paymentId} {
       allow read: if isSignedIn() && (
         isAdmin()
-        || get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.bidder_id == request.auth.uid
+        || get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.supervisor_id == request.auth.uid
         || get(/databases/$(database)/documents/jobs/$(get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.job_id)).data.owner_id == request.auth.uid
       );
       allow write: if false;
@@ -163,7 +171,7 @@ service cloud.firestore {
     match /ledger/{entryId} {
       allow read: if isSignedIn() && (
         isAdmin()
-        || get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.bidder_id == request.auth.uid
+        || get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.supervisor_id == request.auth.uid
         || get(/databases/$(database)/documents/jobs/$(get(/databases/$(database)/documents/awards/$(resource.data.award_id)).data.job_id)).data.owner_id == request.auth.uid
       );
       allow write: if false;
@@ -174,39 +182,39 @@ service cloud.firestore {
     }
 
     // ---- attendance ----
-    // Denormalized owner_id/bidder_id (same pattern as jobs' owner_name)
+    // Denormalized owner_id/supervisor_id (same pattern as jobs' owner_name)
     // keep these rules a single get() away instead of a query rules can't do.
     match /attendance_days/{dayId} {
       allow read: if isSignedIn() && (
-        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid || isAdmin()
+        resource.data.owner_id == request.auth.uid || resource.data.supervisor_id == request.auth.uid || isAdmin()
       );
       allow create: if isSignedIn() && (
-        request.resource.data.owner_id == request.auth.uid || request.resource.data.bidder_id == request.auth.uid
+        request.resource.data.owner_id == request.auth.uid || request.resource.data.supervisor_id == request.auth.uid
       );
       allow update: if isSignedIn() && resource.data.status != 'reconciled' && (
-        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid
+        resource.data.owner_id == request.auth.uid || resource.data.supervisor_id == request.auth.uid
       );
       allow delete: if false;
     }
 
     match /attendance_entries/{entryId} {
       allow read: if isSignedIn() && (
-        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid || isAdmin()
+        resource.data.owner_id == request.auth.uid || resource.data.supervisor_id == request.auth.uid || isAdmin()
       );
       // Each party records only their own side.
       allow create: if isSignedIn()
         && request.resource.data.recorded_by == request.auth.uid
         && ((request.resource.data.party == 'owner' && request.resource.data.owner_id == request.auth.uid)
-            || (request.resource.data.party == 'supervisor' && request.resource.data.bidder_id == request.auth.uid));
+            || (request.resource.data.party == 'supervisor' && request.resource.data.supervisor_id == request.auth.uid));
       allow update, delete: if false;
     }
 
     // ---- completions ----
     match /completions/{completionId} {
       allow read: if isSignedIn() && (
-        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid || isAdmin()
+        resource.data.owner_id == request.auth.uid || resource.data.supervisor_id == request.auth.uid || isAdmin()
       );
-      allow create: if isSignedIn() && request.resource.data.bidder_id == request.auth.uid
+      allow create: if isSignedIn() && request.resource.data.supervisor_id == request.auth.uid
         && request.resource.data.status == 'pending';
       // Confirmation checks a hashed PIN server-side (confirmCompletion Function).
       allow update, delete: if false;
@@ -224,11 +232,11 @@ service cloud.firestore {
     // ---- disputes ----
     match /disputes/{disputeId} {
       allow read: if isSignedIn() && (
-        resource.data.owner_id == request.auth.uid || resource.data.bidder_id == request.auth.uid || isAdmin()
+        resource.data.owner_id == request.auth.uid || resource.data.supervisor_id == request.auth.uid || isAdmin()
       );
       allow create: if isSignedIn()
         && request.resource.data.opened_by == request.auth.uid
-        && (request.resource.data.owner_id == request.auth.uid || request.resource.data.bidder_id == request.auth.uid)
+        && (request.resource.data.owner_id == request.auth.uid || request.resource.data.supervisor_id == request.auth.uid)
         && request.resource.data.status == 'open';
       // resolveDispute (admin, via a Function) writes the resolution.
       allow update, delete: if false;
