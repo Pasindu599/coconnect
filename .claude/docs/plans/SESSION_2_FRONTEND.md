@@ -13,18 +13,18 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 
 | ID | Roadmap | Day | Task | Depends on | Waits for S1 | Status |
 |---|---|---|---|---|---|---|
-| S2-01 | 1B-1 | 1 | Category registry `src/config/categories.ts` + `CategoryContext` | — | | todo |
-| S2-02 | 1B-2 | 1 | Hash router + deep links | — | | todo |
-| S2-03 | 2B-1 | 2 | Home page category picker | S2-01, S2-02 | | todo |
-| S2-04 | 2C-2 | 2 | Final construction content (registry + `categories.md`) | S2-01 | | todo |
-| S2-05 | 2B-2 | 2–3 | Replace hardcoded coconut values with registry lookups | S2-01 | | todo |
-| S2-06 | 3B-1 | 3 | Split `OwnerDashboard` + `SupervisorDashboard` | S2-05 | | todo |
-| S2-07 | 4B-1 | 4 | Login/registration with category + role; staff login | S2-04 | SP2 (S1-05) | todo |
-| S2-08 | — | 4 | `App.tsx`: use `store.startSync()` | S2-02 | SP3 (S1-07) | todo |
-| S2-09 | 4C-1 | 4–5 | UI tests: registry, router, picker, login | S2-03, S2-07 | SP1 (S1-01) | todo |
-| S2-10 | 5B-1 | 5 | Construction landing/dashboard variants; NIC upload to Storage | S2-06, S2-04 | S1-08 for NIC | todo |
+| S2-01 | 1B-1 | 1 | Category registry `src/config/categories.ts` + `CategoryContext` | — | | done |
+| S2-02 | 1B-2 | 1 | Hash router + deep links | — | | done |
+| S2-03 | 2B-1 | 2 | Home page category picker | S2-01, S2-02 | | done |
+| S2-04 | 2C-2 | 2 | Final construction content (registry + `categories.md`) | S2-01 | | done |
+| S2-05 | 2B-2 | 2–3 | Replace hardcoded coconut values with registry lookups | S2-01 | | done |
+| S2-06 | 3B-1 | 3 | Split `OwnerDashboard` + `SupervisorDashboard` | S2-05 | | done |
+| S2-07 | 4B-1 | 4 | Login/registration with category + role; staff login | S2-04 | SP2 (S1-05) | done |
+| S2-08 | — | 4 | `App.tsx`: use `store.startSync()` | S2-02 | SP3 (S1-07) | done |
+| S2-09 | 4C-1 | 4–5 | UI tests: registry, router, picker, login | S2-03, S2-07 | SP1 (S1-01) | partial: registry, router, i18n and store tests done (80 tests); component tests pending |
+| S2-10 | 5B-1 | 5 | Construction landing/dashboard variants; NIC upload to Storage | S2-06, S2-04 | S1-08 for NIC | partial: sites form, totals and map done; NIC upload to Storage waits for S1-08 |
 | — | 5C-1 | 5 | **SP4: week-1 demo + reviews (humans, both sessions)** | | | todo |
-| S2-11 | 6B | 6 | Payment UI: award → fee breakdown → PayHere checkout | S2-06 | SP5 (S1-09) | todo |
+| S2-11 | 6B | 6 | Payment UI: award → fee breakdown → PayHere checkout | S2-06 | SP5 (S1-09) | done |
 | S2-12 | 7B | 7 | Escrow timeline + contact gate from server state | S2-11 | | todo |
 | S2-13 | 7C | 7–8 | Playwright setup + e2e happy path | S2-11 | SP6 (S1-10) | todo |
 | S2-14 | 8B | 8 | Completion + dispute UI; worker consent; payout bank details | S2-12 | S1-11 | todo |

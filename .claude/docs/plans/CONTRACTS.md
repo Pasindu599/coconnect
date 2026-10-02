@@ -105,4 +105,6 @@ When one session needs something in the other's files, add a row here, in your o
 
 | Date | From | To | Request | Status |
 |---|---|---|---|---|
-| | | | | |
+| 2026-10-03 | S2 | S1 | `src/types/index.ts`: added optional `category` and `attributes` to `Estate`, `category` to `Worker` and `LabourJob`, optional `memberships` / `active_category` to `User`. S1-04 had made `memberships` required; it stays optional until the store migrates (pre-category mock users have none, and are coconut members). **S1: make it required in S1-07.** | done by S2 (additive) |
+| 2026-10-03 | S2 | S1 | `src/lib/store.ts`, additive only: `verifyOtp(phone, code, role?, membership?)`, `addMembership(m)` (mock of C3), category stamped by `addEstate` / `addWorker` / `createJob`, construction demo data merged into saved state. **S1-05 / S1-07 replace these** with the real auth and repositories; keep the signatures where you can so the UI keeps working. | done by S2 (additive, interim) |
+| 2026-10-03 | S2 | S1 | `src/lib/seed/construction.ts` holds the construction demo data (4 users, 2 sites, 5 workers, 3 jobs, bids, 1 funded award). **S1-06: port it into the emulator seed script** (the demo phones are in the file header). | open |
