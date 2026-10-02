@@ -74,15 +74,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
         <p className="text-xs text-slate-400 max-w-md mt-2">
           {t.admin_403_desc}
         </p>
-        <button
-          onClick={() => {
-            store.switchActiveUser('user-admin-1');
-            store.switchRole('admin');
-          }}
-          className="mt-5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-md"
-        >
-          {t.admin_403_btn}
-        </button>
       </div>
     );
   }

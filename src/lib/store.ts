@@ -85,6 +85,7 @@ const initialUsers: User[] = [
     id: 'user-admin-1',
     name: 'Niluka Fernando',
     phone: '+94770001122',
+    email: 'niluka.fernando@coconnect.gov.lk',
     roles: ['admin'],
     active_role: 'admin',
     nic_status: 'verified',
@@ -662,6 +663,10 @@ function loadInitialState(): AppState {
       const parsed = JSON.parse(stored);
       // Sessions are intentionally not persisted across site loads.
       parsed.currentUser = null;
+      const seedAdmin = initialUsers.find(u => u.id === 'user-admin-1');
+      parsed.users?.forEach((u: User) => {
+        if (seedAdmin && u.id === seedAdmin.id && !u.email) u.email = seedAdmin.email;
+      });
       if (!parsed.nicSubmissions) {
         parsed.nicSubmissions = initialNicSubmissions;
       }
@@ -735,8 +740,17 @@ class StoreService {
       return { success: false, error: 'Invalid 6-digit OTP verification code' };
     }
 
+    if (requestedRole === 'admin') {
+      return { success: false, error: 'Staff accounts cannot sign in here. Use the staff portal.' };
+    }
+
     let user = this.state.users.find(u => u.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, ''));
-    
+
+    // Admins authenticate only through adminLogin(); the public demo OTP must never open a staff account.
+    if (user?.roles.includes('admin')) {
+      return { success: false, error: 'Staff accounts cannot sign in here. Use the staff portal.' };
+    }
+
     if (!user) {
       // Auto register demo new user
       const newRole = requestedRole || 'owner';
@@ -766,20 +780,31 @@ class StoreService {
     return { success: true, user };
   }
 
-  public switchActiveUser(userId: string): void {
-    const found = this.state.users.find(u => u.id === userId);
-    if (found) {
-      this.state.currentUser = found;
+  // Staff sign-in. Interim client-side check against the seeded admin record until real
+  // Firebase auth with custom claims lands (ROADMAP 3A-1). The same message is returned for a
+  // wrong email or a wrong PIN so the form doesn't reveal which one was right.
+  public adminLogin(email: string, pin: string): { success: boolean; user?: User; error?: string } {
+    const admin = this.state.users.find(
+      u => u.roles.includes('admin') && !!u.email && u.email.toLowerCase() === email.trim().toLowerCase()
+    );
+
+    if (!admin || !admin.pin_hash || admin.pin_hash !== pin) {
+      this.logAudit('system', 'Coconnect Auth', 'auth.admin_login_failed', 'user', admin?.id ?? 'unknown', 'Failed staff sign-in attempt');
       this.notify();
+      return { success: false, error: 'Administrative credentials rejected. Access is strictly audited.' };
     }
+
+    admin.active_role = 'admin';
+    this.state.currentUser = admin;
+    this.logAudit(admin.id, admin.name, 'auth.admin_login', 'user', admin.id, 'Staff sign-in');
+    this.notify();
+    return { success: true, user: admin };
   }
 
+  // Switch between roles the user already holds. Roles are never granted from the client.
   public switchRole(newRole: Role): boolean {
     if (!this.state.currentUser) return false;
-    if (!this.state.currentUser.roles.includes(newRole)) {
-      // Allow adding role for test convenience or reject
-      this.state.currentUser.roles.push(newRole);
-    }
+    if (!this.state.currentUser.roles.includes(newRole)) return false;
     this.state.currentUser.active_role = newRole;
     this.logAudit(
       this.state.currentUser.id,
