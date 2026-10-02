@@ -22,7 +22,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-07 | 4A-1 | 4 | Repositories: users, sites, jobs, bids + `store.startSync()` | S1-04, S1-06 | SP3 | done — **SP3 delivered** |
 | S1-08 | 5A-1 | 5 | Repositories: workers, awards, attendance, completions; NIC images → Storage | S1-07 | | done |
 | — | 5C-1 | 5 | **SP4: week-1 demo + reviews (humans, both sessions)** | | | **blocked — needs a human.** S1's week-1 work (S1-01..S1-08) is merged to `main` and ready to demo on the emulator (`npm run emulators` + `npm run seed`). This row is a human checkpoint (live demo with Session 2, `/code-review`, `/security-review` walkthrough) that an autonomous session can't satisfy on its own — flagging rather than marking done. Continuing into week 2 below since nothing there is actually blocked by this. |
-| S1-09 | 6A, 6C | 6 | `createPayment` Function + `payments.ts` + fee calc, with tests | S1-08, 1C-4 | SP5 | todo |
+| S1-09 | 6A, 6C | 6 | `createPayment` Function + `payments.ts` + fee calc, with tests | S1-08, 1C-4 | SP5 | done (sandbox hash unverified, see note) — **SP5 delivered** |
 | S1-10 | 7A | 7 | `payhereNotify` webhook, with tests | S1-09 | SP6 | todo |
 | S1-11 | 8A, 8C (rules) | 8 | Completion, dispute, refund Functions; payments/ledger rules tests | S1-10 | | todo |
 | S1-12 | 9A | 9 | Admin payout recording + ledger reconciliation | S1-11 | | todo |
@@ -92,12 +92,13 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
   2. **ADR-010, the bigger one:** every Function (`onUserCreate`, `addMembership`, `setAdmin` indirectly, and the new `awardBid`) was calling bare `getFirestore()`, which defaults to the `(default)` database — but the client (`src/lib/firebase.ts`) and `scripts/seed.ts` both target a **named** database (`firebase-applet-config.json`'s `firestoreDatabaseId`). Every Function had been silently writing to a database the app never reads from, since S1-05. `functions/src/db.ts` now exports `getDb()`/`DATABASE_ID`; every Function and `scripts/seed.ts` use it. This would have been a full backend/frontend disconnect in production — worth specifically re-testing (not just re-reading the diff) anywhere this pattern might recur.
 - **Done when:** ✅ nothing *new* is localStorage-only (workers/attendance/completions now write through, same optimistic-plus-syncError pattern as S1-07). Pre-existing localStorage-only paths this task didn't touch (`payEscrow`, `confirmCompletion`'s PIN check, ratings, NIC review) are S1-09/10/11's territory, not a leftover gap in this one. Partially closes #8 (upload exists; S2 still needs to wire the modal).
 
-### S1-09: createPayment (delivers SP5)
-- **Needs:** PayHere sandbox merchant ID and secret from 1C-4. Store them as Functions secrets, never in the repo.
-- **Files:** `functions/src/payments/{provider.ts,payhere.ts,createPayment.ts}`, `src/lib/payments.ts` (CONTRACTS C4).
-- Total = bid price + platform fee. Read the fee percentage from config; record the chosen value in `DECISIONS.md`.
-- Hash: `md5(merchant_id + order_id + amount + currency + md5(secret).toUpperCase()).toUpperCase()`. Check it against PayHere's current docs.
-- **Tests:** fee calculation, hash, only the job's poster can create a payment, cannot pay twice for one award.
+### S1-09: createPayment (delivers SP5) — done, pending real sandbox verification
+- **Needs:** PayHere sandbox merchant ID and secret from 1C-4 — **still not delivered.** Built and tested against a placeholder secret (`functions/.secret.local`, gitignored) instead of blocking; `defineSecret('PAYHERE_MERCHANT_SECRET')` is wired for real `firebase functions:secrets:set` once 1C-4 lands, never a repo value.
+- **Files:** `functions/src/payments/{provider.ts,payhere.ts,feeCalculator.ts,createPayment.ts}`, `functions/.secret.local.example`, `src/lib/payments.ts` (CONTRACTS C4, delivered exactly).
+- Total = bid price + platform fee. Fee is 5% flat, read from `config/platform` (ADR-011), seeded by `scripts/seed.ts`.
+- Hash: implemented exactly as `md5(merchant_id + order_id + amount + currency + md5(secret).toUpperCase()).toUpperCase()`. **Not yet checked against PayHere's actual sandbox** — there is no sandbox access. Pinned to a hand-computed fixture in `functions/src/payments/__tests__/payhere.test.ts` so a future accidental change is still caught; re-verify the literal algorithm against PayHere's current docs the moment 1C-4 delivers credentials, before relying on it for a real charge.
+- **Tests:** ✅ fee calculation (incl. rounding), hash (pinned fixture + sensitivity to every input), only the job's poster can create a payment, cannot pay twice (rejects once `paid`, reuses a pending payment within 30 min instead of duplicating). Both a direct `.run()` unit-test suite (`functions/`) and a real-HTTP integration test (`tests/integration/createPayment.test.ts`) — the latter is what confirmed `defineSecret` actually resolves through the emulator, not just in a direct call.
+- `order_id` is the bare `payments/{id}` document id (not the literal string `"payments/{id}"`) — see payments.md's note; this is a backend-only decision since S2 only passes the value through.
 
 ### S1-10: payhereNotify webhook (delivers SP6)
 - **Files:** `functions/src/payments/payhereNotify.ts`.

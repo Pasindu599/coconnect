@@ -15,3 +15,5 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 emulator-data/
+functions/.secret.local
+!functions/.secret.local.example
