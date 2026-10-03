@@ -41,6 +41,8 @@ export class AuthError extends Error {
 
 /** Exported for unit testing only; not part of CONTRACTS C3. */
 export function mapFirebaseAuthError(err: unknown, fallback: AuthErrorCode = 'unknown'): AuthError {
+  // The screen shows a friendly message; keep the real Firebase reason findable in the console.
+  console.error('[auth] sign-in error:', (err as { code?: string })?.code ?? '', err);
   if (err instanceof FirebaseError) {
     switch (err.code) {
       case 'auth/invalid-phone-number':
@@ -78,7 +80,8 @@ export async function sendOtp(phone: string, recaptchaContainerId: string): Prom
     recaptchaVerifier = new RecaptchaVerifier(auth, recaptchaContainerId, { size: 'invisible' });
     pendingConfirmation = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
   } catch (err) {
-    throw mapFirebaseAuthError(err, 'invalid-phone');
+    // Only a genuinely bad number maps to 'invalid-phone' (above); anything else is not the person's fault
+    throw mapFirebaseAuthError(err, 'unknown');
   }
 }
 
