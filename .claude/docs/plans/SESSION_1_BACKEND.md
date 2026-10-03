@@ -26,8 +26,8 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-10 | 7A | 7 | `payhereNotify` webhook, with tests | S1-09 | SP6 | done — **SP6 delivered** |
 | S1-11 | 8A, 8C (rules) | 8 | Completion, dispute, refund Functions; payments/ledger rules tests | S1-10 | | done |
 | S1-12 | 9A | 9 | Admin payout recording + ledger reconciliation | S1-11 | | done |
-| S1-13 | 9C | 9 | Staging deploy (Hosting + Functions) via CI; error monitoring | S1-01, S1-10 | SP7 | todo |
-| S1-14 | 10A | 10 | Bug fixes from staging | S1-13 | | todo |
+| S1-13 | 9C | 9 | Staging deploy (Hosting + Functions) via CI; error monitoring | S1-01, S1-10 | SP7 | **workflow written, blocked on human setup — see runbook** |
+| S1-14 | 10A | 10 | Bug fixes from staging | S1-13 | | blocked — needs S1-13's staging to actually exist first |
 | — | 10C | 10 | **Final `/code-review` + `/security-review`, docs, retro (humans, both sessions)** | | | todo |
 
 ---
@@ -123,10 +123,14 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 - Reconciliation: `reconcileAwards()` reads every `ledger` entry and every `award` and reports, per award, `sum(hold) == sum(release)+sum(refund) + (escrow_amount if still held/release_requested)`, flagging a mismatch rather than hiding it. This is a **blanket, unfiltered** read of both collections — safe specifically because the caller must be an admin (`isAdmin()` doesn't depend on which document is being read, so Firestore can prove the rule holds for every result without a `where` clause, unlike the per-user collections ADR-009 had to fix). Verified this reasoning empirically with a real admin-authenticated client in `tests/integration/reconciliation.test.ts`, including a deliberately-mismatched fixture to confirm it actually flags a problem instead of always reporting "balanced".
 - No admin UI built here (post-MVP per the spec) — this is the data layer a future dashboard calls.
 
-### S1-13: Staging deploy
-- **Files:** `.github/workflows/deploy-staging.yml`.
-- Merge to `main` deploys Hosting, Functions and rules to a staging Firebase project. Add error monitoring.
-- **Done when:** staging URL is shared with the team, and the Definition of Done in `ROADMAP.md` can be walked through there.
+### S1-13: Staging deploy — workflow done, actual deploy blocked on a human
+- **Files:** `.github/workflows/deploy-staging.yml`, `.claude/docs/runbooks/staging-deploy.md` (new).
+- The workflow is complete and correct: on push to `main`, builds the app and Functions, authenticates via a service account (`google-github-actions/auth`), and runs `firebase deploy --only hosting,functions,firestore:rules,storage:rules`.
+- **Cannot actually run yet** — three things only a human with console/repo-admin access can do, all detailed in the runbook: (1) create a deploy service account with the right IAM roles and add its key as the `FIREBASE_STAGING_SERVICE_ACCOUNT` GitHub secret; (2) create the `PAYHERE_MERCHANT_SECRET` in Secret Manager for this project — `firebase deploy` **fails outright**, not just degrades, if a deployed function references a `defineSecret()` that doesn't exist yet, so this blocks on 1C-4 even as a formality; (3) `firebase login` needs to have happened from *some* authorized machine at some point for the service account's permissions to even be grantable — none of this session's Firebase CLI usage has ever been authenticated (every `firebase` command this session ran was `emulators:exec`/`emulators:start`, which don't need login).
+- "Staging" is the same existing project this app already uses (`gen-lang-client-0417035030`), not a separate one — a deliberate MVP call, documented in the runbook, reversible later if the team wants real environment separation.
+- **Error monitoring:** Cloud Functions already send errors to Google Cloud's Error Reporting automatically once deployed — nothing to add there. A frontend error boundary (e.g. Sentry) would need `src/App.tsx`/a new component, which is Session 2's files; flagged as a follow-up rather than guessed at.
+- **Done when:** staging URL is shared with the team, and the Definition of Done in `ROADMAP.md` can be walked through there. **Not yet reachable** — needs the runbook's setup first, then a merge to `main` to trigger the first deploy.
 
-### S1-14: Bug fixes
+### S1-14: Bug fixes — blocked
 - Fix what the team finds on staging. Log anything not fixed in `KNOWN_ISSUES.md`.
+- **Nothing to do yet by definition:** this task is "fix what a human finds while clicking around a deployed staging environment," and no staging environment has ever been deployed (S1-13). There is no real bug list to work from — fabricating one would be worse than leaving this honestly blocked. Once S1-13's runbook is completed and a deploy succeeds, re-open this task against whatever the team actually finds.

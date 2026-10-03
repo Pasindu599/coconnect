@@ -1,0 +1,39 @@
+name: Deploy to staging
+
+# Runs after CI's checks would pass (main is only updated via merged, CI-green
+# PRs — see README's "one task per PR, CI must be green"), deploying Hosting,
+# Functions and both rule sets to the project in .firebaserc. See
+# .claude/docs/runbooks/staging-deploy.md for the one-time setup this needs
+# before it can succeed — it cannot run without a human completing that first.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build
+
+      - run: npm ci
+        working-directory: functions
+      - run: npm run build
+        working-directory: functions
+
+      # Populates GOOGLE_APPLICATION_CREDENTIALS for every later step —
+      # firebase-tools picks it up automatically, no --token/login needed.
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_STAGING_SERVICE_ACCOUNT }}
+
+      - run: npx firebase deploy --only hosting,functions,firestore:rules,storage:rules --non-interactive
+        env:
+          PAYHERE_MERCHANT_ID: ${{ vars.PAYHERE_MERCHANT_ID }}
