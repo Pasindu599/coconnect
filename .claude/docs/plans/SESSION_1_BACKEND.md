@@ -134,3 +134,19 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 ### S1-14: Bug fixes — blocked
 - Fix what the team finds on staging. Log anything not fixed in `KNOWN_ISSUES.md`.
 - **Nothing to do yet by definition:** this task is "fix what a human finds while clicking around a deployed staging environment," and no staging environment has ever been deployed (S1-13). There is no real bug list to work from — fabricating one would be worse than leaving this honestly blocked. Once S1-13's runbook is completed and a deploy succeeds, re-open this task against whatever the team actually finds.
+
+---
+
+## Merge with Session 2 (2026-10-03)
+
+While finishing S1-13, `origin/main` had moved: Session 2 pushed essentially its entire plan (S2-01 through S2-17 — category registry, router, construction UI, dashboards split, auth/payment UI against C2-C4, admin portal, 310 unit/component tests, 23 Playwright e2e tests), plus a small follow-up fix to `src/lib/auth.ts`'s error mapping. Merged cleanly (no textual conflicts); verified after merging, not just trusted — lint, build, all 310 tests (needed a real Node 22 locally, see S1-01's note), 54 rules tests, 58 Functions tests, and 8 integration tests all still pass post-merge.
+
+S2 had left nine change requests in `CONTRACTS.md`, most blocked on exactly the S1 tasks that have now landed. Responded to each (see `CONTRACTS.md`'s change-request table and new **C7** section for the full detail); the concrete code changes:
+- `payments.ts` now imports its types from `src/types/payments.ts` instead of redefining them.
+- `paymentsApi.ts` switches between the mock and the real `createPayment`/PayHere popup using the same `usesBackend` gate `authApi.ts` already uses — deliberately not an unconditional switch, which would have broken e2e/demo mode.
+- Added `src/lib/escrow.ts` — client wrappers for `confirmCompletion`/`openDispute`/`resolveDispute`/`recordPayout` existed as Functions since S1-11/12 but had **no client-side caller at all** until now.
+- `recordPayout` now writes `payout_ref`/`payout_at` (S2's mock's field names) alongside its own `fee_payment_ref`/`payout_amount`, so `PayoutsTab.tsx` needs no further change.
+- `store.ts`'s nine repository writes now skip silently (no write attempt, no `syncError`) when there's no real Firebase Auth session, instead of firing and failing in demo mode.
+- `User.memberships` is required again, as S2's request asked once S1-07 landed.
+- Added the Playwright e2e CI job.
+- **Left open, flagged rather than guessed at:** the real `openDispute`/`resolveDispute` write to a new `disputes` collection, not the `ExceptionIssue` type S2's `DisputesTab.tsx` is actually built against — these aren't quite the same concept (`ExceptionIssue` covers non-monetary exceptions too), and reconciling them is a joint data-modeling call.
