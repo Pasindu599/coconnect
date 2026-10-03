@@ -31,10 +31,10 @@ export interface User {
   active_role: Role;
   /**
    * Multi-category memberships (CONTRACTS C1). Written only by the `addMembership` Function.
-   * Optional while the mock store still has users from before categories existed (those are
-   * coconut members); S1-07 makes it required once the data layer is migrated.
+   * Required as of S1-07/08 (every seed/mock user-construction site already sets it, even if
+   * to `[]`) — made required per CONTRACTS.md's change request once the data layer landed.
    */
-  memberships?: Membership[];
+  memberships: Membership[];
   /** Which category's UI the user is currently in; a client-writable UI preference. */
   active_category?: CategoryId;
   nic_status: NicStatus;

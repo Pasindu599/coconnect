@@ -65,7 +65,14 @@ describe('recordPayout', () => {
       db.collection('ledger').where('award_id', '==', awardId).where('type', '==', 'release').get(),
     ]);
 
-    expect(award.data()).toMatchObject({ escrow_status: 'released', fee_payment_ref: 'BT-9988', payout_amount: 10000 });
+    expect(award.data()).toMatchObject({
+      escrow_status: 'released',
+      fee_payment_ref: 'BT-9988',
+      payout_amount: 10000,
+      // Session 2's field names (their admin UI reads these) — see CONTRACTS.md C7.
+      payout_ref: 'BT-9988',
+    });
+    expect(award.data()?.payout_at).toBeTruthy();
     expect(ledger.size).toBe(1);
     // The release ledger entry matches the full held amount (10500), not
     // just the payout (10000) — see recordPayout.ts's reconciliation note.

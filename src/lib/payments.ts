@@ -3,36 +3,16 @@
  * {createPayment,payhere}.ts's output shape exactly — this file does no
  * computation of its own, the Function is the only source of truth for the
  * fee and the signed hash.
+ *
+ * Types come from src/types/payments.ts (Session 2's file, also C4) rather
+ * than being redefined here — S2 asked for this in CONTRACTS.md so the
+ * checkout UI and this module can't drift apart on the same contract.
  */
 import { httpsCallable } from 'firebase/functions';
 import { functions } from './firebase';
+import type { PayHereCheckout, FeeBreakdown } from '../types/payments';
 
-export interface PayHereCheckout {
-  sandbox: boolean;
-  merchant_id: string;
-  order_id: string; // = payments/{id}
-  items: string;
-  amount: string; // "35700.00" (bid price + platform fee)
-  currency: 'LKR';
-  hash: string; // signed server-side
-  return_url: string;
-  cancel_url: string;
-  notify_url: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  country: string;
-}
-
-export interface FeeBreakdown {
-  bidPrice: number;
-  platformFee: number;
-  total: number;
-  currency: 'LKR';
-}
+export type { PayHereCheckout, FeeBreakdown };
 
 interface CreatePaymentOutput {
   checkout: PayHereCheckout;

@@ -876,6 +876,18 @@ class StoreService {
     this.notify();
   }
 
+  /**
+   * Fire-and-forget a repository write, but only when there is a real
+   * Firebase Auth session — firestore.rules requires one for every write,
+   * and demo mode / the Playwright e2e suite never sign in to real Firebase
+   * (CONTRACTS.md's SP3 change request: these calls used to fire anyway,
+   * fail, and spam `state.syncError` on every demo-mode action).
+   */
+  private fireRemoteWrite(action: string, run: () => Promise<void>) {
+    if (!auth.currentUser) return;
+    run().catch((err) => this.reportSyncError(action, err));
+  }
+
   private notify() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     for (const listener of this.listeners) {
@@ -1065,7 +1077,7 @@ class StoreService {
     this.state.estates.unshift(newEstate);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'estate.created', 'estate', newEstate.id, `Registered land "${data.name}" (${data.area_acres} acres)`);
     this.notify();
-    createEstateRemote(newEstate).catch((err) => this.reportSyncError('estate.created', err));
+    this.fireRemoteWrite('estate.created', () => createEstateRemote(newEstate));
     return newEstate;
   }
 
@@ -1098,7 +1110,7 @@ class StoreService {
     this.state.workers.unshift(newWorker);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'worker.registered', 'worker', newWorker.id, `Supervisor registered worker ${data.name} with consent via ${data.consent_method}`);
     this.notify();
-    createWorkerRemote(newWorker).catch((err) => this.reportSyncError('worker.registered', err));
+    this.fireRemoteWrite('worker.registered', () => createWorkerRemote(newWorker));
     return newWorker;
   }
 
@@ -1167,7 +1179,7 @@ class StoreService {
     this.state.jobs.unshift(newJob);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'job.published', 'labour_job', newJob.id, `Owner published job "${data.task_type}" at ${estate.name}`);
     this.notify();
-    createJobRemote(newJob).catch((err) => this.reportSyncError('job.published', err));
+    this.fireRemoteWrite('job.published', () => createJobRemote(newJob));
     return newJob;
   }
 
@@ -1228,7 +1240,7 @@ class StoreService {
     this.state.bids.unshift(newBid);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'bid.submitted', 'bid', newBid.id, `Supervisor bid LKR ${data.price} with ${data.crew_member_ids.length} crew members`);
     this.notify();
-    createBidRemote(newBid).catch((err) => this.reportSyncError('bid.submitted', err));
+    this.fireRemoteWrite('bid.submitted', () => createBidRemote(newBid));
     return { success: true, bid: newBid };
   }
 
@@ -1273,7 +1285,7 @@ class StoreService {
     // write jobs.status past OPEN or any award field directly. awardId is
     // this same client-generated id, so the eventual sync listener update
     // reconciles in place rather than duplicating.
-    awardBidRemote(bid.id, award.id).catch((err) => this.reportSyncError('award.created', err));
+    this.fireRemoteWrite('award.created', () => awardBidRemote(bid.id, award.id));
     return { success: true, award };
   }
 
@@ -1392,7 +1404,7 @@ class StoreService {
 
     this.notify();
     if (newDay.owner_id && newDay.supervisor_id) {
-      createAttendanceDayRemote(newDay).catch((err) => this.reportSyncError('attendanceDay.created', err));
+      this.fireRemoteWrite('attendanceDay.created', () => createAttendanceDayRemote(newDay));
     }
     return newDay;
   }
@@ -1441,7 +1453,7 @@ class StoreService {
 
     this.notify();
     if (entry.owner_id && entry.supervisor_id) {
-      createAttendanceEntryRemote(entry).catch((err) => this.reportSyncError('attendanceEntry.recorded', err));
+      this.fireRemoteWrite('attendanceEntry.recorded', () => createAttendanceEntryRemote(entry));
     }
     return entry;
   }
@@ -1474,9 +1486,7 @@ class StoreService {
       day.status = 'reconciled';
     }
     if (day.status !== previousStatus && day.owner_id && day.supervisor_id) {
-      updateAttendanceDayRemote(day.id, { status: day.status }).catch((err) =>
-        this.reportSyncError('attendanceDay.reconciled', err)
-      );
+      this.fireRemoteWrite('attendanceDay.reconciled', () => updateAttendanceDayRemote(day.id, { status: day.status }));
     }
   }
 
@@ -1524,7 +1534,7 @@ class StoreService {
     this.state.completions.unshift(completion);
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'completion.submitted', 'completion', completion.id, `Supervisor submitted completion with wage records total LKR ${totalWages + supervisorFee}`);
     this.notify();
-    createCompletionRemote(completion).catch((err) => this.reportSyncError('completion.submitted', err));
+    this.fireRemoteWrite('completion.submitted', () => createCompletionRemote(completion));
     return completion;
   }
 

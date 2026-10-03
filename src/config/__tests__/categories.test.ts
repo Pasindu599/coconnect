@@ -31,6 +31,7 @@ const user = (overrides: Partial<User>): User => ({
   name: 'Test',
   roles: ['owner'],
   active_role: 'owner',
+  memberships: [],
   nic_status: 'unverified',
   preferred_language: 'en',
   trust_score: 4.5,

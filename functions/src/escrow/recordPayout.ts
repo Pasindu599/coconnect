@@ -50,6 +50,12 @@ export const recordPayout = onCall<RecordPayoutInput>(async (request) => {
       escrow_status: 'released',
       fee_payment_ref: bankTransferRef,
       payout_amount: payoutAmount,
+      // payout_ref/payout_at are Session 2's existing field names (their
+      // admin PayoutsTab UI filters/sorts on these) — set alongside the
+      // names above so the UI needs no further change once it calls this
+      // Function instead of the mock. See CONTRACTS.md C7.
+      payout_ref: bankTransferRef,
+      payout_at: now,
     });
     tx.set(db.collection('ledger').doc(), {
       category: award.category ?? 'coconut',
