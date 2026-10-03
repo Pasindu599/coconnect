@@ -150,3 +150,14 @@ S2 had left nine change requests in `CONTRACTS.md`, most blocked on exactly the 
 - `User.memberships` is required again, as S2's request asked once S1-07 landed.
 - Added the Playwright e2e CI job.
 - **Left open, flagged rather than guessed at:** the real `openDispute`/`resolveDispute` write to a new `disputes` collection, not the `ExceptionIssue` type S2's `DisputesTab.tsx` is actually built against — these aren't quite the same concept (`ExceptionIssue` covers non-monetary exceptions too), and reconciling them is a joint data-modeling call.
+
+## Security review (2026-10-03)
+
+Ran `/security-review` against the full S1 diff (`2c9fbcf..HEAD`: every rule, Function, and data-layer file built this session), per the project convention of running it on anything touching auth/rules/Functions/payments. Each candidate finding was independently re-verified with a second confidence pass (not just taken on the first agent's word) before any fix was applied. Full reasoning in `DECISIONS.md` ADR-013; summary:
+
+- **Fixed:** a bidder could self-accept their own bid and forge `owner_id` on a bid to hide it from the real owner (`firestore.rules`' `bids` rules had gaps in the create and bidder-update branches).
+- **Fixed:** anyone could forge a `completions` doc naming a victim's job/owner, risking a fraudulent escrow-release confirmation (`firestore.rules`' `completions` create rule plus `confirmCompletion.ts` both lacked a submitter-is-real-supervisor check). Closed with a new `Job.supervisor_id` denormalization (set by `awardBid`) plus a rules-level `get()` check and an independent server-side re-check in `confirmCompletion.ts`.
+- **Investigated and rejected as a non-issue:** a theoretical client/trigger race on `users/{uid}.nic_status` — `onUserCreate`'s merge write self-heals it every time, and nothing in the codebase actually gates a privilege on `nic_status`.
+- **Open, needs Session 2:** the `workers` collection's read rule (`isSignedIn()` only) exposes every worker's NIC number and bank account reference to any authenticated user. The correct fix touches S2-owned component files (`BidsModal.tsx`, `AttendanceTab.tsx`) or requires them to switch to the already-existing `Bid.crew_members` denormalization — raised as a CONTRACTS.md change request (not guessed at unilaterally) and tracked as `KNOWN_ISSUES.md` #29.
+
+All four test layers (310 unit, 57 rules, 58 Functions, 8 integration) plus typecheck and the Functions build were re-run clean after the fixes, and three regression tests were added to `tests/rules/firestore.test.ts`.
