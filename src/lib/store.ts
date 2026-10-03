@@ -18,6 +18,10 @@ import {
   ScoringRuleVersion,
   NicSubmission
 } from '../types';
+import type { CategoryId, Membership } from '../types/category';
+import { constructionSeed } from './seed/construction';
+import { getRole, membershipsOf } from '../config/categories';
+import { contactsUnlocked } from '../config/escrow';
 import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
 import { saveNicSubmissionToFirestore, updateNicSubmissionInFirestore, auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -656,6 +660,10 @@ const initialNicSubmissions: NicSubmission[] = [
   }
 ];
 
+export type PayoutError = 'unauthorized' | 'not-found' | 'not-awaiting-payout' | 'reference-required';
+export type ResolveDisputeError = 'unauthorized' | 'not-found' | 'not-open' | 'not-an-escrow-dispute' | 'notes-required';
+export type DisputeError = 'unauthorized' | 'not-found' | 'not-party' | 'not-disputable' | 'description-too-short';
+
 export interface AppState {
   currentUser: User | null;
   users: User[];
@@ -689,6 +697,12 @@ export interface AppState {
   syncError: { action: string; message: string; at: string } | null;
 }
 
+function mergeMissing<T extends { id: string }>(existing: T[] | undefined, seed: T[]): T[] {
+  const list = existing ?? [];
+  const ids = new Set(list.map(item => item.id));
+  return [...list, ...seed.filter(item => !ids.has(item.id))];
+}
+
 function loadInitialState(): AppState {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
@@ -704,6 +718,13 @@ function loadInitialState(): AppState {
         parsed.nicSubmissions = initialNicSubmissions;
       }
       parsed.syncError = null;
+      // Browsers with state saved before the Construction category existed get its demo data.
+      parsed.users = mergeMissing(parsed.users, constructionSeed.users);
+      parsed.estates = mergeMissing(parsed.estates, constructionSeed.estates);
+      parsed.workers = mergeMissing(parsed.workers, constructionSeed.workers);
+      parsed.jobs = mergeMissing(parsed.jobs, constructionSeed.jobs);
+      parsed.bids = mergeMissing(parsed.bids, constructionSeed.bids);
+      parsed.awards = mergeMissing(parsed.awards, constructionSeed.awards);
       return parsed;
     } catch {
       // ignore
@@ -712,12 +733,12 @@ function loadInitialState(): AppState {
 
   return {
     currentUser: null,
-    users: initialUsers,
-    estates: initialEstates,
-    workers: initialWorkers,
-    jobs: initialJobs,
-    bids: initialBids,
-    awards: initialAwards,
+    users: [...initialUsers, ...constructionSeed.users],
+    estates: [...initialEstates, ...constructionSeed.estates],
+    workers: [...initialWorkers, ...constructionSeed.workers],
+    jobs: [...initialJobs, ...constructionSeed.jobs],
+    bids: [...initialBids, ...constructionSeed.bids],
+    awards: [...initialAwards, ...constructionSeed.awards],
     attendanceDays: initialAttendanceDays,
     attendanceEntries: initialAttendanceEntries,
     completions: initialCompletions,
@@ -873,7 +894,17 @@ class StoreService {
     };
   }
 
-  public verifyOtp(phone: string, code: string, requestedRole?: Role): { success: boolean; user?: User; error?: string } {
+  /**
+   * Phone OTP sign-in (mock). `membership` is the category + role the person chose; a new
+   * user is registered with it, and an existing user who lacks it joins it. This stands in
+   * for Firebase phone auth + the `addMembership` Function (CONTRACTS C3).
+   */
+  public verifyOtp(
+    phone: string,
+    code: string,
+    requestedRole?: Role,
+    membership?: Membership
+  ): { success: boolean; user?: User; error?: string } {
     if (code !== '123456' && code !== '654321') {
       return { success: false, error: 'Invalid 6-digit OTP verification code' };
     }
@@ -882,6 +913,12 @@ class StoreService {
       return { success: false, error: 'Staff accounts cannot sign in here. Use the staff portal.' };
     }
 
+    const categoryRole = membership ? getRole(membership.category, membership.role) : undefined;
+    if (membership && !categoryRole) {
+      return { success: false, error: 'Unknown role for this category' };
+    }
+    const wantedRole: Role | undefined = categoryRole?.legacyRole ?? requestedRole;
+
     let user = this.state.users.find(u => u.phone.replace(/\s+/g, '') === phone.replace(/\s+/g, ''));
 
     // Admins authenticate only through adminLogin(); the public demo OTP must never open a staff account.
@@ -889,9 +926,10 @@ class StoreService {
       return { success: false, error: 'Staff accounts cannot sign in here. Use the staff portal.' };
     }
 
+    let joined = false;
     if (!user) {
       // Auto register demo new user
-      const newRole = requestedRole || 'owner';
+      const newRole = wantedRole || 'owner';
       user = {
         id: `user-${Date.now()}`,
         name: `User (${phone.slice(-4)})`,
@@ -905,18 +943,52 @@ class StoreService {
         pin_hash: '1234',
         created_at: new Date().toISOString()
       };
+      if (membership) user.memberships = [membership];
       this.state.users.push(user);
+    } else if (membership) {
+      joined = this.grantMembership(user, membership);
     }
 
-    if (requestedRole && user.roles.includes(requestedRole)) {
-      user.active_role = requestedRole;
+    if (wantedRole && user.roles.includes(wantedRole)) {
+      user.active_role = wantedRole;
     }
+    if (membership) user.active_category = membership.category;
 
     this.state.currentUser = user;
     this.logAudit(user.id, user.name, 'auth.login_otp', 'user', user.id, `User logged in with verified OTP`);
+    if (joined && membership) {
+      this.logAudit(user.id, user.name, 'auth.membership_added', 'user', user.id, `Joined ${membership.category} as ${membership.role}`);
+    }
     this.notify();
 
     return { success: true, user };
+  }
+
+  /** Add a category role to the signed-in user (mock of the `addMembership` Function). Never grants admin. */
+  public addMembership(membership: Membership): { success: boolean; error?: string } {
+    const user = this.state.currentUser;
+    if (!user) return { success: false, error: 'Unauthorized' };
+    const role = getRole(membership.category, membership.role);
+    if (!role) return { success: false, error: 'Unknown role for this category' };
+
+    const added = this.grantMembership(user, membership);
+    user.active_role = role.legacyRole;
+    user.active_category = membership.category;
+    if (added) {
+      this.logAudit(user.id, user.name, 'auth.membership_added', 'user', user.id, `Joined ${membership.category} as ${membership.role}`);
+    }
+    this.notify();
+    return { success: true };
+  }
+
+  /** Returns true if the membership was new. Keeps the legacy `roles` list in step until S1-07 migrates it. */
+  private grantMembership(user: User, membership: Membership): boolean {
+    const existing = membershipsOf(user);
+    if (existing.some(m => m.category === membership.category && m.role === membership.role)) return false;
+    user.memberships = [...existing, membership];
+    const legacy = getRole(membership.category, membership.role)?.legacyRole;
+    if (legacy && !user.roles.includes(legacy)) user.roles.push(legacy);
+    return true;
   }
 
   // Staff sign-in. Interim client-side check against the seeded admin record until real
@@ -971,13 +1043,15 @@ class StoreService {
     notes?: string;
     lat?: number;
     lng?: number;
+    category?: CategoryId;
+    attributes?: Record<string, string | number>;
   }): Estate {
     if (!this.state.currentUser) throw new Error('Unauthorized');
     const newEstate: Estate = {
       id: `est-${Date.now()}`,
-      // Hardcoded until a category-aware posting UI exists (Session 2); every
-      // estate created through this flow today is a coconut estate.
-      category: 'coconut',
+      // Falls back to coconut (pre-category behaviour); the category-aware form always passes one
+      category: data.category ?? 'coconut',
+      attributes: data.attributes,
       owner_id: this.state.currentUser.id,
       name: data.name,
       area_acres: Number(data.area_acres),
@@ -1003,11 +1077,12 @@ class StoreService {
     nic_ref: string;
     bank_ref?: string;
     consent_method: 'sms' | 'written' | 'verbal_recorded';
+    category?: CategoryId;
   }): Worker {
     if (!this.state.currentUser) throw new Error('Unauthorized');
     const newWorker: Worker = {
       id: `worker-${Date.now()}`,
-      category: 'coconut',
+      category: data.category ?? 'coconut',
       supervisor_id: this.state.currentUser.id,
       name: data.name,
       phone: data.phone,
@@ -1025,6 +1100,30 @@ class StoreService {
     this.notify();
     createWorkerRemote(newWorker).catch((err) => this.reportSyncError('worker.registered', err));
     return newWorker;
+  }
+
+  /** Set or change a worker's payout bank details. Only the person who registered the worker may. */
+  public updateWorkerBank(workerId: string, bankRef: string): { success: boolean; error?: 'unauthorized' | 'not-found' } {
+    const user = this.state.currentUser;
+    if (!user) return { success: false, error: 'unauthorized' };
+    const worker = this.state.workers.find(w => w.id === workerId);
+    if (!worker) return { success: false, error: 'not-found' };
+    if (worker.supervisor_id !== user.id) return { success: false, error: 'unauthorized' };
+
+    worker.bank_ref = bankRef;
+    this.logAudit(user.id, user.name, 'worker.bank_updated', 'worker', worker.id, `Updated payout bank details for ${worker.name}`);
+    this.notify();
+    return { success: true };
+  }
+
+  /** Set the signed-in person's own payout account (where an admin sends their payout). */
+  public updatePayoutBank(bankRef: string): { success: boolean; error?: 'unauthorized' } {
+    const user = this.state.currentUser;
+    if (!user) return { success: false, error: 'unauthorized' };
+    user.payout_bank_ref = bankRef;
+    this.logAudit(user.id, user.name, 'user.payout_bank_updated', 'user', user.id, 'Updated payout bank account');
+    this.notify();
+    return { success: true };
   }
 
   // --- Labour Jobs & Bids ---
@@ -1045,7 +1144,7 @@ class StoreService {
 
     const newJob: LabourJob = {
       id: `job-${Date.now()}`,
-      category: 'coconut',
+      category: estate.category ?? 'coconut',
       owner_id: this.state.currentUser.id,
       owner_name: this.state.currentUser.name,
       estate_id: estate.id,
@@ -1186,6 +1285,8 @@ class StoreService {
 
     const job = this.state.jobs.find(j => j.id === award.job_id);
     if (!job) return { success: false, error: 'Job not found' };
+    // Funding only applies to an award still waiting for payment; it must never undo a dispute or a release
+    if (award.escrow_status !== 'pending') return { success: false, error: 'Award is not awaiting payment' };
 
     award.escrow_status = 'held';
     award.contacts_released_at = new Date().toISOString();
@@ -1230,7 +1331,7 @@ class StoreService {
     const award = this.state.awards.find(a => a.id === awardId);
     if (!award) return { success: false, error: 'Award not found' };
 
-    if (award.escrow_status !== 'held' && award.escrow_status !== 'released') {
+    if (!contactsUnlocked(award.escrow_status)) {
       return {
         success: false,
         error: 'ESCROW_NOT_VERIFIED: Contact details are protected and will only be released once funds are verified in escrow.'
@@ -1435,6 +1536,16 @@ class StoreService {
     if (!this.state.currentUser) return { success: false, error: 'Unauthorized' };
     const job = this.state.jobs.find(j => j.id === jobId);
     if (!job) return { success: false, error: 'Job not found' };
+    if (job.owner_id !== this.state.currentUser.id) {
+      return { success: false, error: 'Only the job owner can confirm completion' };
+    }
+    const heldAward = this.state.awards.find(a => a.job_id === jobId);
+    if (heldAward?.escrow_status === 'disputed') {
+      return { success: false, error: 'The escrow is frozen by an open dispute' };
+    }
+    if (!heldAward || (heldAward.escrow_status !== 'held' && heldAward.escrow_status !== 'release_requested')) {
+      return { success: false, error: 'There is no escrow held for this job' };
+    }
 
     // PIN check
     if (this.state.currentUser.pin_hash && this.state.currentUser.pin_hash !== pin) {
@@ -1450,16 +1561,18 @@ class StoreService {
     job.status = 'COMPLETED';
 
     // Release Escrow Funds!
+    // The owner's sign-off requests the release. The money only leaves escrow when an admin
+    // records the bank transfer (recordPayout), as in the real Functions.
     const award = this.state.awards.find(a => a.job_id === jobId);
     if (award) {
-      award.escrow_status = 'released';
+      award.escrow_status = 'release_requested';
       this.logAudit(
         'system',
         'Coconnect Escrow Engine',
-        'escrow.released',
+        'escrow.release_requested',
         'award',
         award.id,
-        `Dual confirmation verified with PIN signature. Released LKR ${award.escrow_amount.toLocaleString()} from escrow to Supervisor & Worker accounts.`
+        `Completion confirmed with PIN signature. Release of LKR ${award.escrow_amount.toLocaleString()} requested; awaiting the admin payout.`
       );
     }
 
@@ -1708,6 +1821,114 @@ class StoreService {
 
     this.notify();
     return true;
+  }
+
+  /** An admin pays a confirmed job out by bank transfer and records the reference: the escrow is then released. */
+  public recordPayout(
+    awardId: string,
+    bankTransferRef: string
+  ): { success: true } | { success: false; error: PayoutError } {
+    const admin = this.state.currentUser;
+    if (!admin || admin.active_role !== 'admin') return { success: false, error: 'unauthorized' };
+    const award = this.state.awards.find(a => a.id === awardId);
+    if (!award) return { success: false, error: 'not-found' };
+    if (award.escrow_status !== 'release_requested') return { success: false, error: 'not-awaiting-payout' };
+    if (bankTransferRef.trim().length < 4) return { success: false, error: 'reference-required' };
+
+    award.escrow_status = 'released';
+    award.payout_ref = bankTransferRef.trim();
+    award.payout_at = new Date().toISOString();
+    this.logAudit(
+      admin.id,
+      admin.name,
+      'escrow.payout_recorded',
+      'award',
+      award.id,
+      `Paid out LKR ${award.escrow_amount.toLocaleString()} to ${award.supervisor_name}; transfer ref ${award.payout_ref}`
+    );
+    this.notify();
+    return { success: true };
+  }
+
+  /** An admin decides a dispute over an award: refund the payment or release it. Either ends the freeze. */
+  public adminResolveDispute(data: {
+    exception_id: string;
+    outcome: 'refunded' | 'released';
+    notes: string;
+  }): { success: true } | { success: false; error: ResolveDisputeError } {
+    const admin = this.state.currentUser;
+    if (!admin || admin.active_role !== 'admin') return { success: false, error: 'unauthorized' };
+    const dispute = this.state.exceptions.find(e => e.id === data.exception_id);
+    if (!dispute) return { success: false, error: 'not-found' };
+    if (dispute.status === 'resolved') return { success: false, error: 'not-open' };
+    const award = this.state.awards.find(a => a.id === dispute.subject_id);
+    if (dispute.subject_type !== 'award' || !award || award.escrow_status !== 'disputed') {
+      return { success: false, error: 'not-an-escrow-dispute' };
+    }
+    if (data.notes.trim().length < 5) return { success: false, error: 'notes-required' };
+
+    const job = this.state.jobs.find(j => j.id === award.job_id);
+    award.escrow_status = data.outcome;
+    if (job) job.status = data.outcome === 'refunded' ? 'CLOSED_DISPUTED' : 'COMPLETED';
+
+    dispute.status = 'resolved';
+    dispute.outcome = data.outcome;
+    dispute.resolution = data.notes.trim();
+    dispute.resolved_by = admin.name;
+    dispute.resolved_at = new Date().toISOString();
+
+    this.logAudit(
+      admin.id,
+      admin.name,
+      data.outcome === 'refunded' ? 'dispute.refunded' : 'dispute.released',
+      'award',
+      award.id,
+      `Resolved dispute #${dispute.id} (${data.outcome}): ${dispute.resolution}`
+    );
+    this.notify();
+    return { success: true };
+  }
+
+  /**
+   * Either party to an award can open a dispute while the money is in escrow. That freezes the
+   * escrow: nothing moves until an admin resolves it (mock of the `openDispute` Function).
+   */
+  public openDispute(data: {
+    award_id: string;
+    reason_code: ExceptionIssue['reason_code'];
+    description: string;
+  }): { success: true; dispute: ExceptionIssue } | { success: false; error: DisputeError } {
+    const user = this.state.currentUser;
+    if (!user) return { success: false, error: 'unauthorized' };
+    const award = this.state.awards.find(a => a.id === data.award_id);
+    const job = this.state.jobs.find(j => j.id === award?.job_id);
+    if (!award || !job) return { success: false, error: 'not-found' };
+    if (user.id !== job.owner_id && user.id !== award.supervisor_id) return { success: false, error: 'not-party' };
+    if (award.escrow_status !== 'held' && award.escrow_status !== 'release_requested') {
+      return { success: false, error: 'not-disputable' };
+    }
+    if (data.description.trim().length < 10) return { success: false, error: 'description-too-short' };
+
+    const dispute: ExceptionIssue = {
+      id: `exc-${Date.now()}`,
+      job_id: job.id,
+      subject_type: 'award',
+      subject_id: award.id,
+      raised_by: user.id,
+      raised_by_name: user.name,
+      reason_code: data.reason_code,
+      description: data.description.trim(),
+      evidence_blob_refs: [],
+      status: 'open',
+      response_deadline: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+    };
+    this.state.exceptions.unshift(dispute);
+    award.escrow_status = 'disputed';
+    job.status = 'EXCEPTION_OPEN';
+
+    this.logAudit(user.id, user.name, 'dispute.opened', 'award', award.id, `Opened a dispute (${data.reason_code}); escrow frozen`);
+    this.notify();
+    return { success: true, dispute };
   }
 
   public adminResolveException(exceptionId: string, resolution: string): boolean {

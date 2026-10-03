@@ -29,8 +29,12 @@ export interface User {
   name: string;
   roles: Role[];
   active_role: Role;
-  /** Multi-category memberships (CONTRACTS C1). Written only by the `addMembership` Function. */
-  memberships: Membership[];
+  /**
+   * Multi-category memberships (CONTRACTS C1). Written only by the `addMembership` Function.
+   * Optional while the mock store still has users from before categories existed (those are
+   * coconut members); S1-07 makes it required once the data layer is migrated.
+   */
+  memberships?: Membership[];
   /** Which category's UI the user is currently in; a client-writable UI preference. */
   active_category?: CategoryId;
   nic_status: NicStatus;
@@ -45,6 +49,8 @@ export interface User {
   created_at: string;
   avatar_url?: string;
   location?: string;
+  /** Where Coconnect sends this person's payout, as "<bank code> <account>" (see src/lib/bank.ts). */
+  payout_bank_ref?: string;
 }
 
 export interface NicSubmission {
@@ -75,6 +81,8 @@ export interface Estate {
   id: string;
   /** Optional, defaults to 'coconut' at write time (see store.ts) until a category-aware posting UI sets it explicitly. Required by firestore.rules' isPoster() check. */
   category?: CategoryId;
+  /** Category-specific site fields from the registry (e.g. construction floor_area_sqft). */
+  attributes?: Record<string, string | number>;
   owner_id: string;
   name: string;
   area_acres: number;
@@ -163,6 +171,9 @@ export interface Award {
   escrow_amount: number;
   contacts_released_at?: string;
   fee_payment_ref?: string;
+  /** The bank transfer reference an admin recorded when paying the bidder out. */
+  payout_ref?: string;
+  payout_at?: string;
   /** Set by recordPayout (S1-12): the net amount wired to the supervisor's bank (escrow_amount minus the platform fee). */
   payout_amount?: number;
 }
@@ -291,6 +302,8 @@ export interface ExceptionIssue {
   status: 'open' | 'under_review' | 'resolved';
   response_deadline: string;
   resolution?: string;
+  /** For a dispute over an award: what the admin decided to do with the money. */
+  outcome?: 'refunded' | 'released';
   resolved_by?: string;
   resolved_at?: string;
 }

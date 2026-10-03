@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
+import { useT } from '../../config/CategoryContext';
+import { hasAnyCapability } from '../../config/categories';
+import { PayoutAccountCard } from './PayoutAccountCard';
 import { store, AppState } from '../../lib/store';
-import {
-  Language,
-  getT,
-  fmt,
-  tRole,
-  tRoleLong,
-  tReviewStatus,
-  tDocType,
-  tReviewTag,
-} from '../../lib/i18n';
+import { Language, fmt, tRole, tRoleLong, tReviewStatus, tDocType, tReviewTag } from '../../lib/i18n';
 import { Role } from '../../types';
 import { 
   User, 
@@ -42,7 +36,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   state,
   currentLang,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   const user = state.currentUser;
   
   // Verification upload state
@@ -54,7 +48,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   if (!user) {
     return (
       <div className="p-8 text-center text-slate-400">
-        {getT(currentLang).profile_login_required}
+        {t.profile_login_required}
       </div>
     );
   }
@@ -436,6 +430,8 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
           </div>
         </div>
       </div>
+
+      {hasAnyCapability(user, 'bidder') && <PayoutAccountCard currentLang={currentLang} user={user} />}
 
       {/* Ratings & Reviews Received */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">

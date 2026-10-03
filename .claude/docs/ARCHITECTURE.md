@@ -1,6 +1,18 @@
 # Architecture
 
-## Current (prototype, as of 2026-10-02)
+## Frontend as built (2026-10-03)
+
+```
+App.tsx (hash router + CategoryProvider)
+ ├─ config/categories.ts      registry: roles/capabilities, tasks, skills, tags, site fields, vocab
+ ├─ components/*              screens read the registry; money screens read config/escrow.ts
+ ├─ lib/authApi.ts            demo sign-in | real Firebase auth (VITE_AUTH_MODE=firebase)
+ ├─ lib/paymentsApi.ts        sandbox stand-in | real createPayment + PayHere popup (S1-09)
+ └─ lib/store.ts              demo data + business logic (mock of the Functions) + Firestore sync (S1-07)
+```
+The escrow state machine in the UI and the mock store matches the diagram below: owner sign-off -> `release_requested`, admin `recordPayout` -> `released`, a dispute freezes the escrow and an admin refunds or releases. Details and the swap points for Session 1 are in `plans/CONTRACTS.md`.
+
+## Prototype it started from (as of 2026-10-02)
 
 ```
 Browser (React SPA)
