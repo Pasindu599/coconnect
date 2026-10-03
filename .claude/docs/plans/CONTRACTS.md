@@ -83,15 +83,17 @@ Escrow status shown in the UI comes from `award.escrow_status` in store state. I
 
 - **Mock until SP5:** S2 uses a local stub in its component tests and UI that returns a fixed `FeeBreakdown` and does not open PayHere.
 
-## C5. NIC upload (S1 adds in S1-08)
+## C5. NIC upload (S1 delivered in S1-08)
 
-S1 replaces this section with the exact signature in the S1-08 PR. Planned shape:
+File: `src/lib/data/nic.ts`
 
 ```ts
-uploadNicImage(file: File, side: 'front' | 'back'): Promise<string>  // returns a Storage path
+export function uploadNicImage(file: File, side: 'front' | 'back'): Promise<string>;
 ```
 
-Until then, `NicSubmissionModal` keeps its current behaviour.
+- Uploads to Storage at `nic/{uid}/{side}.{ext}` (`uid` is `auth.currentUser`, not a parameter — throws if nobody's signed in) and **returns that path**, not a download URL. `storage.rules` restricts the path to the owner and admins.
+- To actually display the image (e.g. an admin review screen), resolve a download URL from the returned path yourself: `getDownloadURL(ref(storage, path))` (`storage` is exported from `src/lib/firebase.ts`).
+- `NicSubmissionModal` can switch to this now — closes KNOWN_ISSUES #8 once it does.
 
 ## C6. Error and status strings
 

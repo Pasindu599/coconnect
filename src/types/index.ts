@@ -139,6 +139,8 @@ export interface Bid {
   /** Optional, see Estate.category. */
   category?: CategoryId;
   job_id: string;
+  /** Denormalized from the job at submission time — lets firestore.rules' sealed-bid read check stay a simple field equality instead of a cross-document get(), which a `list`/onSnapshot query can't safely use (ADR-008/009). */
+  owner_id?: string;
   supervisor_id: string;
   supervisor_name: string;
   supervisor_phone: string;
@@ -157,6 +159,10 @@ export interface Award {
   /** Optional, see Estate.category. */
   category?: CategoryId;
   job_id: string;
+  /** Denormalized, same reason as Bid.owner_id above. owner_phone/owner_name close the "supervisor can't see who to call" gap (S1-11) — the supervisor can read the award but not users/{owner_id} directly. */
+  owner_id?: string;
+  owner_name?: string;
+  owner_phone?: string;
   bid_id: string;
   supervisor_id: string;
   supervisor_name: string;
@@ -168,11 +174,16 @@ export interface Award {
   /** The bank transfer reference an admin recorded when paying the bidder out. */
   payout_ref?: string;
   payout_at?: string;
+  /** Set by recordPayout (S1-12): the net amount wired to the supervisor's bank (escrow_amount minus the platform fee). */
+  payout_amount?: number;
 }
 
 export interface AttendanceDay {
   id: string;
   job_id: string;
+  /** Denormalized from the job/award so firestore.rules can authorize without a query — see ADR-006/S1-08. */
+  owner_id?: string;
+  supervisor_id?: string;
   work_date: string;
   status: 'open' | 'reconciled' | 'disputed';
   created_at: string;
@@ -181,6 +192,9 @@ export interface AttendanceDay {
 export interface AttendanceEntry {
   id: string;
   attendance_day_id: string;
+  /** Denormalized, same reason as AttendanceDay above. */
+  owner_id?: string;
+  supervisor_id?: string;
   worker_id: string;
   worker_name: string;
   party: 'supervisor' | 'owner';
@@ -204,6 +218,8 @@ export interface WageRecord {
 export interface Completion {
   id: string;
   job_id: string;
+  /** Denormalized, same reason as AttendanceDay above; submitted_by already identifies the supervisor side. */
+  owner_id?: string;
   submitted_by: string;
   submitted_at: string;
   status: 'pending' | 'confirmed' | 'disputed';
@@ -211,6 +227,23 @@ export interface Completion {
   total_wages: number;
   supervisor_fee: number;
   notes?: string;
+}
+
+/** New in S1-11 — see .claude/docs/specs/payments.md's dispute/resolveDispute section. */
+export interface Dispute {
+  id: string;
+  category?: CategoryId;
+  job_id: string;
+  award_id: string;
+  owner_id: string;
+  supervisor_id: string;
+  opened_by: string;
+  reason: string;
+  opened_at: string;
+  status: 'open' | 'resolved';
+  resolution?: 'refunded' | 'released';
+  resolved_by?: string;
+  resolved_at?: string;
 }
 
 export interface RatingSubmission {

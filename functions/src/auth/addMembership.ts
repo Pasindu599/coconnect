@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, type Transaction } from 'firebase-admin/firestore';
+import { type Transaction } from 'firebase-admin/firestore';
+import { getDb } from '../db.js';
 import { isValidCategoryRole, type CategoryId, type CategoryRoleId } from './roles.js';
 
 export interface AddMembershipInput {
@@ -32,7 +33,7 @@ export const addMembership = onCall<AddMembershipInput>(async (request) => {
 
   const uid = request.auth.uid;
   const membership: Membership = { category, role };
-  const db = getFirestore();
+  const db = getDb();
   const userRef = db.collection('users').doc(uid);
 
   await db.runTransaction(async (tx: Transaction) => {

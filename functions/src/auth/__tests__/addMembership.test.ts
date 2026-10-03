@@ -6,6 +6,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import type { CallableRequest } from 'firebase-functions/v2/https';
 import { addMembership, type AddMembershipInput } from '../addMembership.js';
+import { DATABASE_ID } from '../../db.js';
 
 let app: App;
 
@@ -49,7 +50,7 @@ describe('addMembership', () => {
     const uid = await freshUid();
     await call({ category: 'coconut', role: 'broker' }, uid);
 
-    const userDoc = await getFirestore(app).collection('users').doc(uid).get();
+    const userDoc = await getFirestore(app, DATABASE_ID).collection('users').doc(uid).get();
     expect(userDoc.data()?.memberships).toEqual([{ category: 'coconut', role: 'broker' }]);
 
     const userRecord = await getAuth(app).getUser(uid);
@@ -61,7 +62,7 @@ describe('addMembership', () => {
     await call({ category: 'construction', role: 'contractor' }, uid);
     await call({ category: 'construction', role: 'contractor' }, uid);
 
-    const userDoc = await getFirestore(app).collection('users').doc(uid).get();
+    const userDoc = await getFirestore(app, DATABASE_ID).collection('users').doc(uid).get();
     expect(userDoc.data()?.memberships).toEqual([{ category: 'construction', role: 'contractor' }]);
   });
 
@@ -70,7 +71,7 @@ describe('addMembership', () => {
     await call({ category: 'coconut', role: 'owner' }, uid);
     await call({ category: 'construction', role: 'client' }, uid);
 
-    const userDoc = await getFirestore(app).collection('users').doc(uid).get();
+    const userDoc = await getFirestore(app, DATABASE_ID).collection('users').doc(uid).get();
     expect(userDoc.data()?.memberships).toEqual([
       { category: 'coconut', role: 'owner' },
       { category: 'construction', role: 'client' },

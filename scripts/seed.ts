@@ -20,6 +20,8 @@
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { DATABASE_ID } from '../functions/src/db';
+import { hashPin } from '../functions/src/escrow/pin';
 
 const PROJECT_ID = process.env.GCLOUD_PROJECT ?? 'demo-coconnect';
 
@@ -30,7 +32,9 @@ process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
 
 const app = initializeApp({ projectId: PROJECT_ID });
 const auth = getAuth(app);
-const db = getFirestore(app);
+// Must match src/lib/firebase.ts's named database (ADR-010) — getFirestore(app)
+// alone would silently write to the separate, empty `(default)` database.
+const db = getFirestore(app, DATABASE_ID);
 
 const iso = (s: string) => Timestamp.fromDate(new Date(s));
 
@@ -49,6 +53,8 @@ interface SeedUser {
   active_category?: 'coconut' | 'construction';
   admin?: boolean;
   nic_status?: 'unverified' | 'pending' | 'verified' | 'rejected';
+  /** Demo completion-confirmation PIN (S1-11's confirmCompletion) — hashed before writing, never stored plain. */
+  completionPin?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +69,7 @@ const coconutUsers: SeedUser[] = [
     memberships: [{ category: 'coconut', role: 'owner' }, { category: 'coconut', role: 'broker' }],
     active_category: 'coconut',
     nic_status: 'verified',
+    completionPin: '1234',
   },
   {
     uid: 'user-sup-1',
@@ -206,19 +213,19 @@ const coconutJobs = [
 
 const coconutBids = [
   {
-    id: 'bid-201', category: 'coconut' as const, job_id: 'job-101', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
+    id: 'bid-201', category: 'coconut' as const, owner_id: 'user-owner-1', job_id: 'job-101', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
     supervisor_phone: '+94719876543', supervisor_trust_score: 4.92, price: 46000, supervisor_fee: 4000,
     payment_schedule: 'daily', status: 'pending', submitted_at: iso('2026-09-18T14:30:00Z'),
     crew_member_ids: ['worker-1', 'worker-2', 'worker-3', 'worker-5'],
   },
   {
-    id: 'bid-202', category: 'coconut' as const, job_id: 'job-102', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
+    id: 'bid-202', category: 'coconut' as const, owner_id: 'user-owner-1', job_id: 'job-102', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
     supervisor_phone: '+94719876543', supervisor_trust_score: 4.92, price: 35000, supervisor_fee: 3500,
     payment_schedule: 'lump_sum', status: 'accepted', submitted_at: iso('2026-09-16T10:00:00Z'),
     crew_member_ids: ['worker-2', 'worker-4', 'worker-5'],
   },
   {
-    id: 'bid-203', category: 'coconut' as const, job_id: 'job-103', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
+    id: 'bid-203', category: 'coconut' as const, owner_id: 'user-owner-1', job_id: 'job-103', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
     supervisor_phone: '+94719876543', supervisor_trust_score: 4.92, price: 38000, supervisor_fee: 3800,
     payment_schedule: 'daily', status: 'accepted', submitted_at: iso('2026-09-15T08:00:00Z'),
     crew_member_ids: ['worker-1', 'worker-3', 'worker-4'],
@@ -227,12 +234,12 @@ const coconutBids = [
 
 const coconutAwards = [
   {
-    id: 'award-302', category: 'coconut' as const, job_id: 'job-102', bid_id: 'bid-202', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
+    id: 'award-302', category: 'coconut' as const, owner_id: 'user-owner-1', owner_name: 'Sunil Perera', owner_phone: '+94771234567', job_id: 'job-102', bid_id: 'bid-202', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
     awarded_at: iso('2026-09-17T09:00:00Z'), escrow_status: 'held', escrow_amount: 35000,
     contacts_released_at: iso('2026-09-17T09:05:00Z'), fee_payment_ref: 'PAYHERE-ESCROW-882910',
   },
   {
-    id: 'award-303', category: 'coconut' as const, job_id: 'job-103', bid_id: 'bid-203', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
+    id: 'award-303', category: 'coconut' as const, owner_id: 'user-owner-1', owner_name: 'Sunil Perera', owner_phone: '+94771234567', job_id: 'job-103', bid_id: 'bid-203', supervisor_id: 'user-sup-1', supervisor_name: 'Kusal Mendis',
     awarded_at: iso('2026-09-15T10:00:00Z'), escrow_status: 'held', escrow_amount: 38000,
     contacts_released_at: iso('2026-09-15T10:02:00Z'), fee_payment_ref: 'PAYHERE-ESCROW-773019',
   },
@@ -259,6 +266,7 @@ const constructionUsers: SeedUser[] = [
     memberships: [{ category: 'construction', role: 'client' }],
     active_category: 'construction',
     nic_status: 'verified',
+    completionPin: '1234',
   },
   {
     uid: 'user-contractor-1',
@@ -362,13 +370,13 @@ const constructionJobs = [
 
 const constructionBids = [
   {
-    id: 'bid-c201', category: 'construction' as const, job_id: 'job-c101', supervisor_id: 'user-contractor-1', supervisor_name: 'Ajith Gunawardena (Lanka Builders)',
+    id: 'bid-c201', category: 'construction' as const, owner_id: 'user-client-1', job_id: 'job-c101', supervisor_id: 'user-contractor-1', supervisor_name: 'Ajith Gunawardena (Lanka Builders)',
     supervisor_phone: '+94773334455', supervisor_trust_score: 4.80, price: 620000, supervisor_fee: 31000,
     payment_schedule: 'lump_sum', status: 'pending', submitted_at: iso('2026-09-26T09:00:00Z'),
     crew_member_ids: ['worker-c1', 'worker-c2'],
   },
   {
-    id: 'bid-c202', category: 'construction' as const, job_id: 'job-c102', supervisor_id: 'user-subcontractor-1', supervisor_name: 'Ruwanthi Electrical Services',
+    id: 'bid-c202', category: 'construction' as const, owner_id: 'user-client-1', job_id: 'job-c102', supervisor_id: 'user-subcontractor-1', supervisor_name: 'Ruwanthi Electrical Services',
     supervisor_phone: '+94774445566', supervisor_trust_score: 4.95, price: 115000, supervisor_fee: 5750,
     payment_schedule: 'lump_sum', status: 'accepted', submitted_at: iso('2026-09-22T09:00:00Z'),
     crew_member_ids: ['worker-c3'],
@@ -377,7 +385,7 @@ const constructionBids = [
 
 const constructionAwards = [
   {
-    id: 'award-c302', category: 'construction' as const, job_id: 'job-c102', bid_id: 'bid-c202', supervisor_id: 'user-subcontractor-1', supervisor_name: 'Ruwanthi Electrical Services',
+    id: 'award-c302', category: 'construction' as const, owner_id: 'user-client-1', owner_name: 'Priya Jayawardena', owner_phone: '+94772223344', job_id: 'job-c102', bid_id: 'bid-c202', supervisor_id: 'user-subcontractor-1', supervisor_name: 'Ruwanthi Electrical Services',
     awarded_at: iso('2026-09-23T09:00:00Z'), escrow_status: 'held', escrow_amount: 115000,
     contacts_released_at: iso('2026-09-23T09:05:00Z'), fee_payment_ref: 'PAYHERE-ESCROW-559012',
   },
@@ -403,6 +411,7 @@ async function seedUser(u: SeedUser) {
     nic_status: u.nic_status ?? 'unverified',
     preferred_language: 'en',
     trust_score: 0,
+    pin_hash: u.completionPin ? await hashPin(u.completionPin) : null,
     created_at: Timestamp.now(),
   });
 }
@@ -428,12 +437,16 @@ async function main() {
   await seedCollection('workers', [...coconutWorkers, ...constructionWorkers]);
   await seedCollection('awards', [...coconutAwards, ...constructionAwards]);
 
+  console.log('  config/platform (ADR-011)...');
+  await db.collection('config').doc('platform').set({ fee_percent: 5 });
+
   console.log('Done. Demo accounts:');
   console.log('  coconut owner   : phone +94771234567 (user-owner-1)');
   console.log('  coconut broker  : phone +94719876543 (user-sup-1)');
   console.log('  construction client     : phone +94772223344 (user-client-1)');
   console.log('  construction contractor : phone +94773334455 (user-contractor-1)');
   console.log('  admin (staff)   : niluka.fernando@coconnect.gov.lk / coconnect-admin-demo-pw');
+  console.log('  completion PIN (both posters): 1234');
   console.log('  Use the Auth emulator UI (http://127.0.0.1:4000/auth) to read the SMS verification code for phone sign-in.');
 }
 

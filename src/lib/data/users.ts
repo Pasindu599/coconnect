@@ -1,5 +1,5 @@
 import type { User } from '../../types';
-import { patchDoc, subscribeToCollection, type RemoteChanges } from './firestoreSync';
+import { patchDoc, subscribeToDocument } from './firestoreSync';
 
 const COLLECTION = 'users';
 
@@ -15,9 +15,17 @@ export function updateOwnProfile(uid: string, patch: Pick<Partial<User>, 'active
   return patchDoc(COLLECTION, uid, patch);
 }
 
-export function subscribeToUsers(
-  onChange: (changes: RemoteChanges<User>) => void,
+/**
+ * Only `users/{uid}` for the signed-in uid — firestore.rules scopes reads to
+ * self+admin, so a bare collection listener would be denied outright for
+ * every non-admin caller the moment any other user's doc exists (ADR-009).
+ * An admin console that needs to browse all users is a separate, deliberate
+ * admin-only query, not something store.startSync() does implicitly.
+ */
+export function subscribeToOwnUser(
+  uid: string,
+  onChange: (user: User | null) => void,
   onError: (err: unknown) => void
 ): () => void {
-  return subscribeToCollection<User>(COLLECTION, onChange, onError);
+  return subscribeToDocument<User>(COLLECTION, uid, onChange, onError);
 }

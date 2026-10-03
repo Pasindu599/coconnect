@@ -166,7 +166,7 @@ describe('bids (sealed)', () => {
     await seedOpenJob();
     const db = ctx(BIDDER).firestore();
     await assertSucceeds(
-      setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', supervisor_id: BIDDER.uid, price: 1000, status: 'pending' })
+      setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, price: 1000, status: 'pending' })
     );
   });
 
@@ -174,7 +174,7 @@ describe('bids (sealed)', () => {
     await seed((db) => setDoc(doc(db, 'jobs', 'j1'), { category: 'coconut', owner_id: OWNER.uid, status: 'DRAFT' }));
     const db = ctx(BIDDER).firestore();
     await assertFails(
-      setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', supervisor_id: BIDDER.uid, price: 1000, status: 'pending' })
+      setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, price: 1000, status: 'pending' })
     );
   });
 
@@ -182,13 +182,13 @@ describe('bids (sealed)', () => {
     await seedOpenJob();
     const db = ctx(OWNER).firestore();
     await assertFails(
-      setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', supervisor_id: OWNER.uid, price: 1000, status: 'pending' })
+      setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OWNER.uid, supervisor_id: OWNER.uid, price: 1000, status: 'pending' })
     );
   });
 
   it('other bidders cannot read a sealed bid; the job owner and the bidder can', async () => {
     await seedOpenJob();
-    await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
+    await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
     await assertSucceeds(getDoc(doc(ctx(BIDDER).firestore(), 'bids', 'b1')));
     await assertSucceeds(getDoc(doc(ctx(OWNER).firestore(), 'bids', 'b1')));
     await assertFails(getDoc(doc(ctx(OTHER_BIDDER).firestore(), 'bids', 'b1')));
@@ -196,20 +196,20 @@ describe('bids (sealed)', () => {
 
   it('the bidder can edit their own pending bid', async () => {
     await seedOpenJob();
-    await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
+    await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
     await assertSucceeds(updateDoc(doc(ctx(BIDDER).firestore(), 'bids', 'b1'), { price: 1200 }));
   });
 
   it('the job owner can accept/reject but not change the price', async () => {
     await seedOpenJob();
-    await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
+    await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
     await assertFails(updateDoc(doc(ctx(OWNER).firestore(), 'bids', 'b1'), { price: 1 }));
     await assertSucceeds(updateDoc(doc(ctx(OWNER).firestore(), 'bids', 'b1'), { status: 'accepted' }));
   });
 
   it('a stranger cannot accept a bid', async () => {
     await seedOpenJob();
-    await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
+    await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
     await assertFails(updateDoc(doc(ctx(OTHER_OWNER).firestore(), 'bids', 'b1'), { status: 'accepted' }));
   });
 });
@@ -262,9 +262,9 @@ describe('money collections are Functions-only', () => {
   it('the job owner and the award\'s bidder can read the award, payment and ledger entry; a stranger cannot', async () => {
     await seed(async (db) => {
       await setDoc(doc(db, 'jobs', 'j1'), { category: 'coconut', owner_id: OWNER.uid, status: 'ACTIVE' });
-      await setDoc(doc(db, 'awards', 'a1'), { job_id: 'j1', supervisor_id: BIDDER.uid, escrow_status: 'held' });
-      await setDoc(doc(db, 'payments', 'p1'), { award_id: 'a1', amount: 100, status: 'paid' });
-      await setDoc(doc(db, 'ledger', 'l1'), { award_id: 'a1', type: 'hold', amount: 100 });
+      await setDoc(doc(db, 'awards', 'a1'), { job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, escrow_status: 'held' });
+      await setDoc(doc(db, 'payments', 'p1'), { award_id: 'a1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, amount: 100, status: 'paid' });
+      await setDoc(doc(db, 'ledger', 'l1'), { award_id: 'a1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, type: 'hold', amount: 100 });
     });
 
     await assertSucceeds(getDoc(doc(ctx(OWNER).firestore(), 'awards', 'a1')));
@@ -319,18 +319,18 @@ describe('attendance', () => {
 describe('completions', () => {
   it('the bidder can submit a completion as pending', async () => {
     await assertSucceeds(
-      setDoc(doc(ctx(BIDDER).firestore(), 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, status: 'pending' })
+      setDoc(doc(ctx(BIDDER).firestore(), 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, submitted_by: BIDDER.uid, status: 'pending' })
     );
   });
 
   it('the job owner cannot submit a completion on the bidder\'s behalf', async () => {
     await assertFails(
-      setDoc(doc(ctx(OWNER).firestore(), 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, status: 'pending' })
+      setDoc(doc(ctx(OWNER).firestore(), 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, submitted_by: BIDDER.uid, status: 'pending' })
     );
   });
 
   it('no client can confirm a completion directly (PIN check is server-side)', async () => {
-    await seed((db) => setDoc(doc(db, 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, status: 'pending' }));
+    await seed((db) => setDoc(doc(db, 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, submitted_by: BIDDER.uid, status: 'pending' }));
     await assertFails(updateDoc(doc(ctx(OWNER).firestore(), 'completions', 'c1'), { status: 'confirmed' }));
     await assertFails(updateDoc(doc(ctx(BIDDER).firestore(), 'completions', 'c1'), { status: 'confirmed' }));
   });

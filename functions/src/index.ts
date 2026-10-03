@@ -5,6 +5,10 @@ initializeApp();
 export { onUserCreate } from './auth/onUserCreate.js';
 export { addMembership } from './auth/addMembership.js';
 export { setAdmin } from './auth/setAdmin.js';
-
-// Functions are added per task: payments/* (S1-09, S1-10), escrow/*
-// (S1-11, S1-12). This file re-exports each once it exists.
+export { awardBid } from './jobs/awardBid.js';
+export { createPayment } from './payments/createPayment.js';
+export { payhereNotify } from './payments/payhereNotify.js';
+export { confirmCompletion } from './escrow/confirmCompletion.js';
+export { openDispute } from './escrow/openDispute.js';
+export { resolveDispute } from './escrow/resolveDispute.js';
+export { recordPayout } from './escrow/recordPayout.js';
