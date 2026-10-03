@@ -190,7 +190,7 @@ const coconutJobs = [
     estate_id: 'est-2', estate_name: 'Chilaw Coastal Coconut Grove', estate_location: 'Madampe, Chilaw',
     task_type: 'Fertilizer Ring Application & Mulching', starts_at: iso('2026-09-22'), ends_at: iso('2026-09-23'),
     worker_count: 3, duration_days: 2, required_skills: ['Fertilizer Trenching', 'Organic Mulching'],
-    wage_budget: 36000, status: 'ACTIVE', created_at: iso('2026-09-16T08:30:00Z'),
+    wage_budget: 36000, status: 'ACTIVE', supervisor_id: 'user-sup-1', created_at: iso('2026-09-16T08:30:00Z'),
     description: 'Applying inorganic fertilizer mix in 6-foot circular trenches around 500 palms with coir dust mulching.',
   },
   {
@@ -198,7 +198,7 @@ const coconutJobs = [
     estate_id: 'est-1', estate_name: 'Silver Palm Estate', estate_location: 'Narammala, Kurunegala',
     task_type: 'Dry Frond Trimming & Crown Cleaning', starts_at: iso('2026-09-20'), ends_at: iso('2026-09-21'),
     worker_count: 3, duration_days: 2, required_skills: ['Tree Climbing', 'Crown Cleaning'],
-    wage_budget: 39000, status: 'IN_PROGRESS', created_at: iso('2026-09-14T11:00:00Z'),
+    wage_budget: 39000, status: 'IN_PROGRESS', supervisor_id: 'user-sup-1', created_at: iso('2026-09-14T11:00:00Z'),
     description: 'Preventative maintenance against rhinoceros beetle and clearing dead petioles.',
   },
   {
@@ -355,7 +355,7 @@ const constructionJobs = [
     estate_id: 'site-c2', estate_name: 'Shop Renovation — Maharagama', estate_location: 'Maharagama, Colombo',
     task_type: 'Electrical Wiring', starts_at: iso('2026-09-28'), ends_at: iso('2026-10-02'),
     worker_count: 2, duration_days: 5, required_skills: ['Electrician'],
-    wage_budget: 120000, status: 'ACTIVE', created_at: iso('2026-09-21T10:00:00Z'),
+    wage_budget: 120000, status: 'ACTIVE', supervisor_id: 'user-subcontractor-1', created_at: iso('2026-09-21T10:00:00Z'),
     description: 'Full rewire of a retail unit: new consumer unit, lighting circuits, socket outlets.',
   },
   {

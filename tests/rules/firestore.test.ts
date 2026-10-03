@@ -212,6 +212,20 @@ describe('bids (sealed)', () => {
     await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
     await assertFails(updateDoc(doc(ctx(OTHER_OWNER).firestore(), 'bids', 'b1'), { status: 'accepted' }));
   });
+
+  it('a bidder cannot self-accept their own bid', async () => {
+    await seedOpenJob();
+    await seed((db) => setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, price: 1000, status: 'pending' }));
+    await assertFails(updateDoc(doc(ctx(BIDDER).firestore(), 'bids', 'b1'), { status: 'accepted' }));
+  });
+
+  it('a bidder cannot forge owner_id to hide a bid from the real owner', async () => {
+    await seedOpenJob();
+    const db = ctx(BIDDER).firestore();
+    await assertFails(
+      setDoc(doc(db, 'bids', 'b1'), { category: 'coconut', job_id: 'j1', owner_id: OTHER_OWNER.uid, supervisor_id: BIDDER.uid, price: 1000, status: 'pending' })
+    );
+  });
 });
 
 describe('workers', () => {
@@ -317,19 +331,38 @@ describe('attendance', () => {
 });
 
 describe('completions', () => {
+  async function seedAwardedJob() {
+    await seed((db) => setDoc(doc(db, 'jobs', 'j1'), { category: 'coconut', owner_id: OWNER.uid, supervisor_id: BIDDER.uid, status: 'PENDING_COMPLETION' }));
+  }
+
   it('the bidder can submit a completion as pending', async () => {
+    await seedAwardedJob();
     await assertSucceeds(
       setDoc(doc(ctx(BIDDER).firestore(), 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, submitted_by: BIDDER.uid, status: 'pending' })
     );
   });
 
   it('the job owner cannot submit a completion on the bidder\'s behalf', async () => {
+    await seedAwardedJob();
     await assertFails(
       setDoc(doc(ctx(OWNER).firestore(), 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, submitted_by: BIDDER.uid, status: 'pending' })
     );
   });
 
+  it('a third party cannot forge a completion naming someone else\'s job/owner', async () => {
+    await seedAwardedJob();
+    // OTHER_BIDDER is not the job's awarded supervisor, so submitted_by won't match job.supervisor_id.
+    await assertFails(
+      setDoc(doc(ctx(OTHER_BIDDER).firestore(), 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, submitted_by: OTHER_BIDDER.uid, status: 'pending' })
+    );
+    // Same bidder, but lying about which owner it's for.
+    await assertFails(
+      setDoc(doc(ctx(BIDDER).firestore(), 'completions', 'c2'), { job_id: 'j1', owner_id: OTHER_OWNER.uid, submitted_by: BIDDER.uid, status: 'pending' })
+    );
+  });
+
   it('no client can confirm a completion directly (PIN check is server-side)', async () => {
+    await seedAwardedJob();
     await seed((db) => setDoc(doc(db, 'completions', 'c1'), { job_id: 'j1', owner_id: OWNER.uid, submitted_by: BIDDER.uid, status: 'pending' }));
     await assertFails(updateDoc(doc(ctx(OWNER).firestore(), 'completions', 'c1'), { status: 'confirmed' }));
     await assertFails(updateDoc(doc(ctx(BIDDER).firestore(), 'completions', 'c1'), { status: 'confirmed' }));

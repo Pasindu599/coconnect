@@ -117,6 +117,8 @@ export interface LabourJob {
   category?: CategoryId;
   owner_id: string;
   owner_name: string;
+  /** Set by awardBid once a bid is accepted; lets firestore.rules verify a completions submitter is the real awarded supervisor. */
+  supervisor_id?: string;
   estate_id: string;
   estate_name: string;
   estate_location: string;

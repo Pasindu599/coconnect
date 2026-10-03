@@ -69,6 +69,16 @@ export const confirmCompletion = onCall<ConfirmCompletionInput>(async (request) 
   if (award.data.escrow_status !== 'held') {
     throw new HttpsError('failed-precondition', `Escrow is "${award.data.escrow_status}", not held.`);
   }
+  // Defense in depth alongside the firestore.rules create check: refuse to
+  // advance escrow for a completion that doesn't match the award's real
+  // owner/supervisor, even if a forged doc somehow reached `held`+pending.
+  // Security-review fix (completions forgery).
+  if (award.data.owner_id !== completion.owner_id) {
+    throw new HttpsError('failed-precondition', 'Completion owner does not match this award.');
+  }
+  if (award.data.supervisor_id !== completion.submitted_by) {
+    throw new HttpsError('failed-precondition', 'This completion was not submitted by the awarded supervisor.');
+  }
 
   const now_iso = new Date().toISOString();
   await db.runTransaction(async (tx: Transaction) => {

@@ -78,7 +78,11 @@ export const awardBid = onCall<AwardBidInput>(async (request) => {
       }
     });
 
-    tx.update(jobRef, { status: 'AWARDED_PENDING_FEE' });
+    // Denormalized so firestore.rules can verify a `completions` doc's
+    // submitted_by is really the awarded supervisor, not just anyone
+    // forging a job_id/owner_id they read off the (broadly readable) job
+    // doc — see the security-review fix for the completions create rule.
+    tx.update(jobRef, { status: 'AWARDED_PENDING_FEE', supervisor_id: bid.supervisor_id });
 
     tx.set(awardRef, {
       category: job.category ?? 'coconut',

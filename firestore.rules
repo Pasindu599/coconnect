@@ -129,7 +129,11 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.supervisor_id == request.auth.uid
         && isBidder(request.resource.data.category)
-        && get(/databases/$(database)/documents/jobs/$(request.resource.data.job_id)).data.status == 'OPEN';
+        && get(/databases/$(database)/documents/jobs/$(request.resource.data.job_id)).data.status == 'OPEN'
+        // owner_id is client-set (denormalized, see above) but must match the
+        // real job — otherwise a bidder could hide their bid from the real
+        // owner or leak it to an arbitrary third party. Security-review fix.
+        && request.resource.data.owner_id == get(/databases/$(database)/documents/jobs/$(request.resource.data.job_id)).data.owner_id;
 
       // Two distinct kinds of update, both narrow:
       //  - the bidder edits their own still-pending bid
@@ -140,7 +144,11 @@ service cloud.firestore {
         (fieldIs(resource.data, 'supervisor_id', request.auth.uid)
           && fieldIs(resource.data, 'status', 'pending')
           && unchanged('supervisor_id')
-          && unchanged('job_id'))
+          && unchanged('job_id')
+          // Only the owner branch below may change status — a bidder can
+          // revise price/crew/etc while pending but can't self-accept or
+          // self-reject their own bid. Security-review fix.
+          && unchanged('status'))
         || (
           fieldIs(resource.data, 'owner_id', request.auth.uid)
           && fieldIs(resource.data, 'status', 'pending')
@@ -242,8 +250,16 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         fieldIs(resource.data, 'owner_id', request.auth.uid) || fieldIs(resource.data, 'submitted_by', request.auth.uid) || isAdmin()
       );
+      // owner_id/submitted_by are checked against the job's real owner and
+      // awarded supervisor (job.supervisor_id, denormalized by awardBid) so
+      // a third party can't forge a completion doc naming someone else's
+      // job to make it appear in that owner's confirm-completion feed.
+      // confirmCompletion.ts re-checks both against the award server-side
+      // before advancing escrow, as defense in depth. Security-review fix.
       allow create: if isSignedIn() && request.resource.data.submitted_by == request.auth.uid
-        && request.resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && request.resource.data.owner_id == get(/databases/$(database)/documents/jobs/$(request.resource.data.job_id)).data.owner_id
+        && request.resource.data.submitted_by == get(/databases/$(database)/documents/jobs/$(request.resource.data.job_id)).data.supervisor_id;
       // Confirmation checks a hashed PIN server-side (confirmCompletion Function).
       allow update, delete: if false;
     }
