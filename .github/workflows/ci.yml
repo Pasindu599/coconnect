@@ -68,4 +68,7 @@ jobs:
       - run: npm ci
         working-directory: functions
       - run: npm run test:rules
+      # The Functions emulator reads defineSecret() values from this file (it cannot reach Secret
+      # Manager in CI). The value is a throwaway test secret that the integration tests sign with.
+      - run: cp functions/.secret.local.example functions/.secret.local
       - run: npm run test:integration
