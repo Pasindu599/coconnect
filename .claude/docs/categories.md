@@ -1,6 +1,6 @@
 # Categories
 
-Each category defines its own roles, task types, skills, rating tags and site fields. In code, all of this lives in `src/config/categories.ts`; this file is the human-readable version. Keep them in sync.
+Each category defines its own roles, task types, skills, rating tags and site fields. In code, all of this lives in `src/config/categories.ts` (wording in `vocab.construction.ts`); this file is the human-readable version. A unit test (`src/config/__tests__/categories.test.ts`) checks the registry's structure and translations; keep this file in step by hand.
 
 Every role maps to one **capability**, which is what the job engine checks:
 
@@ -21,16 +21,13 @@ Every role maps to one **capability**, which is what the job engine checks:
 | Broker (supervisor) | `bidder` | yes |
 | Worker | `crew` | no |
 
-**Task types** (from the current `OwnerDashboard.tsx`; move them into the registry):
-- Coconut harvesting & bunch lowering
-- Nut husking & copra drying batch
-- (add the remaining options from `OwnerDashboard.tsx` around line 578)
+**Task types:** Coconut Harvesting & Bunch Lowering, Fertilizer Ring Application & Mulching, Dry Frond Trimming & Crown Cleaning, Nut Husking & Copra Drying Batch, Undergrowth Tractor Clearing
 
-**Skills:** tree climbing, coconut plucking, nut husking (plus the rest of the list in `OwnerDashboard.tsx` around line 78)
+**Skills:** Tree Climbing, Coconut Plucking, Nut Gathering, Nut Husking, Fertilizer Trenching, Organic Mulching, Crown Cleaning, Copra Bagging
 
 **Rating tags:** punctual crew, zero nut damage, safe tree climbing, clean estate, fast harvest
 
-**Site fields:** area (acres), tree count, location (map pin)
+**Site fields:** area (acres), tree count, location (map pin); a derived palms-per-acre figure on each card. Location presets: Narammala, Madampe, Kuliyapitiya. Map centred on the Coconut Triangle.
 
 ## Construction
 
@@ -46,9 +43,9 @@ Every role maps to one **capability**, which is what the job engine checks:
 
 In the MVP, subcontractors bid directly to clients just like contractors. Contractors hiring subcontractors (nested jobs) comes after the 2 weeks.
 
-**Trades / skills:** mason, carpenter, electrician, plumber, painter, tiler, steel fixer, helper (labourer)
+**Trades / skills:** Mason, Carpenter, Electrician, Plumber, Painter, Tiler, Steel Fixer, Helper (Labourer)
 
-**Task types** (draft; owner C to finalize on day 3):
+**Task types:**
 - Foundation & masonry work
 - Concreting (slab / column / beam)
 - Carpentry & formwork
@@ -58,13 +55,15 @@ In the MVP, subcontractors bid directly to clients just like contractors. Contra
 - Tiling & finishing
 - Site clearing & general labour
 
-**Rating tags** (draft): on schedule, quality workmanship, safe site practices, clean site, good communication
+**Rating tags:** On Schedule, Quality Workmanship, Safe Site Practices, Clean Site, Good Communication
 
-**Site fields** (draft): site type (house / commercial / renovation), floor area (sq ft), number of floors, location (map pin)
+**Site fields:** site type (House, Commercial Building, Renovation, Boundary Wall / Other), floor area (sq ft), number of floors, location (map pin). Location presets: Colombo, Nugegoda, Kandy, Galle. Default job budget LKR 150,000.
 
 ## Adding a category later
-1. Add an entry to `src/config/categories.ts`, with labels in en/si/ta.
-2. Document it in this file.
-3. Add i18n strings for any new copy.
+1. Add an entry to `CATEGORIES` and `CATEGORY_LIST` in `src/config/categories.ts`, with labels in en/si/ta (roles with a card each, task types, skills, tags, site fields, location presets, map centre).
+2. Add si/ta entries for each new task type, skill and tag in the lookup tables in `src/lib/i18n.ts` (`TASK_TYPE`, `SKILL`, `REVIEW_TAG`); the registry test fails until they exist.
+3. If the category should say things differently (e.g. "Site" instead of "Estate"), put the overrides in a `vocab` file like `vocab.construction.ts`.
+4. Add demo data if you want it demonstrable (`src/lib/seed/`), and add the category to the e2e flows.
+5. Document it in this file.
 
 No engine or dashboard changes should be needed. If they are, the registry is missing something; fix the registry rather than special-casing the category.

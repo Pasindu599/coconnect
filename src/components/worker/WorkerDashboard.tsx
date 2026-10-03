@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
+import { formatMoney } from '../../lib/money';
+import { useCategory, useT } from '../../config/CategoryContext';
+import { CategoryIcon } from '../../config/CategoryIcon';
+import { categoryOf } from '../../config/categories';
+import { WorkerPayoutCard } from './WorkerPayoutCard';
+import { Worker } from '../../types';
 import { store, AppState } from '../../lib/store';
-import {
-  Language,
-  getT,
-  tJobStatus,
-  tEscrowStatus,
-  tSkill,
-  tTaskType,
-  tParty,
-} from '../../lib/i18n';
+import { Language, tJobStatus, tEscrowStatus, tSkill, tTaskType, tParty } from '../../lib/i18n';
 import { 
   UserCheck, 
   Calendar, 
@@ -32,18 +30,36 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   state,
   currentLang,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
+  const { category } = useCategory();
   const user = state.currentUser;
   const [activeTab, setActiveTab] = useState<'assignments' | 'attendance' | 'wages'>('assignments');
 
-  // Find worker record matching current user's phone or name
-  const workerRecord = state.workers.find(w => 
-    w.phone.replace(/\s+/g, '') === user?.phone.replace(/\s+/g, '') ||
-    w.name.toLowerCase() === user?.name.toLowerCase()
-  ) || state.workers[0];
+  // The worker record a contractor/broker registered for this user in the active category.
+  // A worker nobody has registered yet sees an empty dashboard, never someone else's data.
+  const noWorkerRecord: Worker = {
+    id: 'no-worker-record',
+    supervisor_id: '',
+    name: user?.name ?? '',
+    phone: user?.phone ?? '',
+    skills: [],
+    nic_ref: '',
+    consent_captured_at: '',
+    consent_method: 'sms',
+    rating: 0,
+    jobs_completed: 0,
+    active: true,
+  };
+  const workerRecord = state.workers.find(w =>
+    categoryOf(w) === category.id && (
+      w.phone.replace(/\s+/g, '') === user?.phone.replace(/\s+/g, '') ||
+      w.name.toLowerCase() === user?.name.toLowerCase()
+    )
+  ) ?? noWorkerRecord;
 
   // Find assignments across bids & awards
   const assignedJobs = state.jobs.filter(job => {
+    if (categoryOf(job) !== category.id) return false;
     const award = state.awards.find(a => a.job_id === job.id);
     if (!award) return false;
     const bid = state.bids.find(b => b.id === award.bid_id);
@@ -74,7 +90,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
     .reduce((sum, r) => sum + r.amount, 0);
 
   const totalInEscrow = myWageRecords
-    .filter(r => r.escrow_status === 'held')
+    .filter(r => r.escrow_status === 'held' || r.escrow_status === 'release_requested')
     .reduce((sum, r) => sum + r.amount, 0);
 
   const supervisorName =
@@ -123,7 +139,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
           <div className="text-xs font-medium text-slate-400">{t.total_wages_paid}</div>
           <div className="text-2xl font-bold text-emerald-400 mt-1">
-            LKR {totalEarnedReleased.toLocaleString()}
+            {formatMoney(totalEarnedReleased, currentLang)}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">{t.disbursed_note}</div>
         </div>
@@ -131,7 +147,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
           <div className="text-xs font-medium text-slate-400">{t.secured_in_escrow}</div>
           <div className="text-2xl font-bold text-amber-400 mt-1">
-            LKR {totalInEscrow.toLocaleString()}
+            {formatMoney(totalInEscrow, currentLang)}
           </div>
           <div className="text-[11px] text-slate-500 mt-0.5">{t.release_on_signoff}</div>
         </div>
@@ -147,11 +163,13 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
         </div>
       </div>
 
+      {workerRecord.id !== 'no-worker-record' && <WorkerPayoutCard currentLang={currentLang} worker={workerRecord} />}
+
       {/* Tabs */}
-      <div className="border-b border-slate-800 flex items-center space-x-2">
+      <div className="border-b border-slate-800 flex items-center space-x-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('assignments')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'assignments' 
               ? 'border-teal-500 text-teal-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -163,7 +181,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
 
         <button
           onClick={() => setActiveTab('attendance')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'attendance' 
               ? 'border-teal-500 text-teal-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -175,7 +193,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
 
         <button
           onClick={() => setActiveTab('wages')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'wages' 
               ? 'border-teal-500 text-teal-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -207,7 +225,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                         </span>
                         <h3 className="text-base font-bold text-white mt-1.5">{tTaskType(job.task_type, currentLang)}</h3>
                         <p className="text-xs text-slate-400 flex items-center mt-0.5">
-                          <Trees className="w-3.5 h-3.5 text-emerald-400 mr-1" />
+                          <CategoryIcon icon={category.icon} className="w-3.5 h-3.5 text-emerald-400 mr-1" />
                           <span>{job.estate_name} • {job.estate_location}</span>
                         </p>
                       </div>
@@ -301,7 +319,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                     <h4 className="text-sm font-bold text-white">{tTaskType(r.job_task, currentLang)}</h4>
                     <p className="text-slate-400">{r.estate_name}</p>
                     <div className="text-[11px] text-slate-500 mt-1">
-                      {t.calculation_label}: {r.days_worked} {t.common_days} @ LKR {r.daily_rate.toLocaleString()} {t.per_day}
+                      {t.calculation_label}: {r.days_worked} {t.common_days} @ {formatMoney(r.daily_rate, currentLang)} {t.per_day}
                     </div>
                   </div>
 
@@ -309,7 +327,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                     <div className="text-right">
                       <div className="text-[11px] text-slate-400">{t.net_wage}</div>
                       <div className="text-base font-bold text-emerald-400 font-mono">
-                        LKR {r.amount.toLocaleString()}
+                        {formatMoney(r.amount, currentLang)}
                       </div>
                     </div>
 

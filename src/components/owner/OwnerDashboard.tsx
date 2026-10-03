@@ -1,44 +1,22 @@
 import React, { useState } from 'react';
 import { store, AppState } from '../../lib/store';
-import { LabourJob, Bid, Award, AttendanceDay, WageRecord } from '../../types';
-import {
-  Language,
-  getT,
-  fmt,
-  tJobStatus,
-  tEscrowStatus,
-  tReviewStatus,
-  tSkill,
-  tTaskType,
-  tPaymentSchedule,
-  tReviewTag,
-  TASK_TYPE_KEYS,
-  SKILL_KEYS,
-  REVIEW_TAG_KEYS,
-} from '../../lib/i18n';
+import { LabourJob, Award } from '../../types';
+import { Language } from '../../lib/i18n';
+import { useCategory, useT } from '../../config/CategoryContext';
+import { CategoryIcon } from '../../config/CategoryIcon';
+import { categoryOf } from '../../config/categories';
 import { LandManagement } from './LandManagement';
-import { 
-  Trees, 
-  PlusCircle, 
-  Briefcase, 
-  ShieldCheck, 
-  Lock, 
-  Unlock, 
-  Phone, 
-  CheckCircle2, 
-  AlertTriangle, 
-  DollarSign, 
-  Star, 
-  Calendar, 
-  Users, 
-  Eye, 
-  Check, 
-  Key, 
-  X,
-  CreditCard,
-  Building2,
-  FileCheck
-} from 'lucide-react';
+import { JobsTab } from './JobsTab';
+import { EscrowTab } from './EscrowTab';
+import { AttendanceTab } from './AttendanceTab';
+import { PostJobModal } from './PostJobModal';
+import { BidsModal } from './BidsModal';
+import { EscrowPaymentModal } from './EscrowPaymentModal';
+import { ContactsModal } from './ContactsModal';
+import { CompletionModal } from './CompletionModal';
+import { OpenDisputeModal } from '../common/OpenDisputeModal';
+import { NoticeBanner } from '../common/NoticeBanner';
+import { Briefcase, CheckCircle2, PlusCircle, ShieldCheck } from 'lucide-react';
 
 interface OwnerDashboardProps {
   state: AppState;
@@ -46,68 +24,33 @@ interface OwnerDashboardProps {
   onNavigate?: (view: any) => void;
 }
 
+/** Poster dashboard (landowner / client): jobs, sites, escrow and attendance for the active category. */
 export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
   state,
   currentLang,
   onNavigate,
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
+  const { category } = useCategory();
   const user = state.currentUser;
   const [activeTab, setActiveTab] = useState<'jobs' | 'lands' | 'attendance' | 'escrow'>('jobs');
-  
-  // Modals state
+
+  // Which modal is open
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
+  const [postJobEstateId, setPostJobEstateId] = useState<string | undefined>();
   const [selectedJobForBids, setSelectedJobForBids] = useState<LabourJob | null>(null);
   const [selectedAwardForEscrow, setSelectedAwardForEscrow] = useState<Award | null>(null);
   const [selectedJobForCompletion, setSelectedJobForCompletion] = useState<LabourJob | null>(null);
   const [viewContactsAwardId, setViewContactsAwardId] = useState<string | null>(null);
-  
-  // New Job Form State
-  const ownerEstates = state.estates.filter(e => e.owner_id === user?.id);
-  const [estateId, setEstateId] = useState(ownerEstates[0]?.id || '');
-  const [taskType, setTaskType] = useState('Coconut Harvesting & Bunch Lowering');
-  const [startsAt, setStartsAt] = useState('2026-09-28');
-  const [endsAt, setEndsAt] = useState('2026-09-30');
-  const [workerCount, setWorkerCount] = useState('3');
-  const [durationDays, setDurationDays] = useState('2');
-  const [wageBudget, setWageBudget] = useState('42000');
-  const [skillsSelected, setSkillsSelected] = useState<string[]>(['Tree Climbing', 'Coconut Plucking']);
-  const [description, setDescription] = useState('');
+  const [disputeAward, setDisputeAward] = useState<Award | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  // Dual-Confirmation PIN & Rating State
-  const [pinInput, setPinInput] = useState('1234');
-  const [ratingScore, setRatingScore] = useState(5);
-  const [ratingComment, setRatingComment] = useState(t.rating_comment_default);
-  const [selectedTags, setSelectedTags] = useState<string[]>(['Punctual Crew', 'Safe Tree Climbing', 'Clean Estate']);
-  const [confirmError, setConfirmError] = useState<string | null>(null);
-
-  const ownerJobs = state.jobs.filter(j => j.owner_id === user?.id);
+  const ownerEstates = state.estates.filter(e => e.owner_id === user?.id && categoryOf(e) === category.id);
+  const ownerJobs = state.jobs.filter(j => j.owner_id === user?.id && categoryOf(j) === category.id);
   const ownerAwards = state.awards.filter(a => {
     const job = state.jobs.find(j => j.id === a.job_id);
-    return job?.owner_id === user?.id;
+    return job?.owner_id === user?.id && categoryOf(job) === category.id;
   });
-
-  const availableSkills = SKILL_KEYS;
-
-  const handleCreateJob = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!estateId) return;
-
-    store.createJob({
-      estate_id: estateId,
-      task_type: taskType,
-      starts_at: startsAt,
-      ends_at: endsAt,
-      worker_count: parseInt(workerCount, 10),
-      duration_days: parseInt(durationDays, 10),
-      required_skills: skillsSelected,
-      wage_budget: parseFloat(wageBudget),
-      description
-    });
-
-    setIsPostJobOpen(false);
-    setDescription('');
-  };
 
   const handleAwardBid = (bidId: string) => {
     const res = store.awardBid(bidId);
@@ -117,31 +60,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
     }
   };
 
-  const handleDepositEscrow = (awardId: string) => {
-    store.payEscrow(awardId);
-    setSelectedAwardForEscrow(null);
-  };
-
-  const handleConfirmCompletion = (e: React.FormEvent) => {
-    e.preventDefault();
-    setConfirmError(null);
-    if (!selectedJobForCompletion) return;
-
-    const res = store.confirmCompletion(
-      selectedJobForCompletion.id,
-      pinInput,
-      {
-        score: ratingScore,
-        review_tags: selectedTags,
-        comment: ratingComment
-      }
-    );
-
-    if (res.success) {
-      setSelectedJobForCompletion(null);
-    } else {
-      setConfirmError(res.error || t.err_confirm_failed);
-    }
+  const openPostJob = (estateId?: string) => {
+    setPostJobEstateId(estateId);
+    setIsPostJobOpen(true);
   };
 
   return (
@@ -163,6 +84,7 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
 
         <div className="flex items-center space-x-3">
           <button
+            data-testid="post-job"
             onClick={() => setIsPostJobOpen(true)}
             className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition"
           >
@@ -173,10 +95,11 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-800 flex items-center space-x-2">
+      <div className="border-b border-slate-800 flex items-center space-x-2 overflow-x-auto">
         <button
+          data-testid="tab-jobs"
           onClick={() => setActiveTab('jobs')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'jobs' 
               ? 'border-emerald-500 text-emerald-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -187,20 +110,22 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </button>
 
         <button
+          data-testid="tab-lands"
           onClick={() => setActiveTab('lands')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'lands' 
               ? 'border-emerald-500 text-emerald-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Trees className="w-4 h-4" />
+          <CategoryIcon icon={category.icon} className="w-4 h-4" />
           <span>{t.my_lands} ({ownerEstates.length})</span>
         </button>
 
         <button
+          data-testid="tab-escrow"
           onClick={() => setActiveTab('escrow')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'escrow' 
               ? 'border-emerald-500 text-emerald-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -211,8 +136,9 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </button>
 
         <button
+          data-testid="tab-attendance"
           onClick={() => setActiveTab('attendance')}
-          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition ${
+          className={`pb-3 px-4 text-xs font-semibold flex items-center space-x-2 border-b-2 transition whitespace-nowrap flex-shrink-0 ${
             activeTab === 'attendance' 
               ? 'border-emerald-500 text-emerald-400' 
               : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -223,850 +149,93 @@ export const OwnerDashboard: React.FC<OwnerDashboardProps> = ({
         </button>
       </div>
 
-      {/* Tab 1: Posted Jobs */}
+
+      {notice && <NoticeBanner message={notice} />}
+
       {activeTab === 'jobs' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {ownerJobs.map((job) => {
-              const bids = state.bids.filter(b => b.job_id === job.id);
-              const award = state.awards.find(a => a.job_id === job.id);
-              const completion = state.completions.find(c => c.job_id === job.id);
-
-              return (
-                <div key={job.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                          job.status === 'OPEN' ? 'bg-blue-950 text-blue-300 border border-blue-800' :
-                          job.status === 'AWARDED_PENDING_FEE' ? 'bg-amber-950 text-amber-300 border border-amber-800 animate-pulse' :
-                          job.status === 'ACTIVE' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
-                          job.status === 'IN_PROGRESS' ? 'bg-purple-950 text-purple-300 border border-purple-800' :
-                          job.status === 'PENDING_COMPLETION' ? 'bg-yellow-950 text-yellow-300 border border-yellow-800 font-bold' :
-                          'bg-slate-800 text-slate-300'
-                        }`}>
-                          {tJobStatus(job.status, currentLang)}
-                        </span>
-                        <h3 className="text-base font-bold text-white mt-2">{tTaskType(job.task_type, currentLang)}</h3>
-                        <p className="text-xs text-slate-400 flex items-center mt-1">
-                          <Trees className="w-3.5 h-3.5 text-emerald-400 mr-1" />
-                          <span>{job.estate_name} ({job.estate_location})</span>
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">{t.job_budget}</div>
-                        <div className="text-sm font-bold text-emerald-400">LKR {job.wage_budget.toLocaleString()}</div>
-                      </div>
-                    </div>
-
-                    <p className="mt-3 text-xs text-slate-300 line-clamp-2">
-                      {job.description || t.job_no_description}
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {job.required_skills.map((s, i) => (
-                        <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                          {tSkill(s, currentLang)}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-xs text-slate-400">
-                      <div>{t.job_dates}: <span className="text-slate-200">{job.starts_at} → {job.ends_at}</span></div>
-                      <div>{t.job_crew_size}: <span className="text-slate-200">{job.worker_count} {t.common_workers}</span></div>
-                    </div>
-                  </div>
-
-                  {/* Actions depending on status */}
-                  <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between">
-                    {job.status === 'OPEN' && (
-                      <>
-                        <span className="text-xs text-slate-400">
-                          <strong>{bids.length}</strong> {t.bids_received_label}
-                        </span>
-                        <button
-                          onClick={() => setSelectedJobForBids(job)}
-                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition"
-                        >
-                          {t.review_bids} ({bids.length}) →
-                        </button>
-                      </>
-                    )}
-
-                    {job.status === 'AWARDED_PENDING_FEE' && award && (
-                      <div className="w-full flex items-center justify-between">
-                        <span className="text-xs text-amber-300 font-medium flex items-center space-x-1">
-                          <Lock className="w-3.5 h-3.5" />
-                          <span>{t.escrow_deposit_required}</span>
-                        </span>
-                        <button
-                          onClick={() => setSelectedAwardForEscrow(award)}
-                          className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md animate-pulse"
-                        >
-                          {t.pay_into_escrow} (LKR {award.escrow_amount.toLocaleString()}) →
-                        </button>
-                      </div>
-                    )}
-
-                    {['ACTIVE', 'IN_PROGRESS'].includes(job.status) && award && (
-                      <div className="w-full flex items-center justify-between">
-                        <span className="text-xs text-emerald-400 font-medium flex items-center space-x-1">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>{t.escrow_held_secured}</span>
-                        </span>
-                        <button
-                          onClick={() => setViewContactsAwardId(award.id)}
-                          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-300 border border-emerald-800 text-xs font-medium flex items-center space-x-1.5"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          <span>{t.view_direct_contacts}</span>
-                        </button>
-                      </div>
-                    )}
-
-                    {job.status === 'PENDING_COMPLETION' && (
-                      <div className="w-full flex items-center justify-between bg-yellow-950/40 p-2 rounded-xl border border-yellow-800/80">
-                        <span className="text-xs text-yellow-300 font-medium">
-                          {t.sup_submitted_completion}
-                        </span>
-                        <button
-                          onClick={() => setSelectedJobForCompletion(job)}
-                          className="px-3 py-1.5 rounded-xl bg-yellow-600 hover:bg-yellow-500 text-white text-xs font-bold shadow-md"
-                        >
-                          {t.verify_release_escrow}
-                        </button>
-                      </div>
-                    )}
-
-                    {job.status === 'COMPLETED' && (
-                      <div className="w-full flex items-center justify-between text-xs text-emerald-400">
-                        <span className="flex items-center space-x-1">
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>{t.job_completed_released}</span>
-                        </span>
-                        <span className="font-mono text-slate-400">{t.archived}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <JobsTab
+          state={state}
+          currentLang={currentLang}
+          jobs={ownerJobs}
+          onReviewBids={setSelectedJobForBids}
+          onPayEscrow={setSelectedAwardForEscrow}
+          onViewContacts={setViewContactsAwardId}
+          onVerifyCompletion={setSelectedJobForCompletion}
+          onOpenDispute={setDisputeAward}
+        />
       )}
 
-      {/* Tab 2: Land Management */}
       {activeTab === 'lands' && (
-        <LandManagement 
-          state={state} 
-          currentLang={currentLang} 
-          onSelectEstateForJob={(eId) => {
-            setEstateId(eId);
-            setIsPostJobOpen(true);
-          }}
+        <LandManagement
+          state={state}
+          currentLang={currentLang}
+          onSelectEstateForJob={openPostJob}
           onViewMap={() => onNavigate && onNavigate('map')}
         />
       )}
 
-      {/* Tab 3: Escrow Accounts & Awards */}
       {activeTab === 'escrow' && (
-        <div className="space-y-4">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-            <div className="flex items-center space-x-2 text-amber-400 font-bold text-base mb-1">
-              <ShieldCheck className="w-5 h-5" />
-              <span>{t.escrow_engine_title}</span>
-            </div>
-            <p className="text-xs text-slate-300 max-w-3xl">
-              {t.escrow_engine_desc}
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {ownerAwards.map((award) => {
-              const job = state.jobs.find(j => j.id === award.job_id);
-              const isHeld = award.escrow_status === 'held';
-              const isReleased = award.escrow_status === 'released';
-
-              return (
-                <div key={award.id} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                        isHeld ? 'bg-amber-950 text-amber-300 border border-amber-800' :
-                        isReleased ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
-                        'bg-rose-950 text-rose-300 border border-rose-800'
-                      }`}>
-                        {t.escrow_label}: {tEscrowStatus(award.escrow_status, currentLang)}
-                      </span>
-                      <span className="text-xs text-slate-400">{t.award_label} #{award.id}</span>
-                    </div>
-
-                    <h4 className="text-sm font-bold text-white mt-2">{tTaskType(job?.task_type, currentLang)}</h4>
-                    <p className="text-xs text-slate-400">{t.supervisor_label}: <strong className="text-slate-200">{award.supervisor_name}</strong></p>
-                    {award.fee_payment_ref && (
-                      <p className="text-[11px] text-slate-500 font-mono mt-0.5">{t.ref_label}: {award.fee_payment_ref}</p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      <div className="text-xs text-slate-400">{t.secured_amount}</div>
-                      <div className="text-base font-bold text-emerald-400">LKR {award.escrow_amount.toLocaleString()}</div>
-                    </div>
-
-                    {isHeld || isReleased ? (
-                      <button
-                        onClick={() => setViewContactsAwardId(award.id)}
-                        className="px-3.5 py-2 rounded-xl bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-800 text-xs font-semibold flex items-center space-x-1.5"
-                      >
-                        <Unlock className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>{t.view_released_contacts}</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setSelectedAwardForEscrow(award)}
-                        className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md"
-                      >
-                        {t.pay_into_escrow} →
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <EscrowTab
+          state={state}
+          currentLang={currentLang}
+          awards={ownerAwards}
+          onPayEscrow={setSelectedAwardForEscrow}
+          onViewContacts={setViewContactsAwardId}
+          onOpenDispute={setDisputeAward}
+        />
       )}
 
-      {/* Tab 4: Dual Attendance Verification */}
-      {activeTab === 'attendance' && (
-        <div className="space-y-4">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-            <h3 className="text-base font-bold text-white flex items-center space-x-2">
-              <CheckCircle2 className="w-5 h-5 text-teal-400" />
-              <span>{t.attendance_dual_title}</span>
-            </h3>
-            <p className="text-xs text-slate-400 mt-1">
-              {t.attendance_dual_desc}
-            </p>
-          </div>
+      {activeTab === 'attendance' && <AttendanceTab state={state} currentLang={currentLang} jobs={ownerJobs} />}
 
-          <div className="space-y-4">
-            {state.attendanceDays.map((day) => {
-              const job = state.jobs.find(j => j.id === day.job_id);
-              const entries = state.attendanceEntries.filter(e => e.attendance_day_id === day.id);
-              const workers = state.workers;
-
-              return (
-                <div key={day.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <div>
-                      <span className="text-xs font-mono text-emerald-400">{t.work_date}: {day.work_date}</span>
-                      <h4 className="text-sm font-bold text-white mt-0.5">{tTaskType(job?.task_type, currentLang)}</h4>
-                    </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                      day.status === 'reconciled' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' :
-                      day.status === 'disputed' ? 'bg-rose-950 text-rose-300 border border-rose-800' :
-                      'bg-amber-950 text-amber-300 border border-amber-800'
-                    }`}>
-                      {tReviewStatus(day.status, currentLang)}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 space-y-2">
-                    {entries.filter(e => e.party === 'supervisor').map((supEntry) => {
-                      const ownerEntry = entries.find(e => e.party === 'owner' && e.worker_id === supEntry.worker_id);
-
-                      return (
-                        <div key={supEntry.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-xs">
-                          <div>
-                            <div className="font-semibold text-white">{supEntry.worker_name}</div>
-                            <div className="text-[11px] text-slate-400">
-                              {t.supervisor_logged}: <strong className="text-emerald-400">{supEntry.present ? t.common_present : t.common_absent}</strong>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center space-x-3">
-                            {ownerEntry ? (
-                              <span className="px-2 py-1 rounded bg-slate-800 text-slate-300 text-[11px]">
-                                {t.owner_verified_label}: {ownerEntry.present ? `✅ ${t.common_present}` : `❌ ${t.common_absent}`}
-                              </span>
-                            ) : (
-                              <div className="flex items-center space-x-1.5">
-                                <button
-                                  onClick={() => {
-                                    store.recordAttendanceEntry({
-                                      attendance_day_id: day.id,
-                                      worker_id: supEntry.worker_id,
-                                      party: 'owner',
-                                      present: true
-                                    });
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
-                                >
-                                  {t.confirm_present}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    store.recordAttendanceEntry({
-                                      attendance_day_id: day.id,
-                                      worker_id: supEntry.worker_id,
-                                      party: 'owner',
-                                      present: false
-                                    });
-                                  }}
-                                  className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium"
-                                >
-                                  {t.mark_absent}
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Post New Job */}
       {isPostJobOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-white font-bold text-base">
-                <Briefcase className="w-5 h-5 text-emerald-400" />
-                <span>{t.post_job}</span>
-              </div>
-              <button 
-                onClick={() => setIsPostJobOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateJob} className="p-6 space-y-4 overflow-y-auto">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  {t.select_estate}
-                </label>
-                <select
-                  required
-                  value={estateId}
-                  onChange={(e) => setEstateId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value="" disabled>{t.choose_land}</option>
-                  {ownerEstates.map(e => (
-                    <option key={e.id} value={e.id}>
-                      {e.name} ({e.area_acres} {t.acres_word} • {e.tree_count} {t.trees_word}) - {e.location}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  {t.task_type_label}
-                </label>
-                <select
-                  value={taskType}
-                  onChange={(e) => setTaskType(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500"
-                >
-                  {TASK_TYPE_KEYS.map((key) => (
-                    <option key={key} value={key}>{tTaskType(key, currentLang)}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    {t.start_date}
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={startsAt}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    {t.end_date}
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={endsAt}
-                    onChange={(e) => setEndsAt(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    {t.job_crew_size}
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={workerCount}
-                    onChange={(e) => setWorkerCount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    {t.duration_days_label}
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={durationDays}
-                    onChange={(e) => setDurationDays(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    {t.budget_lkr}
-                  </label>
-                  <input
-                    type="number"
-                    step="500"
-                    required
-                    value={wageBudget}
-                    onChange={(e) => setWageBudget(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                  {t.required_skills_label}
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {availableSkills.map((sk) => {
-                    const selected = skillsSelected.includes(sk);
-                    return (
-                      <button
-                        type="button"
-                        key={sk}
-                        onClick={() => {
-                          if (selected) {
-                            setSkillsSelected(skillsSelected.filter(s => s !== sk));
-                          } else {
-                            setSkillsSelected([...skillsSelected, sk]);
-                          }
-                        }}
-                        className={`text-[11px] px-2.5 py-1 rounded-lg border transition ${
-                          selected 
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-600 font-semibold' 
-                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
-                        }`}
-                      >
-                        {tSkill(sk, currentLang)} {selected && '✓'}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  {t.estate_instructions}
-                </label>
-                <textarea
-                  rows={2}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t.estate_instructions_ph}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsPostJobOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800"
-                >
-                  {t.common_cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md"
-                >
-                  {t.publish_job}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <PostJobModal
+          currentLang={currentLang}
+          estates={ownerEstates}
+          initialEstateId={postJobEstateId}
+          onClose={() => setIsPostJobOpen(false)}
+        />
       )}
 
-      {/* Modal: Review Bids & Escrow Gate */}
       {selectedJobForBids && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-white">{t.bids_for} {tTaskType(selectedJobForBids.task_type, currentLang)}</h3>
-                <p className="text-xs text-slate-400">{t.job_budget}: LKR {selectedJobForBids.wage_budget.toLocaleString()}</p>
-              </div>
-              <button 
-                onClick={() => setSelectedJobForBids(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4 overflow-y-auto">
-              <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/60 text-amber-200 text-xs flex items-center space-x-2">
-                <Lock className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <span>{t.contacts_hidden_notice}</span>
-              </div>
-
-              {state.bids.filter(b => b.job_id === selectedJobForBids.id).map((bid) => {
-                const crewMembers = state.workers.filter(w => bid.crew_member_ids.includes(w.id));
-
-                return (
-                  <div key={bid.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-white text-sm">{bid.supervisor_name}</span>
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] font-mono border border-emerald-800">
-                            ⭐ {bid.supervisor_trust_score.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="text-xs text-slate-400 mt-0.5 flex items-center space-x-1">
-                          <Lock className="w-3 h-3 text-slate-500" />
-                          <span>{t.phone_protected}</span>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-xs text-slate-400">{t.bid_total}</div>
-                        <div className="text-base font-bold text-emerald-400">LKR {bid.price.toLocaleString()}</div>
-                        <div className="text-[10px] text-slate-500">{fmt(t.includes_commission, { amount: bid.supervisor_fee.toLocaleString() })}</div>
-                      </div>
-                    </div>
-
-                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300">
-                      <div className="font-semibold text-slate-400 text-[11px] mb-1">
-                        {t.crew_plan} ({crewMembers.length} {t.common_workers}):
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {crewMembers.map(w => (
-                          <div key={w.id} className="flex items-center justify-between text-[11px] bg-slate-850 p-1.5 rounded">
-                            <span>{w.name}</span>
-                            <span className="text-amber-400">⭐ {w.rating.toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2">
-                      <span className="text-xs text-slate-400 capitalize">
-                        {t.payment_label}: <strong>{tPaymentSchedule(bid.payment_schedule, currentLang)}</strong>
-                      </span>
-                      <button
-                        onClick={() => handleAwardBid(bid.id)}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition"
-                      >
-                        {t.award_job} →
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+        <BidsModal
+          state={state}
+          currentLang={currentLang}
+          job={selectedJobForBids}
+          onClose={() => setSelectedJobForBids(null)}
+          onAward={handleAwardBid}
+        />
       )}
 
-      {/* Modal: Escrow Payment Simulation */}
       {selectedAwardForEscrow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
-            <div className="flex items-center space-x-2 text-amber-400 font-bold text-base">
-              <CreditCard className="w-5 h-5" />
-              <span>{t.escrow_deposit_title}</span>
-            </div>
-
-            <p className="text-xs text-slate-300">
-              {fmt(t.escrow_deposit_desc, { id: selectedAwardForEscrow.id })}
-            </p>
-
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-400">
-                <span>{t.supervisor_label}:</span>
-                <strong className="text-white">{selectedAwardForEscrow.supervisor_name}</strong>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>{t.payment_gate}:</span>
-                <strong className="text-emerald-400">{t.payment_gate_value}</strong>
-              </div>
-              <div className="flex justify-between text-slate-200 font-bold text-sm pt-2 border-t border-slate-800">
-                <span>{t.total_escrow_deposit}:</span>
-                <span className="text-emerald-400">LKR {selectedAwardForEscrow.escrow_amount.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setSelectedAwardForEscrow(null)}
-                className="w-1/2 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium"
-              >
-                {t.common_cancel}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDepositEscrow(selectedAwardForEscrow.id)}
-                className="w-1/2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md flex items-center justify-center space-x-1"
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span>{t.confirm_deposit}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <EscrowPaymentModal
+          state={state}
+          currentLang={currentLang}
+          award={selectedAwardForEscrow}
+          onClose={() => setSelectedAwardForEscrow(null)}
+        />
       )}
 
-      {/* Modal: View Released Contacts (Section 5.2 Verification) */}
       {viewContactsAwardId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center space-x-2 text-emerald-400 font-bold text-base">
-                <Unlock className="w-5 h-5" />
-                <span>{t.contacts_released_title}</span>
-              </div>
-              <button onClick={() => setViewContactsAwardId(null)} className="text-slate-400 hover:text-white">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {(() => {
-              const res = store.getAwardContacts(viewContactsAwardId);
-              if (!res.success || !res.contacts) {
-                return (
-                  <div className="p-3 bg-rose-950/60 border border-rose-800 text-rose-200 text-xs rounded-xl">
-                    {res.error || t.contacts_locked}
-                  </div>
-                );
-              }
-              const { supervisor_name, supervisor_phone, crew } = res.contacts;
-
-              return (
-                <div className="space-y-3">
-                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <div className="text-[11px] text-slate-400 uppercase tracking-wider">{t.supervisor_contact}</div>
-                    <div className="text-sm font-bold text-white mt-1">{supervisor_name}</div>
-                    <div className="text-emerald-400 font-mono text-sm mt-0.5 flex items-center space-x-1">
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>{supervisor_phone}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-semibold text-slate-400 mb-2">{t.confirmed_crew}</div>
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                      {crew.map((w, idx) => (
-                        <div key={idx} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
-                          <div>
-                            <div className="font-semibold text-white">{w.name}</div>
-                            <div className="text-[11px] text-slate-500">{w.skills.map((sk) => tSkill(sk, currentLang)).join(', ')}</div>
-                          </div>
-                          <div className="font-mono text-emerald-400 text-[11px]">{w.phone}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            <button
-              onClick={() => setViewContactsAwardId(null)}
-              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
-            >
-              {t.common_close}
-            </button>
-          </div>
-        </div>
+        <ContactsModal currentLang={currentLang} awardId={viewContactsAwardId} onClose={() => setViewContactsAwardId(null)} />
       )}
 
-      {/* Modal: Dual-Confirmation with PIN & Rating */}
+      {disputeAward && (
+        <OpenDisputeModal
+          currentLang={currentLang}
+          award={disputeAward}
+          onClose={() => setDisputeAward(null)}
+          onOpened={setNotice}
+        />
+      )}
+
       {selectedJobForCompletion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-              <div className="flex items-center space-x-2 text-white font-bold text-base">
-                <FileCheck className="w-5 h-5 text-yellow-400" />
-                <span>{t.confirm_completion}</span>
-              </div>
-              <button 
-                onClick={() => setSelectedJobForCompletion(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleConfirmCompletion} className="p-6 space-y-4 overflow-y-auto">
-              <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-800 text-emerald-200 text-xs">
-                {t.completion_pin_note}
-              </div>
-
-              {confirmError && (
-                <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-200 text-xs">
-                  {confirmError}
-                </div>
-              )}
-
-              {/* Wage summary */}
-              {(() => {
-                const comp = state.completions.find(c => c.job_id === selectedJobForCompletion.id);
-                if (!comp) return null;
-
-                return (
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
-                    <div className="font-semibold text-slate-300">{t.wages_distribution}</div>
-                    {comp.wage_records.map(r => (
-                      <div key={r.worker_id} className="flex justify-between text-slate-400">
-                        <span>{r.worker_name} ({r.days_worked} {t.common_days})</span>
-                        <span className="font-mono text-white">LKR {r.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between text-slate-400">
-                      <span>{t.supervisor_commission}</span>
-                      <span className="font-mono text-white">LKR {comp.supervisor_fee.toLocaleString()}</span>
-                    </div>
-                    <div className="pt-1.5 border-t border-slate-800 flex justify-between font-bold text-emerald-400">
-                      <span>{t.total_escrow_release}</span>
-                      <span>LKR {(comp.total_wages + comp.supervisor_fee).toLocaleString()}</span>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Security PIN verification */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  {t.enter_pin}
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Key className="w-4 h-4 text-slate-500" />
-                  </div>
-                  <input
-                    type="password"
-                    maxLength={4}
-                    required
-                    value={pinInput}
-                    onChange={(e) => setPinInput(e.target.value)}
-                    placeholder="••••"
-                    className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono text-center tracking-widest text-lg focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">{t.demo_pin_note}</p>
-              </div>
-
-              {/* Rating System (Requirement 7) */}
-              <div className="pt-2 border-t border-slate-800">
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                  {t.performance_rating_label}
-                </label>
-                <div className="flex items-center space-x-2">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <button
-                      type="button"
-                      key={s}
-                      onClick={() => setRatingScore(s)}
-                      className={`p-2 rounded-xl transition ${
-                        s <= ratingScore ? 'text-amber-400 bg-amber-950/60 border border-amber-800' : 'text-slate-600 bg-slate-800'
-                      }`}
-                    >
-                      <Star className="w-6 h-6 fill-current" />
-                    </button>
-                  ))}
-                  <span className="text-sm font-bold text-amber-400 ml-2">{ratingScore} / 5 {t.common_stars}</span>
-                </div>
-
-                <div className="mt-3">
-                  <label className="block text-[11px] text-slate-400 mb-1">{t.review_tags_label}</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {REVIEW_TAG_KEYS.map(tag => {
-                      const active = selectedTags.includes(tag);
-                      return (
-                        <button
-                          type="button"
-                          key={tag}
-                          onClick={() => {
-                            if (active) setSelectedTags(selectedTags.filter(t => t !== tag));
-                            else setSelectedTags([...selectedTags, tag]);
-                          }}
-                          className={`text-[11px] px-2.5 py-1 rounded-lg border ${
-                            active ? 'bg-amber-950 text-amber-300 border-amber-700' : 'bg-slate-850 text-slate-400 border-slate-800'
-                          }`}
-                        >
-                          {tReviewTag(tag, currentLang)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <label className="block text-[11px] text-slate-400 mb-1">{t.review_feedback_label}</label>
-                  <textarea
-                    rows={2}
-                    value={ratingComment}
-                    onChange={(e) => setRatingComment(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedJobForCompletion(null)}
-                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800"
-                >
-                  {t.common_cancel}
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md flex items-center space-x-2"
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>{t.release_submit_rating}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CompletionModal
+          state={state}
+          currentLang={currentLang}
+          job={selectedJobForCompletion}
+          onClose={() => setSelectedJobForCompletion(null)}
+        />
       )}
-
     </div>
   );
 };

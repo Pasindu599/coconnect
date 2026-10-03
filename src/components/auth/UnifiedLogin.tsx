@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { store } from '../../lib/store';
-import { Role } from '../../types';
-import { Language, getT, fmt, tRole } from '../../lib/i18n';
+import React, { useState } from 'react';
+import { Language, fmt } from '../../lib/i18n';
+import { authApi, RECAPTCHA_CONTAINER_ID } from '../../lib/authApi';
+import { authErrorMessage } from '../../lib/authErrors';
+import { useCategory, useT } from '../../config/CategoryContext';
+import { CategoryIcon } from '../../config/CategoryIcon';
+import { CategoryRole, l10n } from '../../config/categories';
+import type { Capability, CategoryId, CategoryRoleId } from '../../types/category';
 import { 
   Phone, 
   KeyRound, 
   ArrowRight, 
-  Trees, 
   HardHat, 
   UserCheck, 
   CheckCircle2, 
@@ -16,65 +19,101 @@ import {
 
 interface UnifiedLoginProps {
   currentLang: Language;
-  initialRole?: Role;
-  onLoginSuccess: (role: Role) => void;
+  /** Role pre-selected from a landing-page card. */
+  initialRoleId?: CategoryRoleId;
+  onLoginSuccess: () => void;
   onBackToHome?: () => void;
+  onSwitchCategory?: () => void;
 }
+
+// Demo phone numbers of the seeded users, so each role can be tried without typing (mock OTP).
+const DEMO_PHONES: Record<CategoryId, Partial<Record<CategoryRoleId, string>>> = {
+  coconut: { owner: '+94 77 123 4567', broker: '+94 71 987 6543', worker: '+94 76 555 1234' },
+  construction: {
+    client: '+94 77 200 0001',
+    contractor: '+94 77 200 0002',
+    subcontractor: '+94 77 200 0003',
+    worker: '+94 77 200 0004',
+  },
+};
+
+// Tailwind needs the full class names present in the source.
+const SELECTED: Record<Capability, string> = {
+  poster: 'border-emerald-500 bg-emerald-950/60 text-emerald-200',
+  bidder: 'border-amber-500 bg-amber-950/60 text-amber-200',
+  crew: 'border-teal-500 bg-teal-950/60 text-teal-200',
+};
+
+const RoleIcon: React.FC<{ role: CategoryRole; categoryIcon: 'trees' | 'building'; className?: string }> = ({
+  role,
+  categoryIcon,
+  className,
+}) => {
+  if (role.capability === 'poster') return <CategoryIcon icon={categoryIcon} className={className} />;
+  if (role.capability === 'bidder') return <HardHat className={className} />;
+  return <UserCheck className={className} />;
+};
 
 export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
   currentLang,
-  initialRole = 'owner',
+  initialRoleId,
   onLoginSuccess,
   onBackToHome,
+  onSwitchCategory,
 }) => {
-  const t = getT(currentLang);
-  const [selectedRole, setSelectedRole] = useState<Role>(initialRole === 'admin' ? 'owner' : initialRole);
-  const [phone, setPhone] = useState('+94 77 123 4567');
+  const t = useT(currentLang);
+  const { category } = useCategory();
+
+  const firstRole = category.roles[0].id;
+  const startRole = category.roles.some(r => r.id === initialRoleId) ? (initialRoleId as CategoryRoleId) : firstRole;
+
+  const [selectedRoleId, setSelectedRoleId] = useState<CategoryRoleId>(startRole);
+  // Demo numbers and the demo code only exist in demo mode; real sign-in starts blank
+  const [phone, setPhone] = useState(authApi.isMock ? DEMO_PHONES[category.id][startRole] ?? '+94 7' : '+94 ');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [otpCode, setOtpCode] = useState('123456');
+  const [otpCode, setOtpCode] = useState(authApi.isMock ? '123456' : '');
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(60);
 
-  useEffect(() => {
-    if (initialRole && initialRole !== 'admin') {
-      setSelectedRole(initialRole);
-      if (initialRole === 'owner') setPhone('+94 77 123 4567');
-      if (initialRole === 'supervisor') setPhone('+94 71 987 6543');
-      if (initialRole === 'worker') setPhone('+94 76 555 1234');
-    }
-  }, [initialRole]);
-
-  const handleRoleSelect = (role: Role) => {
-    setSelectedRole(role);
-    if (role === 'owner') setPhone('+94 77 123 4567');
-    if (role === 'supervisor') setPhone('+94 71 987 6543');
-    if (role === 'worker') setPhone('+94 76 555 1234');
+  const handleRoleSelect = (roleId: CategoryRoleId) => {
+    setSelectedRoleId(roleId);
+    if (authApi.isMock) setPhone(DEMO_PHONES[category.id][roleId] ?? phone);
   };
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!phone || phone.length < 9) {
       setError(t.login_err_phone);
       return;
     }
-    const res = store.requestOtp(phone);
-    if (res.success) {
+    setBusy(true);
+    try {
+      const { demoCode } = await authApi.sendOtp(phone);
       setStep('otp');
-      setOtpCode(res.code);
-      setInfoMessage(fmt(t.login_otp_mock, { code: res.code }));
+      if (demoCode) {
+        setOtpCode(demoCode);
+        setInfoMessage(fmt(t.login_otp_mock, { code: demoCode }));
+      }
+    } catch (err) {
+      setError(authErrorMessage(err, t));
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const res = store.verifyOtp(phone, otpCode, selectedRole);
-    if (res.success && res.user) {
-      onLoginSuccess(res.user.active_role);
-    } else {
-      setError(res.error || t.login_err_verify);
+    setBusy(true);
+    try {
+      await authApi.confirmOtp(phone, otpCode, { category: category.id, role: selectedRoleId });
+      onLoginSuccess();
+    } catch (err) {
+      setError(authErrorMessage(err, t));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -97,7 +136,7 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
 
         <div className="text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 mb-3">
-            <Trees className="w-8 h-8" />
+            <CategoryIcon icon={category.icon} className="w-8 h-8" />
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-white">
             {t.app_title}
@@ -105,12 +144,21 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
           <p className="mt-1.5 text-xs text-slate-400 max-w-sm mx-auto">
             {t.tagline}
           </p>
+          <div className="mt-2 inline-flex items-center space-x-2 text-[11px] text-slate-400">
+            <span>{t.login_in_category}</span>
+            <strong className="text-emerald-300" data-testid="login-category">{l10n(category.label, currentLang)}</strong>
+            {onSwitchCategory && (
+              <button type="button" onClick={onSwitchCategory} className="underline hover:text-white">
+                {t.category_switch}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 py-7 px-4 shadow-2xl rounded-2xl sm:px-8 space-y-5">
           
           {error && (
-            <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-200 text-xs flex items-center space-x-2">
+            <div role="alert" className="p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-200 text-xs flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
               <span>{error}</span>
             </div>
@@ -129,45 +177,24 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
                   1. {t.login_step_role}
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleRoleSelect('owner')}
-                    className={`p-3 rounded-xl border text-center transition flex flex-col items-center justify-center ${
-                      selectedRole === 'owner'
-                        ? 'border-emerald-500 bg-emerald-950/60 text-emerald-200'
-                        : 'border-slate-800 bg-slate-850 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <Trees className="w-5 h-5 mb-1" />
-                    <span className="text-xs font-bold">{tRole('owner', currentLang)}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleRoleSelect('supervisor')}
-                    className={`p-3 rounded-xl border text-center transition flex flex-col items-center justify-center ${
-                      selectedRole === 'supervisor'
-                        ? 'border-amber-500 bg-amber-950/60 text-amber-200'
-                        : 'border-slate-800 bg-slate-850 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <HardHat className="w-5 h-5 mb-1" />
-                    <span className="text-xs font-bold">{tRole('supervisor', currentLang)}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleRoleSelect('worker')}
-                    className={`p-3 rounded-xl border text-center transition flex flex-col items-center justify-center ${
-                      selectedRole === 'worker'
-                        ? 'border-teal-500 bg-teal-950/60 text-teal-200'
-                        : 'border-slate-800 bg-slate-850 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    <UserCheck className="w-5 h-5 mb-1" />
-                    <span className="text-xs font-bold">{tRole('worker', currentLang)}</span>
-                  </button>
+                <div className={`grid gap-2 ${category.roles.length > 3 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                  {category.roles.map(role => (
+                    <button
+                      key={role.id}
+                      type="button"
+                      data-testid={`login-role-${role.id}`}
+                      aria-pressed={selectedRoleId === role.id}
+                      onClick={() => handleRoleSelect(role.id)}
+                      className={`p-3 rounded-xl border text-center transition flex flex-col items-center justify-center ${
+                        selectedRoleId === role.id
+                          ? SELECTED[role.capability]
+                          : 'border-slate-800 bg-slate-850 text-slate-400 hover:border-slate-700'
+                      }`}
+                    >
+                      <RoleIcon role={role} categoryIcon={category.icon} className="w-5 h-5 mb-1" />
+                      <span className="text-xs font-bold">{l10n(role.label, currentLang)}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -191,11 +218,15 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
                 <p className="mt-1 text-[11px] text-slate-500">
                   {t.login_otp_note}
                 </p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  {t.login_register_note}
+                </p>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md transition flex items-center justify-center space-x-2"
+                disabled={busy}
+                className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-bold text-sm shadow-md transition flex items-center justify-center space-x-2"
               >
                 <span>{t.send_otp}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -238,7 +269,8 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="w-2/3 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md flex items-center justify-center space-x-1.5"
+                  disabled={busy}
+                  className="w-2/3 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-bold shadow-md flex items-center justify-center space-x-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{t.verify_continue}</span>
@@ -248,6 +280,9 @@ export const UnifiedLogin: React.FC<UnifiedLoginProps> = ({
           )}
 
         </div>
+
+        {/* Invisible reCAPTCHA anchor for real phone sign-in */}
+        {!authApi.isMock && <div id={RECAPTCHA_CONTAINER_ID} />}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
+import { useT } from '../../config/CategoryContext';
 import { AppState, store } from '../../lib/store';
-import { Language, getT, fmt, tGender } from '../../lib/i18n';
+import { Language, fmt, tGender } from '../../lib/i18n';
 import { 
   validateAndParseSriLankanNic, 
   getSampleSriLankaNicCard, 
@@ -35,7 +36,7 @@ export const NicSubmissionModal: React.FC<NicSubmissionModalProps> = ({
   state,
   currentLang
 }) => {
-  const t = getT(currentLang);
+  const t = useT(currentLang);
   const currentUser = state.currentUser;
   const userSubmission = state.nicSubmissions?.find(s => s.user_id === currentUser?.id);
 
