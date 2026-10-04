@@ -21,36 +21,14 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  functions:
+  # RLS / SQL-function / storage tests against the dev Supabase project.
+  # Off until the repo variable SUPABASE_DB_TESTS is "true" and these secrets
+  # exist: SUPABASE_TEST_URL, SUPABASE_TEST_ANON_KEY, SUPABASE_TEST_SERVICE_ROLE_KEY.
+  # Never point them at production: the tests create and delete users.
+  db:
+    if: ${{ vars.SUPABASE_DB_TESTS == 'true' }}
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: functions/package-lock.json
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      # The functions/ test script shells out to the `firebase` CLI, resolved
-      # from the repo root's node_modules/.bin (npm walks up the directory
-      # tree for this) rather than duplicating firebase-tools as a functions/
-      # dependency too.
-      - run: npm ci
-      - run: npm ci
-        working-directory: functions
-      - run: npm run build
-        working-directory: functions
-      - run: npm test
-        working-directory: functions
-
-  rules:
-    runs-on: ubuntu-latest
+    concurrency: supabase-db-tests
     steps:
       - uses: actions/checkout@v4
 
@@ -59,19 +37,12 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
       - run: npm ci
-      - run: npm ci
-        working-directory: functions
-      - run: npm run test:rules
-      # The Functions emulator reads defineSecret() values from this file (it cannot reach Secret
-      # Manager in CI). The value is a throwaway test secret that the integration tests sign with.
-      - run: cp functions/.secret.local.example functions/.secret.local
-      - run: npm run test:integration
+      - run: npm run test:db
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_SERVICE_ROLE_KEY }}
 
   e2e:
     runs-on: ubuntu-latest

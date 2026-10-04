@@ -23,8 +23,7 @@ import { constructionSeed } from './seed/construction';
 import { getRole, membershipsOf } from '../config/categories';
 import { contactsUnlocked } from '../config/escrow';
 import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
-import { saveNicSubmissionToFirestore, updateNicSubmissionInFirestore, auth } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getAuthUserId, isSupabaseConfigured, supabase } from './supabase';
 import { createEstate as createEstateRemote, subscribeToEstates } from './data/estates';
 import { createJob as createJobRemote, subscribeToJobs } from './data/jobs';
 import { createBid as createBidRemote, subscribeToBids } from './data/bids';
@@ -39,8 +38,13 @@ import {
   subscribeToAttendanceEntries,
 } from './data/attendance';
 import { createCompletion as createCompletionRemote, subscribeToCompletions } from './data/completions';
-import { reconcile, type RemoteChanges } from './data/firestoreSync';
+import { reconcile, type RemoteChanges } from './data/sync';
 import { awardBid as awardBidRemote } from './data/jobEngine';
+import {
+  createNicSubmission as createNicSubmissionRemote,
+  reviewNicSubmission as reviewNicSubmissionRemote,
+  subscribeToNicSubmissions,
+} from './data/nicSubmissions';
 
 const STORAGE_KEY = 'coconnect_app_state_v1';
 
@@ -689,7 +693,7 @@ export interface AppState {
   }>;
   isOfflineSimulated: boolean;
   /**
-   * The most recent Firestore write failure, surfaced through normal
+   * The most recent backend sync/write failure, surfaced through normal
    * subscribe()/notify() re-renders rather than a silent console.warn
    * (closes KNOWN_ISSUES #11). Cleared by the next successful write of the
    * same kind; callers that want a toast/banner read this field.
@@ -774,47 +778,41 @@ class StoreService {
   }
 
   /**
-   * Starts Firestore listeners for every repository-backed collection
-   * (CONTRACTS C2). Each one reconciles adds, modifications AND removals
-   * into state — the previous ad-hoc sync in App.tsx only ever merged in
-   * adds (closes KNOWN_ISSUES #10). Returns one combined unsubscribe.
+   * Starts Supabase Realtime listeners for every repository-backed table
+   * (CONTRACTS C2). Each one reconciles adds, modifications AND removals into
+   * state (closes KNOWN_ISSUES #10). Returns one combined unsubscribe.
+   *
+   * Every table needs a signed-in user under RLS, so the listeners start when
+   * a Supabase session appears and stop when it goes, keyed off the auth
+   * uid, not this.state.currentUser. A token refresh (same uid) changes nothing.
    */
   public startSync(): () => void {
-    // estates/jobs/workers have an isSignedIn()-only read rule — no
-    // per-document branch — so a bare collection listener is fine (ADR-009).
-    const alwaysOn = [
-      subscribeToEstates(
-        (changes) => this.applyRemoteChanges('estates', changes),
-        (err) => this.reportSyncError('estates.sync', err)
-      ),
-      subscribeToJobs(
-        (changes) => this.applyRemoteChanges('jobs', changes),
-        (err) => this.reportSyncError('jobs.sync', err)
-      ),
-      subscribeToWorkers(
-        (changes) => this.applyRemoteChanges('workers', changes),
-        (err) => this.reportSyncError('workers.sync', err)
-      ),
-    ];
-
-    // Everything else is scoped to "me" (owner or supervisor, or just the
-    // one user doc) — firestore.rules denies these outright for a caller
-    // who isn't actually signed in to *real* Firebase Auth, which the
-    // still-mock OTP/admin login in this file doesn't do (CONTRACTS SP2:
-    // Session 2 switches that over). Re-subscribed on every real auth state
-    // change, keyed off auth.currentUser.uid, not this.state.currentUser.
+    let activeUid: string | null = null;
     let perUserUnsubscribers: Array<() => void> = [];
-    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+
+    const stopAll = () => {
       perUserUnsubscribers.forEach((unsub) => unsub());
       perUserUnsubscribers = [];
-      if (!firebaseUser) return;
+    };
 
-      const uid = firebaseUser.uid;
+    const startFor = (uid: string) => {
       perUserUnsubscribers = [
         subscribeToOwnUser(
           uid,
           (user) => this.applyOwnUser(user),
           (err) => this.reportSyncError('users.sync', err)
+        ),
+        subscribeToEstates(
+          (changes) => this.applyRemoteChanges('estates', changes),
+          (err) => this.reportSyncError('estates.sync', err)
+        ),
+        subscribeToJobs(
+          (changes) => this.applyRemoteChanges('jobs', changes),
+          (err) => this.reportSyncError('jobs.sync', err)
+        ),
+        subscribeToWorkers(
+          (changes) => this.applyRemoteChanges('workers', changes),
+          (err) => this.reportSyncError('workers.sync', err)
         ),
         subscribeToBids(
           uid,
@@ -841,25 +839,77 @@ class StoreService {
           (changes) => this.applyRemoteChanges('completions', changes),
           (err) => this.reportSyncError('completions.sync', err)
         ),
+        subscribeToNicSubmissions(
+          (changes) => this.applyRemoteChanges('nicSubmissions', changes),
+          (err) => this.reportSyncError('nicSubmissions.sync', err)
+        ),
       ];
+    };
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const uid = session?.user.id ?? null;
+      if (uid === activeUid) return;
+      activeUid = uid;
+      // Deferred: Supabase runs this callback while holding its auth lock,
+      // and the listeners' first queries need that lock to read the session.
+      setTimeout(() => {
+        stopAll();
+        if (uid && uid === activeUid) startFor(uid);
+      }, 0);
     });
 
     return () => {
-      alwaysOn.forEach((unsub) => unsub());
-      perUserUnsubscribers.forEach((unsub) => unsub());
-      unsubscribeAuth();
+      stopAll();
+      data.subscription.unsubscribe();
     };
   }
 
+  /**
+   * The signed-in user's own `users` row. It becomes `currentUser` (the
+   * session user the UI reads) with the legacy `roles` / `active_role`
+   * derived from memberships, the same way the demo sign-in derives them,
+   * keeping the role the person was already acting as when they still hold it.
+   */
   private applyOwnUser(user: User | null) {
     if (!user) return;
-    const others = this.state.users.filter((u) => u.id !== user.id);
-    this.state.users = [user, ...others];
+    const memberships = membershipsOf(user);
+    const roles: Role[] = [];
+    for (const m of memberships) {
+      const legacy = getRole(m.category, m.role)?.legacyRole;
+      if (legacy && !roles.includes(legacy)) roles.push(legacy);
+    }
+    const isAdmin = user.is_admin === true;
+    if (isAdmin) roles.push('admin');
+
+    const previous = this.state.currentUser?.id === user.id ? this.state.currentUser : null;
+    const activeMembership = memberships.find((m) => m.category === user.active_category) ?? memberships[0];
+    const fallbackRole: Role = isAdmin
+      ? 'admin'
+      : (activeMembership && getRole(activeMembership.category, activeMembership.role)?.legacyRole) || roles[0] || 'owner';
+    const sessionUser: User = {
+      ...user,
+      memberships,
+      roles,
+      active_role: previous && roles.includes(previous.active_role) ? previous.active_role : fallbackRole,
+    };
+
+    this.state.users = [sessionUser, ...this.state.users.filter((u) => u.id !== user.id)];
+    this.state.currentUser = sessionUser;
     this.notify();
   }
 
   private applyRemoteChanges<
-    K extends 'users' | 'estates' | 'jobs' | 'bids' | 'workers' | 'awards' | 'attendanceDays' | 'attendanceEntries' | 'completions'
+    K extends
+      | 'users'
+      | 'estates'
+      | 'jobs'
+      | 'bids'
+      | 'workers'
+      | 'awards'
+      | 'attendanceDays'
+      | 'attendanceEntries'
+      | 'completions'
+      | 'nicSubmissions'
   >(key: K, changes: RemoteChanges<AppState[K][number]>) {
     type Item = AppState[K][number] & { id: string };
     (this.state[key] as unknown as Item[]) = reconcile(this.state[key] as unknown as Item[], changes);
@@ -867,10 +917,10 @@ class StoreService {
   }
 
   private reportSyncError(action: string, err: unknown) {
-    console.error(`Firestore sync error (${action}):`, err);
+    console.error(`Backend sync error (${action}):`, err);
     this.state.syncError = {
       action,
-      message: err instanceof Error ? err.message : 'Unknown sync error',
+      message: err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'Unknown sync error',
       at: new Date().toISOString(),
     };
     this.notify();
@@ -878,13 +928,13 @@ class StoreService {
 
   /**
    * Fire-and-forget a repository write, but only when there is a real
-   * Firebase Auth session — firestore.rules requires one for every write,
-   * and demo mode / the Playwright e2e suite never sign in to real Firebase
-   * (CONTRACTS.md's SP3 change request: these calls used to fire anyway,
-   * fail, and spam `state.syncError` on every demo-mode action).
+   * Supabase session: RLS requires one for every write, and demo mode / the
+   * Playwright e2e suite never sign in to the backend (CONTRACTS.md's SP3
+   * change request: these calls used to fire anyway, fail, and spam
+   * `state.syncError` on every demo-mode action).
    */
   private fireRemoteWrite(action: string, run: () => Promise<void>) {
-    if (!auth.currentUser) return;
+    if (!getAuthUserId()) return;
     run().catch((err) => this.reportSyncError(action, err));
   }
 
@@ -909,7 +959,7 @@ class StoreService {
   /**
    * Phone OTP sign-in (mock). `membership` is the category + role the person chose; a new
    * user is registered with it, and an existing user who lacks it joins it. This stands in
-   * for Firebase phone auth + the `addMembership` Function (CONTRACTS C3).
+   * for Supabase phone auth + the `add_membership` SQL function (CONTRACTS C3).
    */
   public verifyOtp(
     phone: string,
@@ -976,7 +1026,7 @@ class StoreService {
     return { success: true, user };
   }
 
-  /** Add a category role to the signed-in user (mock of the `addMembership` Function). Never grants admin. */
+  /** Add a category role to the signed-in user (mock of the `add_membership` SQL function). Never grants admin. */
   public addMembership(membership: Membership): { success: boolean; error?: string } {
     const user = this.state.currentUser;
     if (!user) return { success: false, error: 'Unauthorized' };
@@ -1003,8 +1053,8 @@ class StoreService {
     return true;
   }
 
-  // Staff sign-in. Interim client-side check against the seeded admin record until real
-  // Firebase auth with custom claims lands (ROADMAP 3A-1). The same message is returned for a
+  // Staff sign-in (demo mode). Real staff sign-in is src/lib/auth.ts's signInStaff, which needs
+  // the server-side is_admin flag (ROADMAP 3A-1). The same message is returned for a
   // wrong email or a wrong PIN so the form doesn't reveal which one was right.
   public adminLogin(email: string, pin: string): { success: boolean; user?: User; error?: string } {
     const admin = this.state.users.find(
@@ -1044,6 +1094,10 @@ class StoreService {
   public logout(): void {
     this.state.currentUser = null;
     this.notify();
+    // With real auth, end the backend session too, or the next load signs the person straight back in.
+    if (isSupabaseConfigured && getAuthUserId()) {
+      supabase.auth.signOut().catch((err) => this.reportSyncError('auth.signOut', err));
+    }
   }
 
   // --- Estates (Lands) ---
@@ -1222,7 +1276,8 @@ class StoreService {
 
     const newBid: Bid = {
       id: `bid-${Date.now()}`,
-      category: 'coconut',
+      // The job's category: RLS only lets a bidder of that category bid (a construction contractor is not a coconut bidder)
+      category: job.category ?? 'coconut',
       job_id: data.job_id,
       owner_id: job.owner_id,
       supervisor_id: this.state.currentUser.id,
@@ -1281,7 +1336,7 @@ class StoreService {
     this.logAudit(this.state.currentUser.id, this.state.currentUser.name, 'award.created', 'award', award.id, `Owner accepted bid #${bid.id}. Escrow deposit of LKR ${bid.price} pending.`);
     this.notify();
     // The real award, status transitions and audit entry are written by the
-    // awardBid Function (Admin SDK, bypasses rules) — this client can't
+    // award_bid() SQL function (security definer) — this client can't
     // write jobs.status past OPEN or any award field directly. awardId is
     // this same client-generated id, so the eventual sync listener update
     // reconciles in place rather than duplicating.
@@ -1396,7 +1451,7 @@ class StoreService {
 
     if (job && job.status === 'ACTIVE') {
       // Local-only: ACTIVE -> IN_PROGRESS isn't in the client-allowed subset
-      // of job.status transitions (firestore.rules), and no Function covers
+      // of job.status transitions (the jobs RLS policy), and no SQL function covers
       // it yet. Flagged as a gap rather than silently attempting a write
       // that would just be denied.
       job.status = 'IN_PROGRESS';
@@ -1528,7 +1583,7 @@ class StoreService {
     };
 
     // Local-only: PENDING_COMPLETION isn't in the client-allowed subset of
-    // job.status transitions (firestore.rules) — same gap as
+    // job.status transitions (the jobs RLS policy) — same gap as
     // openAttendanceDay's ACTIVE -> IN_PROGRESS above.
     job.status = 'PENDING_COMPLETION';
     this.state.completions.unshift(completion);
@@ -1736,8 +1791,7 @@ class StoreService {
     this.uploadVerificationDoc('NIC_FRONT', newSub.front_file_name);
     this.uploadVerificationDoc('NIC_BACK', newSub.back_file_name);
 
-    // Save to Firestore for durable cloud persistence
-    saveNicSubmissionToFirestore(newSub);
+    this.fireRemoteWrite('nic.submitted', () => createNicSubmissionRemote(newSub));
 
     this.logAudit(
       user.id,
@@ -1779,13 +1833,14 @@ class StoreService {
       this.recomputeTrustScore(targetUser.id, 'nic_status_changed');
     }
 
-    // Persist to Firestore
-    updateNicSubmissionInFirestore(sub.id, {
-      status: sub.status,
-      reviewed_at: sub.reviewed_at,
-      reviewed_by: sub.reviewed_by,
-      rejection_reason: sub.rejection_reason
-    });
+    this.fireRemoteWrite('nic.reviewed', () =>
+      reviewNicSubmissionRemote(sub.id, {
+        status: sub.status,
+        reviewed_at: sub.reviewed_at,
+        reviewed_by: sub.reviewed_by,
+        rejection_reason: sub.rejection_reason
+      })
+    );
 
     this.logAudit(
       this.state.currentUser.id,
@@ -1901,7 +1956,7 @@ class StoreService {
 
   /**
    * Either party to an award can open a dispute while the money is in escrow. That freezes the
-   * escrow: nothing moves until an admin resolves it (mock of the `openDispute` Function).
+   * escrow: nothing moves until an admin resolves it (mock of the `open_dispute` SQL function).
    */
   public openDispute(data: {
     award_id: string;

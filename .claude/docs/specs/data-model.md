@@ -1,5 +1,7 @@
 # Spec: data model
 
+> **2026-10-04 — backend moved to Supabase (ADR-014).** This spec was written for Firebase. Its rules still hold (who may do what, the state machine, error codes, the fee model), but the mechanics are now: Postgres tables named like the collections, columns named like the `src/types` fields, `timestamptz`/`date` columns, client-chosen text ids for client-created rows; `firestore.rules` became RLS policies plus per-column grants (`supabase/migrations/*_rls.sql`); "Functions only" now means no client write grant, only SQL functions or the service role. Where this file and `supabase/migrations/*` disagree, the migrations win.
+
 Status: draft, for team review (S1-02). Builds on [ARCHITECTURE.md](../ARCHITECTURE.md) and the frozen [CONTRACTS.md](../plans/CONTRACTS.md) C1/C2. This is the source of truth for `firestore.rules` (S1-04) and the `src/lib/data/*` repositories (S1-07, S1-08).
 
 ## Conventions

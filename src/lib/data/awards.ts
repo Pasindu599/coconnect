@@ -1,18 +1,17 @@
 import type { Award } from '../../types';
-import { subscribeToOwnedCollection, type RemoteChanges } from './firestoreSync';
+import { subscribeToTable, type RemoteChanges } from './sync';
 
-const COLLECTION = 'awards';
+const TABLE = 'awards';
 
 /**
- * Read-only: awards are Functions-only (firestore.rules denies every client
- * write). Created by the `awardBid` callable (functions/src/jobs/awardBid.ts)
- * and later mutated by the payment/escrow Functions (S1-09 through S1-12).
- * Owner-or-supervisor scoped, not a bare collection listener — see ADR-009.
+ * Read-only: no client write grant on awards. Created by award_bid() and
+ * changed only by the payment/escrow SQL functions. RLS returns the awards
+ * where `uid` is the owner or the bidder (all of them for an admin).
  */
 export function subscribeToAwards(
-  uid: string,
+  _uid: string,
   onChange: (changes: RemoteChanges<Award>) => void,
   onError: (err: unknown) => void
 ): () => void {
-  return subscribeToOwnedCollection<Award>(COLLECTION, uid, { ownerField: 'owner_id', supervisorField: 'supervisor_id' }, onChange, onError);
+  return subscribeToTable<Award>(TABLE, onChange, onError);
 }

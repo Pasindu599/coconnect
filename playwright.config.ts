@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * End-to-end tests run the real app in a browser. Today the app keeps its data in the
  * browser (the mock store), so each test gets a fresh browser context and needs no backend.
- * When the Firebase data layer lands (S1-07/08), run these against the emulators.
+ * The Supabase backend is off here (no VITE_AUTH_MODE), so e2e never touches a real project.
  *
  * Locally, to use an installed Chrome instead of downloading Playwright's browser:
  *   PW_CHROME_PATH=/usr/bin/google-chrome npm run test:e2e

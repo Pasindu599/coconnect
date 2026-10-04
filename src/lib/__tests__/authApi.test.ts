@@ -19,7 +19,7 @@ beforeEach(async () => {
 });
 
 describe('mock auth API (the default)', () => {
-  it('is the demo sign-in unless VITE_AUTH_MODE is "firebase"', () => {
+  it('is the demo sign-in unless VITE_AUTH_MODE is "supabase"', () => {
     expect(api.authApi).toBe(api.mockAuthApi);
     expect(api.authApi.isMock).toBe(true);
   });
@@ -58,8 +58,8 @@ describe('mock auth API (the default)', () => {
 });
 
 describe('real auth API', () => {
-  it('is wired to the Firebase functions and is not the demo', () => {
-    expect(api.firebaseAuthApi.isMock).toBe(false);
+  it('is wired to Supabase auth and is not the demo', () => {
+    expect(api.supabaseAuthApi.isMock).toBe(false);
     expect(api.RECAPTCHA_CONTAINER_ID).toBe('recaptcha-container');
   });
 });

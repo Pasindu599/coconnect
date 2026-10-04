@@ -2,11 +2,14 @@ import { AuthError, addMembership, confirmOtp, sendOtp, signInStaff } from './au
 import { store } from './store';
 import type { Membership } from '../types/category';
 
-/** The element the invisible reCAPTCHA attaches to (the real phone sign-in needs one on the page). */
+/**
+ * The sign-in page still renders this anchor; Supabase phone auth does not need it (no reCAPTCHA).
+ * Kept so a captcha (hCaptcha/Turnstile) can mount here later without a UI change.
+ */
 export const RECAPTCHA_CONTAINER_ID = 'recaptcha-container';
 
 export interface AuthApi {
-  /** True for the in-browser demo sign-in (code 123456); false for real Firebase auth. */
+  /** True for the in-browser demo sign-in (code 123456); false for real Supabase auth. */
   isMock: boolean;
   /** Sends the code. In demo mode it returns the code so the screen can show it. */
   sendOtp: (phone: string) => Promise<{ demoCode?: string }>;
@@ -34,14 +37,11 @@ export const mockAuthApi: AuthApi = {
   },
 };
 
-/**
- * Real Firebase auth (src/lib/auth.ts, S1-05). Roles are added by the `addMembership` Function.
- * Do not turn this on until the data layer is on Firestore (S1-07).
- */
-export const firebaseAuthApi: AuthApi = {
+/** Real Supabase auth (src/lib/auth.ts). Roles are added by the `add_membership` SQL function. */
+export const supabaseAuthApi: AuthApi = {
   isMock: false,
   async sendOtp(phone) {
-    // Firebase wants E.164 without spaces
+    // E.164 without spaces
     await sendOtp(phone.replace(/\s+/g, ''), RECAPTCHA_CONTAINER_ID);
     return {};
   },
@@ -54,10 +54,10 @@ export const firebaseAuthApi: AuthApi = {
   },
 };
 
-export const authApi: AuthApi = import.meta.env.VITE_AUTH_MODE === 'firebase' ? firebaseAuthApi : mockAuthApi;
+export const authApi: AuthApi = import.meta.env.VITE_AUTH_MODE === 'supabase' ? supabaseAuthApi : mockAuthApi;
 
 /**
- * Whether the app talks to the Firebase backend. Firestore rules need a signed-in user, so data
- * sync only runs with real auth; in demo mode everything stays in the browser.
+ * Whether the app talks to the Supabase backend. RLS needs a signed-in user, so data sync only
+ * runs with real auth; in demo mode everything stays in the browser.
  */
 export const usesBackend: boolean = !authApi.isMock;

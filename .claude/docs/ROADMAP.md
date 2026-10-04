@@ -9,6 +9,8 @@
 | **B: Frontend** | Router, category registry, home category picker, config-driven dashboards, construction UI, i18n |
 | **C: QA / DevOps / Security + domain** | CI, emulators, tests (rules, functions, e2e), security fixes, construction domain content, keeping `.claude/docs` current |
 
+> **2026-10-04: the backend moved from Firebase to Supabase + Vercel (ADR-014, task S1-15 in the S1 plan).** Task names below that say Firebase, Firestore, rules or Functions now mean Supabase Auth, Postgres, RLS policies and SQL/Edge Functions.
+
 > **Since day 1, the work runs as two parallel Claude sessions.** Status for every task below is tracked in [plans/SESSION_1_BACKEND.md](plans/SESSION_1_BACKEND.md) and [plans/SESSION_2_FRONTEND.md](plans/SESSION_2_FRONTEND.md); this file stays as the overview. 1C-4 is handled by a person outside both sessions.
 
 Status values: `todo` · `doing` · `done` · `blocked`. Update the row when you start or finish a task.

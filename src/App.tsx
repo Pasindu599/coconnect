@@ -53,7 +53,7 @@ export default function App() {
       navigate({ page: 'admin' }, { replace: true });
     }
 
-    // Live Firestore sync (users, estates, jobs, bids) once real auth is on; see authApi.usesBackend
+    // Live Supabase sync (users, estates, jobs, bids, ...) once real auth is on; see authApi.usesBackend
     const stopSync = usesBackend ? store.startSync() : undefined;
 
     return () => {

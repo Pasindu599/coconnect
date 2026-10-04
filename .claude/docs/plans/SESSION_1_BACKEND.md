@@ -28,6 +28,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S1-12 | 9A | 9 | Admin payout recording + ledger reconciliation | S1-11 | | done |
 | S1-13 | 9C | 9 | Staging deploy (Hosting + Functions) via CI; error monitoring | S1-01, S1-10 | SP7 | **workflow written, blocked on human setup — see runbook** |
 | S1-14 | 10A | 10 | Bug fixes from staging | S1-13 | | blocked — needs S1-13's staging to actually exist first |
+| S1-15 | — | — | **Migrate the whole backend from Firebase to Supabase** (team decision, ADR-014) | — | | done on `feat/supabase-migration` — see the S1-15 notes below; S1-13's workflow and runbook rewritten for Supabase + Vercel |
 | — | 10C | 10 | **Final `/code-review` + `/security-review`, docs, retro (humans, both sessions)** | | | todo |
 
 ---
@@ -161,3 +162,12 @@ Ran `/security-review` against the full S1 diff (`2c9fbcf..HEAD`: every rule, Fu
 - **Open, needs Session 2:** the `workers` collection's read rule (`isSignedIn()` only) exposes every worker's NIC number and bank account reference to any authenticated user. The correct fix touches S2-owned component files (`BidsModal.tsx`, `AttendanceTab.tsx`) or requires them to switch to the already-existing `Bid.crew_members` denormalization — raised as a CONTRACTS.md change request (not guessed at unilaterally) and tracked as `KNOWN_ISSUES.md` #29.
 
 All four test layers (310 unit, 57 rules, 58 Functions, 8 integration) plus typecheck and the Functions build were re-run clean after the fixes, and three regression tests were added to `tests/rules/firestore.test.ts`.
+
+### S1-15: Firebase -> Supabase (2026-10-04)
+- Removed: `firebase*.json`, `.firebaserc`, `firestore.rules`, `storage.rules`, `firestore.indexes.json`, `functions/` (whole package), `src/lib/firebase.ts`, `tests/rules`, `tests/integration`, the `firebase`/`firebase-admin`/`firebase-tools`/`@firebase/rules-unit-testing` packages.
+- Added: `supabase/migrations/` (1 schema, 2 RLS, 3 SQL functions, 4 storage), `supabase/functions/{create-payment,payhere-notify,_shared}`, `supabase/config.toml`, `src/lib/supabase.ts`, `src/lib/googleDrive.ts`, `src/lib/data/nicSubmissions.ts`, `tests/db/` (RLS, functions, storage), `scripts/db-push.ts`, `vercel.json`, runbooks/supabase-setup.md.
+- Each Cloud Function became a `security definer` SQL function with the same checks and the same error codes (CONTRACTS C7), except the two that need the PayHere secret or a public URL, which are Edge Functions that hand state changes to SQL.
+- Stricter than the old rules, on purpose: bids must be created `pending`; attendance days/entries and direct dispute inserts are checked against the real job/award parties; per-column update grants (a job owner can't set `supervisor_id`; nobody edits `rating`, `memberships`, `is_admin`); one rating per job and person; at most one `paid` payment per award; one award per job.
+- Fixed while here: `store.submitBid` hardcoded `category: 'coconut'`, which RLS (and the old rules) would reject for every construction bid; real-auth mode never set `state.currentUser` from the synced profile, so a real sign-in could not log anyone in — `applyOwnUser` now does, deriving `roles`/`active_role` from memberships like the demo; `store.logout()` now also ends the Supabase session.
+- Sync: every listener starts at sign-in (RLS needs a user) and stops at sign-out; `nic_submissions` is synced too now.
+- Verified: `npm run lint`, `npm test` (unit), `npm run build`, `npm run test:e2e` (demo mode). 2026-10-05: migrations pushed to the dev project (`ncgaxlsoxtvchwggmyfy`, `npm run db:push`) and `npm run test:db` passes there, 46/46 (RLS, SQL functions, storage). Not yet exercised: phone OTP (provider off in the dashboard), Google OAuth, Realtime in the browser, the Edge Functions (not deployed yet).

@@ -1,5 +1,7 @@
 # Spec: payments & escrow
 
+> **2026-10-04 — backend moved to Supabase (ADR-014).** This spec was written for Firebase. Its rules still hold (who may do what, the state machine, error codes, the fee model), but the mechanics are now: `createPayment` = the `create-payment` Edge Function + `create_payment_intent()`; `payhereNotify` = the `payhere-notify` Edge Function + `payhere_apply_notify()`; confirm/dispute/payout are SQL functions; the fee config is the `platform_config` table. Where this file and `supabase/migrations/*` disagree, the migrations win.
+
 Status: draft, for team review (S1-02). Implements CONTRACTS C4, ADR-002, and the escrow state machine in [ARCHITECTURE.md](../ARCHITECTURE.md). Implementation spans S1-09 through S1-12.
 
 **Open dependency:** 1C-4 (a human contacting PayHere for sandbox credentials and confirming marketplace/escrow holding is permitted) is not done yet as of this writing. Everything below is buildable and testable against mocked PayHere responses on the emulator; the hash format is written from PayHere's public docs and must be re-verified against the actual sandbox once credentials exist, per the task note in SESSION_1_BACKEND.md S1-09.

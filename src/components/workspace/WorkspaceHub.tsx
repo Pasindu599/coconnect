@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useT } from '../../config/CategoryContext';
 import { AppState, store } from '../../lib/store';
-import { 
-  googleSignIn, 
-  googleSignOut, 
-  getAccessToken, 
-  initAuth,
-  auth 
-} from '../../lib/firebase';
+import { googleSignIn, googleSignOut, watchGoogleAccount, type GoogleAccount } from '../../lib/googleDrive';
 import { 
   listDriveFiles, 
   uploadFileToDrive, 
@@ -31,7 +25,6 @@ import {
   Download,
   Lock
 } from 'lucide-react';
-import { User } from 'firebase/auth';
 import { Language, fmt } from '../../lib/i18n';
 
 interface WorkspaceHubProps {
@@ -41,7 +34,7 @@ interface WorkspaceHubProps {
 
 export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state, currentLang }) => {
   const t = useT(currentLang);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<GoogleAccount | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -66,21 +59,12 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state, currentLang }
     onConfirm: async () => {},
   });
 
-  // Track auth state
+  // Track the Google session (set when the OAuth redirect returns here)
   useEffect(() => {
-    const unsubscribe = initAuth(
-      (user, token) => {
-        setCurrentUser(user);
-        setAccessToken(token);
-      },
-      () => {
-        setCurrentUser(null);
-        setAccessToken(null);
-      }
-    );
-    return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
-    };
+    return watchGoogleAccount((account, token) => {
+      setCurrentUser(account);
+      setAccessToken(token);
+    });
   }, []);
 
   // Fetch Drive files when token is available
@@ -94,16 +78,11 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state, currentLang }
     setIsLoadingAuth(true);
     setAuthError(null);
     try {
-      const res = await googleSignIn();
-      if (res) {
-        setCurrentUser(res.user);
-        setAccessToken(res.accessToken);
-        await loadDriveFiles(res.accessToken);
-      }
+      // Navigates away to Google; the account and token arrive through watchGoogleAccount on return.
+      await googleSignIn();
     } catch (err: any) {
       console.error('Sign-in error:', err);
       setAuthError(err.message || t.ws_err_auth);
-    } finally {
       setIsLoadingAuth(false);
     }
   };
@@ -337,19 +316,19 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ state, currentLang }
         </div>
       )}
 
-      {/* Cloud Firestore & Google Drive Status Cards */}
+      {/* Cloud database & Google Drive Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{t.ws_card_firestore}</span>
+            <span>{t.ws_card_database}</span>
             <Database className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-base font-bold text-white flex items-center space-x-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>{t.ws_firestore_active}</span>
+            <span>{t.ws_database_active}</span>
           </div>
           <p className="text-[11px] text-slate-400">
-            {t.ws_firestore_desc}
+            {t.ws_database_desc}
           </p>
         </div>
 

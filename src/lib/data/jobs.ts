@@ -1,28 +1,29 @@
 import type { LabourJob } from '../../types';
-import { patchDoc, putDoc, removeDoc, subscribeToCollection, type RemoteChanges } from './firestoreSync';
+import { deleteRow, insertRow, subscribeToTable, updateRow, type RemoteChanges } from './sync';
 
-const COLLECTION = 'jobs';
+const TABLE = 'jobs';
 
 export function createJob(job: LabourJob): Promise<void> {
-  return putDoc(COLLECTION, job.id, job);
+  return insertRow(TABLE, job);
 }
 
 /**
- * Only for the owner-allowed subset of transitions (DRAFT/OPEN/CANCELLED —
- * see firestore.rules). Anything past OPEN is written by a Function, never
- * through this repository.
+ * Only for the owner-allowed subset of transitions (DRAFT/OPEN/CANCELLED,
+ * see the jobs policies in supabase/migrations/*_rls.sql). Anything past
+ * OPEN is written by a SQL function, never through this module.
  */
 export function updateJob(id: string, patch: Partial<LabourJob>): Promise<void> {
-  return patchDoc(COLLECTION, id, patch);
+  return updateRow(TABLE, id, patch);
 }
 
+/** RLS has no delete policy for jobs, so this is refused for every client today. */
 export function deleteJob(id: string): Promise<void> {
-  return removeDoc(COLLECTION, id);
+  return deleteRow(TABLE, id);
 }
 
 export function subscribeToJobs(
   onChange: (changes: RemoteChanges<LabourJob>) => void,
   onError: (err: unknown) => void
 ): () => void {
-  return subscribeToCollection<LabourJob>(COLLECTION, onChange, onError);
+  return subscribeToTable<LabourJob>(TABLE, onChange, onError);
 }

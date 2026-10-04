@@ -1,17 +1,26 @@
 name: Deploy to staging
 
-# Runs after CI's checks would pass (main is only updated via merged, CI-green
-# PRs — see README's "one task per PR, CI must be green"), deploying Hosting,
-# Functions and both rule sets to the project in .firebaserc. See
-# .claude/docs/runbooks/staging-deploy.md for the one-time setup this needs
-# before it can succeed — it cannot run without a human completing that first.
+# On every push to main (main only moves through merged, CI-green PRs):
+#   1. database migrations  -> the staging Supabase project
+#   2. Edge Functions       -> the staging Supabase project
+#   3. the static site      -> Vercel
+# See .claude/docs/runbooks/staging-deploy.md for the one-time setup (secrets
+# and variables) this needs before it can succeed.
 on:
   push:
     branches: [main]
 
+concurrency: deploy-staging
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -21,19 +30,19 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
-      - run: npm run build
 
-      - run: npm ci
-        working-directory: functions
-      - run: npm run build
-        working-directory: functions
-
-      # Populates GOOGLE_APPLICATION_CREDENTIALS for every later step —
-      # firebase-tools picks it up automatically, no --token/login needed.
-      - uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_STAGING_SERVICE_ACCOUNT }}
-
-      - run: npx firebase deploy --only hosting,functions,firestore:rules,storage:rules --non-interactive
+      - name: Apply database migrations
+        run: npx supabase db push --db-url "$SUPABASE_DB_URL"
         env:
-          PAYHERE_MERCHANT_ID: ${{ vars.PAYHERE_MERCHANT_ID }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+
+      - name: Deploy Edge Functions
+        run: npx supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF"
+
+      # Vercel builds with the env vars set in the Vercel project
+      # (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_AUTH_MODE, VITE_GOOGLE_MAPS_API_KEY).
+      - name: Deploy site to Vercel
+        run: |
+          npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest build --prod --token="$VERCEL_TOKEN"
+          npx --yes vercel@latest deploy --prebuilt --prod --token="$VERCEL_TOKEN"

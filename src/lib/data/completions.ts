@@ -1,18 +1,18 @@
 import type { Completion } from '../../types';
-import { putDoc, subscribeToOwnedCollection, type RemoteChanges } from './firestoreSync';
+import { insertRow, subscribeToTable, type RemoteChanges } from './sync';
 
-const COLLECTION = 'completions';
+const TABLE = 'completions';
 
-/** Create only — confirming a completion is Functions-only (checks a hashed PIN server-side, see S1-11). */
+/** Create only. Confirming is confirm_completion() (src/lib/escrow.ts), which checks a hashed PIN server-side. */
 export function createCompletion(completion: Completion): Promise<void> {
-  return putDoc(COLLECTION, completion.id, completion);
+  return insertRow(TABLE, completion);
 }
 
-/** Owner-or-submitter scoped, not a bare collection listener — see ADR-009. */
+/** RLS returns the completions where `uid` is the owner or the submitter. */
 export function subscribeToCompletions(
-  uid: string,
+  _uid: string,
   onChange: (changes: RemoteChanges<Completion>) => void,
   onError: (err: unknown) => void
 ): () => void {
-  return subscribeToOwnedCollection<Completion>(COLLECTION, uid, { ownerField: 'owner_id', supervisorField: 'submitted_by' }, onChange, onError);
+  return subscribeToTable<Completion>(TABLE, onChange, onError);
 }

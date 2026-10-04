@@ -1,37 +1,39 @@
-import { describe, expect, it } from 'vitest';
-import { FirebaseError } from 'firebase/app';
-import { AuthError, mapFirebaseAuthError } from '../auth';
+import { describe, expect, it, vi } from 'vitest';
+import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js';
+import { AuthError, mapSupabaseAuthError } from '../auth';
 
-function firebaseError(code: string) {
-  return new FirebaseError(code, 'test error');
+vi.spyOn(console, 'error').mockImplementation(() => {});
+
+function apiError(code: string, status = 400) {
+  return new AuthApiError('test error', status, code);
 }
 
-describe('mapFirebaseAuthError', () => {
-  it('maps known Firebase Auth codes to AuthError codes', () => {
-    expect(mapFirebaseAuthError(firebaseError('auth/invalid-phone-number')).code).toBe('invalid-phone');
-    expect(mapFirebaseAuthError(firebaseError('auth/invalid-verification-code')).code).toBe('invalid-code');
-    expect(mapFirebaseAuthError(firebaseError('auth/code-expired')).code).toBe('code-expired');
-    expect(mapFirebaseAuthError(firebaseError('auth/too-many-requests')).code).toBe('too-many-requests');
-    expect(mapFirebaseAuthError(firebaseError('auth/network-request-failed')).code).toBe('network');
+describe('mapSupabaseAuthError', () => {
+  it('maps known Supabase Auth codes to AuthError codes', () => {
+    expect(mapSupabaseAuthError(apiError('validation_failed')).code).toBe('invalid-phone');
+    expect(mapSupabaseAuthError(apiError('otp_expired', 403)).code).toBe('invalid-code');
+    expect(mapSupabaseAuthError(apiError('over_sms_send_rate_limit')).code).toBe('too-many-requests');
+    expect(mapSupabaseAuthError(apiError('anything', 429)).code).toBe('too-many-requests');
+    expect(mapSupabaseAuthError(new AuthRetryableFetchError('offline', 0)).code).toBe('network');
   });
 
   it('maps credential failures to not-staff only when that is the given fallback', () => {
-    expect(mapFirebaseAuthError(firebaseError('auth/wrong-password'), 'not-staff').code).toBe('not-staff');
-    expect(mapFirebaseAuthError(firebaseError('auth/user-not-found'), 'not-staff').code).toBe('not-staff');
-    expect(mapFirebaseAuthError(firebaseError('auth/wrong-password')).code).toBe('unknown');
+    expect(mapSupabaseAuthError(apiError('invalid_credentials'), 'not-staff').code).toBe('not-staff');
+    expect(mapSupabaseAuthError(apiError('validation_failed'), 'not-staff').code).toBe('not-staff');
+    expect(mapSupabaseAuthError(apiError('invalid_credentials')).code).toBe('unknown');
   });
 
   it('falls back to the given default for an unrecognized code', () => {
-    expect(mapFirebaseAuthError(firebaseError('auth/something-new'), 'invalid-phone').code).toBe('invalid-phone');
+    expect(mapSupabaseAuthError(apiError('something_new'), 'invalid-code').code).toBe('invalid-code');
   });
 
-  it('falls back to "unknown" for a non-Firebase error with no explicit fallback', () => {
-    expect(mapFirebaseAuthError(new Error('boom')).code).toBe('unknown');
+  it('falls back to "unknown" for a non-Supabase error with no explicit fallback', () => {
+    expect(mapSupabaseAuthError(new Error('boom')).code).toBe('unknown');
   });
 
   it('keeps the original error as `cause`', () => {
-    const original = firebaseError('auth/code-expired');
-    const mapped = mapFirebaseAuthError(original);
+    const original = apiError('otp_expired', 403);
+    const mapped = mapSupabaseAuthError(original);
     expect(mapped).toBeInstanceOf(AuthError);
     expect(mapped.cause).toBe(original);
   });

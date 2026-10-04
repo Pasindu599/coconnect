@@ -8,16 +8,12 @@ coverage/
 !.env.example
 .claude/settings.local.json
 
-# Firebase
-functions/lib/
-.firebase/
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
-emulator-data/
+# Supabase CLI / Vercel
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env
+.vercel/
 
 # Playwright
 test-results/
 playwright-report/
-functions/.secret.local
-!functions/.secret.local.example
