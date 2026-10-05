@@ -19,7 +19,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 | S2-04 | 2C-2 | 2 | Final construction content (registry + `categories.md`) | S2-01 | | done |
 | S2-05 | 2B-2 | 2–3 | Replace hardcoded coconut values with registry lookups | S2-01 | | done |
 | S2-06 | 3B-1 | 3 | Split `OwnerDashboard` + `SupervisorDashboard` | S2-05 | | done |
-| S2-07 | 4B-1 | 4 | Login/registration with category + role; staff login | S2-04 | SP2 (S1-05) | done on the demo sign-in; real auth is wired behind `VITE_AUTH_MODE=firebase` with every error code translated; switching it on waits for the S1-07 follow-up in CONTRACTS.md |
+| S2-07 | 4B-1 | 4 | Login/registration with category + role; staff login | S2-04 | SP2 (S1-05) | done on the demo sign-in; real auth is wired behind `VITE_AUTH_MODE=supabase` (was `firebase` before ADR-014) with every error code translated; switching it on waits for the S1-07 follow-up in CONTRACTS.md |
 | S2-08 | — | 4 | `App.tsx`: use `store.startSync()` | S2-02 | SP3 (S1-07) | done: `store.startSync()` replaces the old listeners (real-auth mode only) and sync errors show in a banner |
 | S2-09 | 4C-1 | 4–5 | UI tests: registry, router, picker, login | S2-03, S2-07 | SP1 (S1-01) | done: 310 unit tests (registry, router, i18n, store, auth, payments, money, bank, audit labels) and component tests for the picker, landing, sign-in, join, timeline, payment, dispute, consent/bank, payout and admin tabs; mutation-checked |
 | S2-10 | 5B-1 | 5 | Construction landing/dashboard variants; NIC upload to Storage | S2-06, S2-04 | S1-08 for NIC | partial: sites form, totals and map done; the NIC upload to Storage waits for S1-08 |
@@ -101,7 +101,7 @@ Status: `todo` · `doing` · `done` · `blocked`. Update this table when you sta
 
 ### S2-13: e2e happy path
 - **Files:** `playwright.config.ts`, `e2e/**`, `package.json`.
-- Runs against the emulators + seed. Flow: pick category → post job → bid → award → sandbox pay → contacts visible. Run it for **both** categories.
+- Runs against the dev Supabase project + `npm run seed`. Flow: pick category → post job → bid → award → sandbox pay → contacts visible. Run it for **both** categories.
 - Write it against the stubbed payment first; the full run needs SP6.
 
 ### S2-14: Completion, dispute, consent, bank details

@@ -30,13 +30,15 @@ export interface User {
   roles: Role[];
   active_role: Role;
   /**
-   * Multi-category memberships (CONTRACTS C1). Written only by the `addMembership` Function.
+   * Multi-category memberships (CONTRACTS C1). Written only by the `add_membership` SQL function.
    * Required as of S1-07/08 (every seed/mock user-construction site already sets it, even if
    * to `[]`) — made required per CONTRACTS.md's change request once the data layer landed.
    */
   memberships: Membership[];
   /** Which category's UI the user is currently in; a client-writable UI preference. */
   active_category?: CategoryId;
+  /** Staff flag from the backend `users` row (only set_admin() changes it). Unset in demo data, which uses `roles` instead. */
+  is_admin?: boolean;
   nic_status: NicStatus;
   nic_number?: string;
   nic_front_url?: string;
@@ -79,7 +81,7 @@ export interface NicSubmission {
 
 export interface Estate {
   id: string;
-  /** Optional, defaults to 'coconut' at write time (see store.ts) until a category-aware posting UI sets it explicitly. Required by firestore.rules' isPoster() check. */
+  /** Optional, defaults to 'coconut' at write time (see store.ts) until a category-aware posting UI sets it explicitly. Checked by the estates insert policy's is_poster() (supabase/migrations/*_rls.sql). */
   category?: CategoryId;
   /** Category-specific site fields from the registry (e.g. construction floor_area_sqft). */
   attributes?: Record<string, string | number>;
@@ -117,7 +119,7 @@ export interface LabourJob {
   category?: CategoryId;
   owner_id: string;
   owner_name: string;
-  /** Set by awardBid once a bid is accepted; lets firestore.rules verify a completions submitter is the real awarded supervisor. */
+  /** Set by award_bid() once a bid is accepted; lets the completions insert policy verify the submitter is the real awarded supervisor. */
   supervisor_id?: string;
   estate_id: string;
   estate_name: string;
@@ -141,7 +143,7 @@ export interface Bid {
   /** Optional, see Estate.category. */
   category?: CategoryId;
   job_id: string;
-  /** Denormalized from the job at submission time — lets firestore.rules' sealed-bid read check stay a simple field equality instead of a cross-document get(), which a `list`/onSnapshot query can't safely use (ADR-008/009). */
+  /** Denormalized from the job at submission time; the sealed-bid read policy matches on it, and the insert policy checks it equals the real job owner. */
   owner_id?: string;
   supervisor_id: string;
   supervisor_name: string;
@@ -161,7 +163,7 @@ export interface Award {
   /** Optional, see Estate.category. */
   category?: CategoryId;
   job_id: string;
-  /** Denormalized, same reason as Bid.owner_id above. owner_phone/owner_name close the "supervisor can't see who to call" gap (S1-11) — the supervisor can read the award but not users/{owner_id} directly. */
+  /** Denormalized, same reason as Bid.owner_id above. owner_phone/owner_name close the "supervisor can't see who to call" gap (S1-11) — the supervisor can read the award but not the owner's `users` row directly. */
   owner_id?: string;
   owner_name?: string;
   owner_phone?: string;
@@ -183,7 +185,7 @@ export interface Award {
 export interface AttendanceDay {
   id: string;
   job_id: string;
-  /** Denormalized from the job/award so firestore.rules can authorize without a query — see ADR-006/S1-08. */
+  /** Denormalized from the job/award so RLS policies can authorize with a plain column check. */
   owner_id?: string;
   supervisor_id?: string;
   work_date: string;

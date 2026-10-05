@@ -27,12 +27,12 @@ store.subscribe(listener: () => void): () => void
 store.<action>(...)          // awardBid, submitBid, confirmCompletion, ...
 ```
 
-S1 swaps the internals from `localStorage` to Firestore (S1-07, S1-08) **without changing these signatures**. If a signature has to change, S1 updates every caller in the same PR, with an S2 reviewer.
+S1 swaps the internals from `localStorage` to the backend (S1-07, S1-08; Supabase since ADR-014) **without changing these signatures**. If a signature has to change, S1 updates every caller in the same PR, with an S2 reviewer.
 
 New for S2 (S1 adds by SP3):
 
 ```ts
-store.startSync(): () => void   // starts Firestore listeners, returns unsubscribe
+store.startSync(): () => void   // starts Supabase Realtime listeners once signed in, returns unsubscribe
 ```
 
 ## C3. Auth API (S1 delivers by SP2)
@@ -52,6 +52,7 @@ export class AuthError extends Error {
 ```
 
 - Errors are **codes, not text**. S2 maps each code to an `i18n.ts` key.
+- **Supabase (ADR-014):** `recaptchaContainerId` is accepted but unused (Supabase phone auth has no reCAPTCHA). `addMembership` calls the `add_membership` SQL function; RLS reads memberships from the `users` table, so nothing needs a token refresh afterwards. Real auth is on with `VITE_AUTH_MODE=supabase`.
 - **Mock until SP2:** S2 keeps using the existing `store.verifyOtp` (demo OTP `123456`) and `store.adminLogin`.
 
 ## C4. Payments API (S1 delivers by SP5)
@@ -91,8 +92,8 @@ File: `src/lib/data/nic.ts`
 export function uploadNicImage(file: File, side: 'front' | 'back'): Promise<string>;
 ```
 
-- Uploads to Storage at `nic/{uid}/{side}.{ext}` (`uid` is `auth.currentUser`, not a parameter — throws if nobody's signed in) and **returns that path**, not a download URL. `storage.rules` restricts the path to the owner and admins.
-- To actually display the image (e.g. an admin review screen), resolve a download URL from the returned path yourself: `getDownloadURL(ref(storage, path))` (`storage` is exported from `src/lib/firebase.ts`).
+- **Supabase (ADR-014):** uploads to the private Storage bucket `nic` at `{uid}/{side}.{ext}` (`uid` is the signed-in Supabase user, not a parameter — throws if nobody's signed in) and **returns that path** (no `nic/` prefix; the bucket is the prefix), not a URL. Storage policies restrict it to the owner and admins; the bucket only accepts jpeg/png/webp under 5 MB.
+- To display the image (e.g. the admin review screen), call `getNicImageUrl(path)` from the same file: a signed URL valid for 5 minutes.
 - `NicSubmissionModal` can switch to this now — closes KNOWN_ISSUES #8 once it does.
 
 ## C6. Error and status strings
@@ -112,7 +113,7 @@ export function recordPayout(awardId: string, bankTransferRef: string): Promise<
 
 These were never given a CONTRACTS letter when built (found necessary mid-S1-07/08, not in the original roadmap task list by name) — this section is that backfill, written in response to the mock-shape change requests below.
 
-- **Errors are Firebase's own `FunctionsError`**, not a custom `AuthError`-style class: `err.code` is already a clean string with no `functions/` prefix. Per function:
+- **Errors are `BackendError`** (`src/lib/supabase.ts`; was Firebase's `FunctionsError` before ADR-014): `err.code` is the same clean string as before, so any UI mapping carries over unchanged. These are SQL functions now (`supabase/migrations/*_functions.sql`). Per function:
   - `confirmCompletion`: `unauthenticated`, `invalid-argument` (missing fields), `not-found` (completion), `permission-denied` (not the owner, **or** wrong PIN — both read the same to the caller on purpose), `failed-precondition` (completion not `pending`), `resource-exhausted` (5 wrong attempts in the last hour).
   - `openDispute`: `unauthenticated`, `invalid-argument`, `not-found` (award), `permission-denied` (not a party to the award), `failed-precondition` (escrow not `held`/`release_requested`).
   - `resolveDispute` (admin only): `permission-denied` (not admin), `invalid-argument`, `not-found` (dispute/award), `failed-precondition` (dispute already resolved, or no paid payment to refund), `internal` (the PayHere refund call itself failed — **by design, always today**, see below).
@@ -139,3 +140,4 @@ When one session needs something in the other's files, add a row here, in your o
 | 2026-10-03 | S2 | S1 | **SP3 received (thanks); wired, with two requests.** `App.tsx` now calls `store.startSync()` instead of its own Firestore listeners, and shows `state.syncError` in a dismissible banner. Both only run when real auth is on (`authApi.usesBackend`, i.e. `VITE_AUTH_MODE=firebase`), because the rules need a signed-in user. **(1)** In demo mode your `createEstateRemote` / `createJobRemote` / `createBidRemote` calls still fire (and fail, and set `syncError`) on every post; please skip them when there is no signed-in Firebase user (or export a flag from `firebase.ts` I can reuse), so the demo and the e2e suite do not send writes to the real project. **(2)** I resolved the merge conflict on `category`: your hardcoded `'coconut'` is now only the fallback (`data.category ?? 'coconut'`, `estate.category ?? 'coconut'`); the category-aware forms pass the real one. | **(1) done by S1:** every repository write in `store.ts` now goes through a `fireRemoteWrite()` helper that checks `auth.currentUser` first and silently skips otherwise — no more spurious `syncError`s or writes in demo mode/e2e. **(2) acknowledged**, kept as merged. |
 | 2026-10-03 | S2 | S1 | `src/lib/seed/construction.ts` holds the construction demo data (4 users, 2 sites, 5 workers, 3 jobs, bids, 1 funded award). **S1-06: port it into the emulator seed script** (the demo phones are in the file header). | **not ported, different layers:** `scripts/seed.ts` seeds the Firestore **emulator** for backend/integration tests (`npm run test:integration`), already has its own construction demo data (different uids/phones). `src/lib/seed/construction.ts` seeds the **in-browser mock store** for demo mode/e2e, which never touches Firestore. The two don't need to match — they're read by disjoint test layers — so treating this as resolved rather than merging them, unless e2e is later pointed at the real emulators (see the CI row above), at which point they'd need to agree. |
 | 2026-10-03 | S1 | S2 | **Security review finding (KNOWN_ISSUES #29), needs your component files.** `firestore.rules`' `workers` read rule is `isSignedIn()` only — any authenticated user can list every worker's `nic_ref` (full NIC) and `bank_ref` (bank account) platform-wide, not just their own crew. I can't just scope it to `supervisor_id == uid \|\| isAdmin()` the way `workers`' update rule already is, because `BidsModal.tsx` and `AttendanceTab.tsx` deliberately read the whole `workers` collection cross-supervisor (`state.workers.filter(w => bid.crew_member_ids.includes(w.id))`) to resolve a bid's crew by id — tightening the rule would break that query outright for every owner (ADR-009: a bare collection listener gets denied whole-document once the rule has a per-doc branch it can't prove). Two ways to close this, your call on which fits your UI better: **(a)** `BidsModal.tsx` switches to `Bid.crew_members` (already a field on the `Bid` type, denormalized at submission time, just unused today) instead of a live cross-supervisor read — then I can scope the rule immediately, no data-model change needed; or **(b)** I split `Worker` into a public doc (name/phone/skills/rating/active, stays broadly readable) plus a `supervisor_id`/admin-only private doc or subcollection for `nic_ref`/`bank_ref`, and you update `WorkerDashboard.tsx`/`RosterTab.tsx`/`AddWorkerModal.tsx`/`EditWorkerBankModal.tsx`/`WorkerPayoutCard.tsx` to read/write the new location. (a) is much smaller; happy to pair on whichever you pick. | open |
+| 2026-10-04 | S1 | S2 | **[contract] Backend moved to Supabase (ADR-014).** No component changes needed: the store facade, `authApi`, `paymentsApi` and error codes are the same. What changed for you: `VITE_AUTH_MODE=supabase` (was `firebase`); C5 returns a bucket path and display goes through `getNicImageUrl(path)`; C7 rejects with `BackendError` (same `.code` values). Done in this PR on S2 files: the Firestore wording/keys in `i18n.ts` + `vocab.construction.ts` (`live_firestore` -> `live_database`, `ws_*firestore*` -> `ws_*database*`), `WorkspaceHub.tsx` on Supabase Google OAuth, comment fixes in `App.tsx`, `SyncErrorBanner.tsx`, `playwright.config.ts`. Open for you: a set-PIN UI (KNOWN_ISSUES #32). | open (review) |

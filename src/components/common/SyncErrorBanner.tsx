@@ -9,7 +9,7 @@ interface SyncErrorBannerProps {
   currentLang: Language;
 }
 
-/** Shows the last Firestore sync failure until the person dismisses it (a newer failure shows again). */
+/** Shows the last backend sync failure until the person dismisses it (a newer failure shows again). */
 export const SyncErrorBanner: React.FC<SyncErrorBannerProps> = ({ syncError, currentLang }) => {
   const t = useT(currentLang);
   const [dismissedAt, setDismissedAt] = useState<string | null>(null);

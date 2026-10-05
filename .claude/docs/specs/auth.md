@@ -1,5 +1,7 @@
 # Spec: auth
 
+> **2026-10-04 — backend moved to Supabase (ADR-014).** This spec was written for Firebase. Its rules still hold (who may do what, the state machine, error codes, the fee model), but the mechanics are now: Supabase Auth (phone OTP, email/password for staff); memberships and the admin flag are columns on `public.users` read directly by RLS (no custom claims, no token refresh); `add_membership()` / `set_admin()` are SQL functions; a new auth user gets a profile row from the `on_auth_user_created` trigger; the first admin is set with SQL (runbooks/supabase-setup.md). Where this file and `supabase/migrations/*` disagree, the migrations win.
+
 Status: draft, for team review (S1-02). Implements CONTRACTS C3 exactly; implementation is S1-05, delivering **SP2**.
 
 ## Principles

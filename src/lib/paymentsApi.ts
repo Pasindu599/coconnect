@@ -23,10 +23,10 @@ export const mockPaymentsApi: PaymentsApi = {
 };
 
 /**
- * The real thing (SP5, S1-09): the real createPayment Function and the real
- * PayHere popup, live against the sandbox merchant id/secret configured in
- * Cloud Functions. The escrow still only becomes `held` through
- * payhereNotify, never from this call.
+ * The real thing (SP5, S1-09): the create-payment Edge Function and the real
+ * PayHere popup, live against the sandbox merchant id/secret set as Edge
+ * Function secrets. The escrow still only becomes `held` through the
+ * payhere-notify webhook, never from this call.
  */
 export const livePaymentsApi: PaymentsApi = {
   isMock: false,
@@ -35,9 +35,9 @@ export const livePaymentsApi: PaymentsApi = {
 };
 
 /**
- * Same gate as `authApi` (`usesBackend` / `VITE_AUTH_MODE=firebase`) — an
- * award only exists in Firestore once the caller is really signed in to
- * Firebase, so there is nothing for the real `createPayment` to read
+ * Same gate as `authApi` (`usesBackend` / `VITE_AUTH_MODE=supabase`) — an
+ * award only exists in the database once the caller is really signed in to
+ * Supabase, so there is nothing for the real `createPayment` to read
  * otherwise. Demo mode and e2e (which never set `VITE_AUTH_MODE`) keep
  * getting the mock unchanged.
  */

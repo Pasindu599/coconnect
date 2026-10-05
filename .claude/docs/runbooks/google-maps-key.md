@@ -42,7 +42,7 @@ cloned. The key must be treated as compromised and rotated.
      | `maps-browser-prod` | `https://<production-domain>/*` |
 
      Use exact hosts. Do **not** use `*` or a bare `*.web.app/*` — every other
-     Firebase Hosting site would then be able to spend our quota.
+     hosted site (Vercel) would then be able to spend our quota.
    - *API restrictions* → **Restrict key** → enable only **Maps JavaScript API**
      (add Places / Geocoding only if and when we actually call them).
 3. **Cap the spend**: APIs & Services → Maps JavaScript API → *Quotas* → set a
@@ -67,10 +67,10 @@ cloned. The key must be treated as compromised and rotated.
 - Add a secret scan to CI when 2C-1 lands (e.g. gitleaks, or a grep for `AIza`
   over tracked files as a cheap first pass).
 
-## A note on the Firebase web API key
+## A note on the Supabase anon key
 
-`firebase-applet-config.json` also contains an `AIza...` key. That one is the
-Firebase **web config** key and is *meant* to be public — it identifies the
-project, it does not authorise anything. It must not be rotated as part of this
-task. What protects Firebase data is Firestore/Storage security rules
-(KNOWN_ISSUES #1, task 2A-1), not the secrecy of that key.
+`VITE_SUPABASE_ANON_KEY` is also shipped to the browser and is *meant* to be
+public: it identifies the project, it does not authorise anything. What
+protects the data is Row Level Security (`supabase/migrations/*_rls.sql`),
+not the secrecy of that key. The **service_role** key is the opposite: it
+bypasses RLS, and must never get a `VITE_` prefix or reach the browser.

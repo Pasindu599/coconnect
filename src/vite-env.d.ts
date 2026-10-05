@@ -28,16 +28,22 @@ interface ImportMetaEnv {
   readonly VITE_GOOGLE_MAPS_API_KEY?: string;
 
   /**
-   * When "true", src/lib/firebase.ts connects Auth, Firestore, Storage and
-   * Functions to the local Firebase Emulator Suite (see `npm run emulators`)
-   * instead of the real project. Unset (falsy) talks to the real project.
+   * The Supabase project's API URL (https://<ref>.supabase.co). Public (ADR-005):
+   * RLS protects the data, not this value. Optional so demo mode, CI and e2e
+   * run without a project; see src/lib/supabase.ts.
    */
-  readonly VITE_USE_EMULATORS?: string;
+  readonly VITE_SUPABASE_URL?: string;
 
   /**
-   * "firebase" signs people in with real Firebase phone / staff auth (src/lib/auth.ts). Anything
-   * else uses the in-browser demo sign-in (code 123456). Keep it unset until the data layer
-   * moves to Firestore (S1-07): the signed-in user is still read from the local store.
+   * The project's anon (publishable) key. Public by design, same as the URL.
+   * Never put the service_role key here: it bypasses RLS.
+   */
+  readonly VITE_SUPABASE_ANON_KEY?: string;
+
+  /**
+   * "supabase" signs people in with real Supabase phone / staff auth
+   * (src/lib/auth.ts) and turns on live data sync. Anything else uses the
+   * in-browser demo sign-in (code 123456) and keeps all data local.
    */
   readonly VITE_AUTH_MODE?: string;
 }

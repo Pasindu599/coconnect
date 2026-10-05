@@ -39,7 +39,7 @@ describe('SyncErrorBanner', () => {
 });
 
 describe('usesBackend', () => {
-  it('is off by default, so the demo never tries to sync with Firestore', () => {
+  it('is off by default, so the demo never tries to sync with the backend', () => {
     expect(usesBackend).toBe(false);
   });
 });

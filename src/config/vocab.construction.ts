@@ -281,10 +281,10 @@ export const CONSTRUCTION_VOCAB: Vocab = {
     si: 'ඉදිකිරීම් ස්ථාන ලේඛන, එස්ක්‍රෝ ගිවිසුම් සහ NIC KYC වාර්තා Google Drive සමඟ සමමුහුර්ත කරන්න',
     ta: 'கட்டுமான இடப் பதிவேடுகள், எஸ்க்ரோ ஒப்பந்தங்கள் மற்றும் NIC KYC பதிவுகளை Google Drive உடன் ஒத்திசைக்கவும்',
   },
-  ws_firestore_desc: {
-    en: 'NIC submissions, site details and labour jobs persist directly in Firebase Firestore.',
-    si: 'NIC ඉදිරිපත් කිරීම්, ස්ථාන විස්තර සහ ශ්‍රම රැකියා Firebase Firestore හි සුරැකේ.',
-    ta: 'NIC சமர்ப்பிப்புகள், இட விவரங்கள் மற்றும் தொழிலாளர் வேலைகள் Firebase Firestore இல் நேரடியாகச் சேமிக்கப்படும்.',
+  ws_database_desc: {
+    en: 'NIC submissions, site details and labour jobs persist directly in Supabase.',
+    si: 'NIC ඉදිරිපත් කිරීම්, ස්ථාන විස්තර සහ ශ්‍රම රැකියා Supabase හි සුරැකේ.',
+    ta: 'NIC சமர்ப்பிப்புகள், இட விவரங்கள் மற்றும் தொழிலாளர் வேலைகள் Supabase இல் நேரடியாகச் சேமிக்கப்படும்.',
   },
   ws_export_estates: { en: 'Export Sites', si: 'ස්ථාන නිර්යාත කරන්න', ta: 'இடங்களை ஏற்றுமதி செய்க' },
   ws_connect_desc: {

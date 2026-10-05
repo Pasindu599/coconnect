@@ -58,7 +58,7 @@ export const VerificationsTab: React.FC<VerificationsTabProps> = ({ state, curre
               <Camera className="w-4 h-4" />
               <span>{t.nic_queue_title} ({nicSubmissions.length} {t.common_total} • {pendingNicSubmissions.length} {t.common_pending})</span>
             </h4>
-            <span className="text-[11px] text-slate-500">{t.live_firestore}</span>
+            <span className="text-[11px] text-slate-500">{t.live_database}</span>
           </div>
 
           {nicSubmissions.length === 0 ? (

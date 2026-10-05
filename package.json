@@ -14,18 +14,17 @@
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-coconnect-test \"vitest run --config vitest.rules.config.ts\"",
-    "test:integration": "npm run build --prefix functions && firebase emulators:exec --only auth,firestore,functions --project gen-lang-client-0417035030 \"vitest run --config vitest.integration.config.ts\"",
-    "emulators": "firebase emulators:start",
     "seed": "tsx scripts/seed.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:push": "tsx scripts/db-push.ts",
+    "test:db": "vitest run --config vitest.db.config.ts",
+    "functions:deploy": "supabase functions deploy"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "@tailwindcss/vite": "^4.3.3",
     "@vis.gl/react-google-maps": "^1.10.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "bcryptjs": "^3.0.3",
-    "firebase": "^12.19.0",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "react": "^19.0.1",
@@ -33,8 +32,6 @@
     "vite": "^8.3.0"
   },
   "devDependencies": {
-    "@firebase/rules-unit-testing": "^5.0.2",
-    "@google-cloud/firestore": "^9.3.1",
     "@playwright/test": "^1.63.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
@@ -44,9 +41,8 @@
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.28.2",
-    "firebase-admin": "^14.5.0",
-    "firebase-tools": "^15.32.1",
     "jsdom": "^30.1.1",
+    "supabase": "^2.119.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",

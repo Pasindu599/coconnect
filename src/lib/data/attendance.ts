@@ -1,35 +1,35 @@
 import type { AttendanceDay, AttendanceEntry } from '../../types';
-import { patchDoc, putDoc, subscribeToOwnedCollection, type RemoteChanges } from './firestoreSync';
+import { insertRow, subscribeToTable, updateRow, type RemoteChanges } from './sync';
 
-const DAYS_COLLECTION = 'attendance_days';
-const ENTRIES_COLLECTION = 'attendance_entries';
-const OWNED_FIELDS = { ownerField: 'owner_id', supervisorField: 'supervisor_id' };
+const DAYS_TABLE = 'attendance_days';
+const ENTRIES_TABLE = 'attendance_entries';
 
 export function createAttendanceDay(day: AttendanceDay): Promise<void> {
-  return putDoc(DAYS_COLLECTION, day.id, day);
+  return insertRow(DAYS_TABLE, day);
 }
 
-export function updateAttendanceDay(id: string, patch: Partial<AttendanceDay>): Promise<void> {
-  return patchDoc(DAYS_COLLECTION, id, patch);
+/** Status only (the one column clients may update), and never once reconciled. */
+export function updateAttendanceDay(id: string, patch: Pick<Partial<AttendanceDay>, 'status'>): Promise<void> {
+  return updateRow(DAYS_TABLE, id, patch);
 }
 
-/** Owner-or-supervisor scoped, not a bare collection listener — see ADR-009. */
+/** RLS returns the days where `uid` is the owner or the supervisor. */
 export function subscribeToAttendanceDays(
-  uid: string,
+  _uid: string,
   onChange: (changes: RemoteChanges<AttendanceDay>) => void,
   onError: (err: unknown) => void
 ): () => void {
-  return subscribeToOwnedCollection<AttendanceDay>(DAYS_COLLECTION, uid, OWNED_FIELDS, onChange, onError);
+  return subscribeToTable<AttendanceDay>(DAYS_TABLE, onChange, onError);
 }
 
 export function createAttendanceEntry(entry: AttendanceEntry): Promise<void> {
-  return putDoc(ENTRIES_COLLECTION, entry.id, entry);
+  return insertRow(ENTRIES_TABLE, entry);
 }
 
 export function subscribeToAttendanceEntries(
-  uid: string,
+  _uid: string,
   onChange: (changes: RemoteChanges<AttendanceEntry>) => void,
   onError: (err: unknown) => void
 ): () => void {
-  return subscribeToOwnedCollection<AttendanceEntry>(ENTRIES_COLLECTION, uid, OWNED_FIELDS, onChange, onError);
+  return subscribeToTable<AttendanceEntry>(ENTRIES_TABLE, onChange, onError);
 }

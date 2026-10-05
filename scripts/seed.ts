@@ -1,42 +1,31 @@
 /**
- * Fills an empty Firebase Emulator Suite with a usable demo for both
- * categories (coconut, construction). Moves the data that used to be
- * hardcoded in src/lib/store.ts's `initial*` arrays here, and adds
- * construction-category content from .claude/docs/categories.md.
+ * Fills a Supabase project with a usable demo for both categories (coconut,
+ * construction): auth users, their profiles and memberships, estates/sites,
+ * workers, jobs, bids and funded awards.
  *
- * Field names deliberately match the EXISTING types in src/types/index.ts
- * (Estate, LabourJob, Bid, Worker, Award — "estate_id", "supervisor_id", ...)
- * for every category, not just coconut. See DECISIONS.md ADR-007 for why
- * this script does not introduce a renamed/generalized schema.
+ * Field names match the types in src/types/index.ts (Estate, LabourJob, Bid,
+ * Worker, Award; "estate_id", "supervisor_id", ...) for every category, not
+ * just coconut. See DECISIONS.md ADR-007.
  *
- * Emulator-only, on purpose: it writes Auth custom claims and Firestore
- * `memberships` directly with the Admin SDK, bypassing the addMembership
- * Function (see specs/auth.md's "Bootstrapping the first admin" note) —
- * never a pattern to reuse against a real project.
+ * Uses the service_role key (bypasses RLS) to write memberships, is_admin and
+ * the money tables directly, skipping add_membership()/award_bid(). That is
+ * only acceptable for demo data; never reuse this pattern in app code.
+ * Re-running is safe: users are matched by phone/email, rows are upserted.
  *
- * Run with: npm run seed  (requires `firebase emulators:start` running, or
- * wrap it with `firebase emulators:exec --project demo-coconnect "npm run seed"`)
+ * Run with: npm run seed -- --yes   (URL and service_role key from .env.local)
+ * Never against production.
  */
-import { initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
-import { DATABASE_ID } from '../functions/src/db';
-import { hashPin } from '../functions/src/escrow/pin';
+import { createClient } from '@supabase/supabase-js';
+import { loadLocalEnv, requireEnv } from './lib/env';
 
-const PROJECT_ID = process.env.GCLOUD_PROJECT ?? 'demo-coconnect';
+loadLocalEnv();
+const SUPABASE_URL = requireEnv('VITE_SUPABASE_URL');
+const admin = createClient(SUPABASE_URL, requireEnv('SUPABASE_SERVICE_ROLE_KEY'), {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
-// Always the local emulators. This script must never be able to touch a real
-// project — there is no flag to point it anywhere else.
-process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
-process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099';
-
-const app = initializeApp({ projectId: PROJECT_ID });
-const auth = getAuth(app);
-// Must match src/lib/firebase.ts's named database (ADR-010) — getFirestore(app)
-// alone would silently write to the separate, empty `(default)` database.
-const db = getFirestore(app, DATABASE_ID);
-
-const iso = (s: string) => Timestamp.fromDate(new Date(s));
+// Postgres parses both full ISO timestamps and plain dates (starts_at/ends_at are `date` columns).
+const iso = (s: string) => s;
 
 interface Membership {
   category: 'coconut' | 'construction';
@@ -53,7 +42,7 @@ interface SeedUser {
   active_category?: 'coconut' | 'construction';
   admin?: boolean;
   nic_status?: 'unverified' | 'pending' | 'verified' | 'rejected';
-  /** Demo completion-confirmation PIN (S1-11's confirmCompletion) — hashed before writing, never stored plain. */
+  /** Demo completion-confirmation PIN (confirm_completion) — hashed by set_user_pin(), never stored plain. */
   completionPin?: string;
 }
 
@@ -393,61 +382,106 @@ const constructionAwards = [
 
 // ---------------------------------------------------------------------------
 
-async function seedUser(u: SeedUser) {
-  await auth.createUser({
-    uid: u.uid,
-    phoneNumber: u.phone,
-    email: u.email,
-    password: u.password,
-    displayName: u.name,
-  });
-  await auth.setCustomUserClaims(u.uid, { memberships: u.memberships, admin: u.admin || undefined });
-  await db.collection('users').doc(u.uid).set({
-    name: u.name,
-    phone: u.phone ?? null,
-    email: u.email ?? null,
-    memberships: u.memberships,
-    active_category: u.active_category ?? null,
-    nic_status: u.nic_status ?? 'unverified',
-    preferred_language: 'en',
-    trust_score: 0,
-    pin_hash: u.completionPin ? await hashPin(u.completionPin) : null,
-    created_at: Timestamp.now(),
-  });
+/** Seed uid ('user-owner-1', ...) -> the real auth.users id it got in this project. */
+const uidMap = new Map<string, string>();
+
+async function findAuthUser(u: SeedUser): Promise<string | null> {
+  const phone = u.phone?.replace(/^\+/, '');
+  for (let page = 1; ; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    const match = data.users.find((x) => (phone && x.phone === phone) || (u.email && x.email === u.email));
+    if (match) return match.id;
+    if (data.users.length < 1000) return null;
+  }
 }
 
-async function seedCollection(name: string, docs: Array<{ id: string } & Record<string, unknown>>) {
-  await Promise.all(
-    docs.map(({ id, ...rest }) => db.collection(name).doc(id).set(rest))
-  );
+async function seedUser(u: SeedUser) {
+  let id = await findAuthUser(u);
+  if (!id) {
+    const { data, error } = await admin.auth.admin.createUser({
+      phone: u.phone,
+      phone_confirm: Boolean(u.phone),
+      email: u.email,
+      email_confirm: Boolean(u.email),
+      password: u.password,
+      user_metadata: { full_name: u.name },
+    });
+    if (error) throw error;
+    id = data.user.id;
+  }
+  uidMap.set(u.uid, id);
+
+  // The on_auth_user_created trigger made the row; fill in the demo profile.
+  const { error } = await admin
+    .from('users')
+    .update({
+      name: u.name,
+      memberships: u.memberships,
+      active_category: u.active_category ?? null,
+      nic_status: u.nic_status ?? 'unverified',
+      is_admin: u.admin === true,
+      trust_score: 4.8,
+    })
+    .eq('id', id);
+  if (error) throw error;
+
+  if (u.completionPin) {
+    const { error: pinError } = await admin.rpc('set_user_pin', { p_user_id: id, p_pin: u.completionPin });
+    if (pinError) throw pinError;
+  }
+}
+
+const USER_FIELDS = ['owner_id', 'supervisor_id'] as const;
+
+/** Swaps seed uids for real ones in the user-reference columns. */
+function withRealUids<T extends Record<string, unknown>>(row: T): T {
+  const out: Record<string, unknown> = { ...row };
+  for (const field of USER_FIELDS) {
+    const seedUid = out[field];
+    if (typeof seedUid === 'string') {
+      const real = uidMap.get(seedUid);
+      if (!real) throw new Error(`No seeded user for ${field}=${seedUid}`);
+      out[field] = real;
+    }
+  }
+  return out as T;
+}
+
+async function seedTable(table: string, rows: Array<{ id: string } & Record<string, unknown>>) {
+  const { error } = await admin.from(table).upsert(rows.map(withRealUids));
+  if (error) throw new Error(`${table}: ${error.message}`);
 }
 
 async function main() {
-  console.log(`Seeding emulators for project "${PROJECT_ID}"...`);
+  if (!process.argv.includes('--yes')) {
+    console.log(`This writes demo users and data into ${SUPABASE_URL}.`);
+    console.log('Re-run with: npm run seed -- --yes');
+    process.exit(1);
+  }
+  console.log(`Seeding ${SUPABASE_URL}...`);
 
-  console.log('  users (Auth + Firestore)...');
+  console.log('  users (auth + profiles)...');
   for (const u of [...coconutUsers, ...constructionUsers]) {
     await seedUser(u);
   }
 
-  console.log('  estates, jobs, bids, workers, awards...');
-  await seedCollection('estates', [...coconutEstates, ...constructionEstates]);
-  await seedCollection('jobs', [...coconutJobs, ...constructionJobs]);
-  await seedCollection('bids', [...coconutBids, ...constructionBids]);
-  await seedCollection('workers', [...coconutWorkers, ...constructionWorkers]);
-  await seedCollection('awards', [...coconutAwards, ...constructionAwards]);
-
-  console.log('  config/platform (ADR-011)...');
-  await db.collection('config').doc('platform').set({ fee_percent: 5 });
+  console.log('  estates, jobs, workers, bids, awards...');
+  await seedTable('estates', [...coconutEstates, ...constructionEstates]);
+  await seedTable('jobs', [...coconutJobs, ...constructionJobs]);
+  await seedTable('workers', [...coconutWorkers, ...constructionWorkers]);
+  await seedTable('bids', [...coconutBids, ...constructionBids]);
+  await seedTable('awards', [...coconutAwards, ...constructionAwards]);
 
   console.log('Done. Demo accounts:');
-  console.log('  coconut owner   : phone +94771234567 (user-owner-1)');
-  console.log('  coconut broker  : phone +94719876543 (user-sup-1)');
-  console.log('  construction client     : phone +94772223344 (user-client-1)');
-  console.log('  construction contractor : phone +94773334455 (user-contractor-1)');
-  console.log('  admin (staff)   : niluka.fernando@coconnect.gov.lk / coconnect-admin-demo-pw');
+  console.log('  coconut owner           : phone +94771234567');
+  console.log('  coconut broker          : phone +94719876543');
+  console.log('  construction client     : phone +94772223344');
+  console.log('  construction contractor : phone +94773334455');
+  console.log('  admin (staff)           : niluka.fernando@coconnect.gov.lk / coconnect-admin-demo-pw');
   console.log('  completion PIN (both posters): 1234');
-  console.log('  Use the Auth emulator UI (http://127.0.0.1:4000/auth) to read the SMS verification code for phone sign-in.');
+  console.log('  Phone sign-in needs an SMS provider, or these numbers added as test numbers');
+  console.log('  (Dashboard > Authentication > Providers > Phone > Test phone numbers, e.g. OTP 123456).');
 }
 
 main()
