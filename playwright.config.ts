@@ -34,5 +34,9 @@ export default defineConfig({
     url: 'http://127.0.0.1:3100',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
+    // Always the in-browser demo, even when .env.local turns real auth on: these tests
+    // use the demo code and data, and must never write to a real Supabase project.
+    // (Variables set here win over .env files.)
+    env: { VITE_AUTH_MODE: 'demo', VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '' },
   },
 });

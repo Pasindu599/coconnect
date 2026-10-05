@@ -44,7 +44,7 @@ npm run lint     # tsc --noEmit (type check)
 npm run build
 ```
 Also: `npm test` (Vitest), `npm run test:e2e` (Playwright; locally `PW_CHROME_PATH=/usr/bin/google-chrome npm run test:e2e` uses an installed Chrome).
-Backend: `npm run db:push` (apply `supabase/migrations` to the project in `SUPABASE_DB_URL`), `npm run test:db` (RLS/function/storage tests against the dev project; creates and deletes throwaway users), `npm run seed -- --yes` (demo data), `npm run functions:deploy`. Never run `test:db` or `seed` against production. Setup: [.claude/docs/runbooks/supabase-setup.md](.claude/docs/runbooks/supabase-setup.md).
+Backend: `npm run db:push` (apply `supabase/migrations` to the project in `SUPABASE_DB_URL`), `npm run test:db` (RLS/function/storage tests against the dev project; creates and deletes throwaway users), `npm run seed -- --yes` (demo data), `npm run functions:deploy`. Never run `test:db` or `seed` against production. `npm test` and `npm run test:e2e` always run the demo, whatever `.env.local` says (pinned in `vitest.config.ts` / `playwright.config.ts`). Setup: [.claude/docs/runbooks/supabase-setup.md](.claude/docs/runbooks/supabase-setup.md).
 
 ### Local environment
 `.env.local` is gitignored; `.env.example` holds placeholders only. Ask the team

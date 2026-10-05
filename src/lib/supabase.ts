@@ -14,6 +14,9 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(url && anonKey);
 
+/** Real auth and live data (`VITE_AUTH_MODE=supabase`). Off = the in-browser demo. authApi.usesBackend is the same switch. */
+export const backendMode = import.meta.env.VITE_AUTH_MODE === 'supabase';
+
 // ---------------------------------------------------------------------------
 // Session storage. Supabase keeps the session in localStorage, and after a
 // Google sign-in that session includes the Google access token (full Drive
@@ -55,7 +58,8 @@ const authStorage: SupportedStorage = {
   removeItem: (key) => browserStorage()?.removeItem(key),
 };
 
-export const supabase = createClient(url ?? 'http://127.0.0.1:54321', anonKey ?? 'demo-mode-no-backend', {
+// `||`, not `??`: an empty VITE_SUPABASE_URL="" must fall back too, or createClient throws and the page is blank.
+export const supabase = createClient(url || 'http://127.0.0.1:54321', anonKey || 'demo-mode-no-backend', {
   auth: {
     // PKCE returns `?code=` instead of tokens in the URL fragment, which the
     // hash router (src/lib/router.ts) owns.

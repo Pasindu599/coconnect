@@ -23,7 +23,7 @@ import { constructionSeed } from './seed/construction';
 import { getRole, membershipsOf } from '../config/categories';
 import { contactsUnlocked } from '../config/escrow';
 import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
-import { getAuthUserId, isSupabaseConfigured, supabase } from './supabase';
+import { backendMode, getAuthUserId, isSupabaseConfigured, supabase } from './supabase';
 import { createEstate as createEstateRemote, subscribeToEstates } from './data/estates';
 import { createJob as createJobRemote, subscribeToJobs } from './data/jobs';
 import { createBid as createBidRemote, subscribeToBids } from './data/bids';
@@ -707,7 +707,39 @@ function mergeMissing<T extends { id: string }>(existing: T[] | undefined, seed:
   return [...list, ...seed.filter(item => !ids.has(item.id))];
 }
 
+/**
+ * Real-auth mode (KNOWN_ISSUES #34): no demo records and no localStorage
+ * snapshot. State holds only what store.startSync() loads for the signed-in
+ * user, so real data never mixes with demo data and one person's data never
+ * lingers in the browser for the next.
+ */
+function emptyBackendState(): AppState {
+  return {
+    currentUser: null,
+    users: [],
+    estates: [],
+    workers: [],
+    jobs: [],
+    bids: [],
+    awards: [],
+    attendanceDays: [],
+    attendanceEntries: [],
+    completions: [],
+    ratings: [],
+    verificationDocs: [],
+    nicSubmissions: [],
+    exceptions: [],
+    auditLogs: [],
+    scoringRule: initialScoringRules,
+    offlineQueue: [],
+    isOfflineSimulated: false,
+    syncError: null
+  };
+}
+
 function loadInitialState(): AppState {
+  if (backendMode) return emptyBackendState();
+
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
     try {
@@ -854,6 +886,9 @@ class StoreService {
       // and the listeners' first queries need that lock to read the session.
       setTimeout(() => {
         stopAll();
+        // A different person (or nobody) now: drop everything synced for the previous one.
+        this.state = emptyBackendState();
+        this.notify();
         if (uid && uid === activeUid) startFor(uid);
       }, 0);
     });
@@ -939,7 +974,8 @@ class StoreService {
   }
 
   private notify() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    // The demo persists its whole state; real-auth mode keeps nothing in the browser (KNOWN_ISSUES #34).
+    if (!backendMode) localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     for (const listener of this.listeners) {
       listener();
     }

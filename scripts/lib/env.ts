@@ -1,3 +1,5 @@
+import net from 'node:net';
+
 /**
  * Loads .env.local (then .env) into process.env for the Node-side scripts
  * and the database tests. Vite does this for the app; plain Node does not.
@@ -11,6 +13,10 @@ export function loadLocalEnv(): void {
       // file absent: fine
     }
   }
+  // Node gives each resolved address only 250 ms to connect before trying the
+  // next ("happy eyeballs"); on a slow or IPv6-less network every attempt then
+  // times out and requests fail with "fetch failed". Allow 5 s per address.
+  net.setDefaultAutoSelectFamilyAttemptTimeout(5000);
 }
 
 export function requireEnv(name: string): string {

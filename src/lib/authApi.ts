@@ -1,6 +1,7 @@
 import { AuthError, addMembership, confirmOtp, sendOtp, signInStaff } from './auth';
 import { store } from './store';
 import type { Membership } from '../types/category';
+import { backendMode } from './supabase';
 
 /**
  * The sign-in page still renders this anchor; Supabase phone auth does not need it (no reCAPTCHA).
@@ -54,7 +55,7 @@ export const supabaseAuthApi: AuthApi = {
   },
 };
 
-export const authApi: AuthApi = import.meta.env.VITE_AUTH_MODE === 'supabase' ? supabaseAuthApi : mockAuthApi;
+export const authApi: AuthApi = backendMode ? supabaseAuthApi : mockAuthApi;
 
 /**
  * Whether the app talks to the Supabase backend. RLS needs a signed-in user, so data sync only

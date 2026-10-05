@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BackendError, toBackendErrorCode } from '../supabase';
 import { fromRow } from '../data/sync';
 
@@ -31,5 +31,17 @@ describe('fromRow', () => {
       active: false,
       note: '',
     });
+  });
+});
+
+describe('client setup', () => {
+  it('loads (demo mode) when the Supabase env vars are present but empty', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
+    vi.resetModules();
+    const mod = await import('../supabase');
+    expect(mod.isSupabaseConfigured).toBe(false);
+    expect(mod.supabase).toBeDefined();
+    vi.unstubAllEnvs();
   });
 });
