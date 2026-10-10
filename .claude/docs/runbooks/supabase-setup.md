@@ -30,8 +30,8 @@ applied anywhere: add a new one.
 
 - **Phone:** enable. For real SMS, configure Twilio, MessageBird, Vonage or
   Textlocal. For dev, add **test phone numbers** with a fixed OTP (e.g. the seed
-  phones `+94771234567`, `+94719876543`, `+94772223344`, `+94773334455` with
-  `123456`). Without one of these, `sendOtp` fails (KNOWN_ISSUES #33).
+  phones `+94771234567`, `+94719876543`, `+94772223344`, `+94773334455`, `+94774445566`, `+94775556677`,
+  `+94765551234` with `123456`). Without one of these, `sendOtp` fails (KNOWN_ISSUES #33).
 - **Email:** keep enabled (staff sign in with email + password).
 - **Google** (Drive page only): create an OAuth client in Google Cloud Console
   (Web application; authorized redirect URI
