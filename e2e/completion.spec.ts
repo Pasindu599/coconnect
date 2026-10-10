@@ -11,7 +11,7 @@ interface Flow {
 
 const FLOWS: Flow[] = [
   { category: 'construction', poster: 'client', bidder: 'contractor', task: 'Plastering & Painting' },
-  { category: 'coconut', poster: 'owner', bidder: 'broker', task: 'Fertilizer Ring Application & Mulching' },
+  { category: 'coconut', poster: 'owner', bidder: 'agent', task: 'Fertilizer Ring Application & Mulching' },
 ];
 
 for (const flow of FLOWS) {

@@ -61,7 +61,7 @@ describe('recordPayout', () => {
     expect(store.recordPayout(AWARD, 'TRX-1')).toEqual({ success: false, error: 'unauthorized' }); // the owner
     store.logout();
     expect(store.recordPayout(AWARD, 'TRX-1')).toEqual({ success: false, error: 'unauthorized' }); // nobody
-    store.verifyOtp('+94719876543', '123456', 'supervisor'); // the broker being paid
+    store.verifyOtp('+94719876543', '123456', 'supervisor'); // the agent being paid
     expect(store.recordPayout(AWARD, 'TRX-1')).toEqual({ success: false, error: 'unauthorized' });
     expect(award().escrow_status).toBe('release_requested');
   });

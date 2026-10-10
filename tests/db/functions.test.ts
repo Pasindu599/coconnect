@@ -39,6 +39,13 @@ describe('add_membership', () => {
     expect(await codeOf(me.client.rpc('add_membership', { p_category: 'coconut', p_role: 'contractor' }))).toBe('invalid-argument');
   });
 
+  it('refuses the retired broker and subcontractor roles (ADR-015)', async () => {
+    const me = await createTestUser();
+    expect(await codeOf(me.client.rpc('add_membership', { p_category: 'coconut', p_role: 'broker' }))).toBe('invalid-argument');
+    expect(await codeOf(me.client.rpc('add_membership', { p_category: 'construction', p_role: 'subcontractor' }))).toBe('invalid-argument');
+    await ok(me.client.rpc('add_membership', { p_category: 'coconut', p_role: 'agent' }));
+  });
+
   it('takes effect in RLS immediately, with no token refresh', async () => {
     const me = await createTestUser();
     const estate = { id: uid('est'), category: 'coconut', owner_id: me.id, name: 'E' };

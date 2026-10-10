@@ -4,8 +4,8 @@ import type { Award, Bid, Estate, LabourJob, User, Worker } from '../../types';
  * Demo data for the Construction category (mock phase). The coconut demo data lives in
  * store.ts. Session 1's emulator seed script (ROADMAP S1-06) replaces both.
  *
- * Demo sign-ins (OTP 123456): client +94 77 200 0001, contractor +94 77 200 0002,
- * subcontractor +94 77 200 0003, tradesperson +94 77 200 0004.
+ * Demo sign-ins (OTP 123456): client +94 77 200 0001, contractors +94 77 200 0002 and
+ * +94 77 200 0003, tradesperson +94 77 200 0004.
  */
 
 const users: User[] = [
@@ -47,7 +47,7 @@ const users: User[] = [
     phone: '+94772000003',
     roles: ['supervisor'],
     active_role: 'supervisor',
-    memberships: [{ category: 'construction', role: 'subcontractor' }],
+    memberships: [{ category: 'construction', role: 'contractor' }],
     active_category: 'construction',
     nic_status: 'verified',
     nic_number: '198567803345',

@@ -25,7 +25,7 @@ const FLOWS: Flow[] = [
   {
     category: 'coconut',
     poster: 'owner',
-    bidder: 'broker',
+    bidder: 'agent',
     task: 'Undergrowth Tractor Clearing',
     bidderPhone: '+94719876543',
     siteLabel: /coconut estate/i,

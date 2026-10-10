@@ -19,13 +19,12 @@ const setup = (category: CategoryId) => {
 };
 
 describe('CategoryLanding', () => {
-  it('shows the four construction roles from the registry', () => {
+  it('shows the three construction roles from the registry', () => {
     setup('construction');
     const cards = within(screen.getByTestId('role-cards')).getAllByTestId(/^role-card-/);
     expect(cards.map(c => c.dataset.testid)).toEqual([
       'role-card-client',
       'role-card-contractor',
-      'role-card-subcontractor',
       'role-card-worker',
     ]);
   });
@@ -33,13 +32,13 @@ describe('CategoryLanding', () => {
   it('shows the three coconut roles', () => {
     setup('coconut');
     expect(screen.getAllByTestId(/^role-card-/)).toHaveLength(3);
-    expect(screen.getByTestId('role-card-broker')).toBeTruthy();
+    expect(screen.getByTestId('role-card-agent')).toBeTruthy();
   });
 
   it('passes the chosen role to sign-in', () => {
     const { onOpenLogin } = setup('construction');
-    fireEvent.click(within(screen.getByTestId('role-card-subcontractor')).getByRole('button'));
-    expect(onOpenLogin).toHaveBeenCalledWith('subcontractor');
+    fireEvent.click(within(screen.getByTestId('role-card-contractor')).getByRole('button'));
+    expect(onOpenLogin).toHaveBeenCalledWith('contractor');
   });
 
   it('starts the main call to action as the first poster role', () => {

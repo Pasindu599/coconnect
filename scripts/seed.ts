@@ -55,7 +55,7 @@ const coconutUsers: SeedUser[] = [
     uid: 'user-owner-1',
     name: 'Sunil Perera',
     phone: '+94771234567',
-    memberships: [{ category: 'coconut', role: 'owner' }, { category: 'coconut', role: 'broker' }],
+    memberships: [{ category: 'coconut', role: 'owner' }, { category: 'coconut', role: 'agent' }],
     active_category: 'coconut',
     nic_status: 'verified',
     completionPin: '1234',
@@ -64,7 +64,7 @@ const coconutUsers: SeedUser[] = [
     uid: 'user-sup-1',
     name: 'Kusal Mendis',
     phone: '+94719876543',
-    memberships: [{ category: 'coconut', role: 'broker' }],
+    memberships: [{ category: 'coconut', role: 'agent' }],
     active_category: 'coconut',
     nic_status: 'verified',
   },
@@ -269,7 +269,7 @@ const constructionUsers: SeedUser[] = [
     uid: 'user-subcontractor-1',
     name: 'Ruwanthi Electrical Services',
     phone: '+94774445566',
-    memberships: [{ category: 'construction', role: 'subcontractor' }],
+    memberships: [{ category: 'construction', role: 'contractor' }],
     active_category: 'construction',
     nic_status: 'verified',
   },
@@ -475,9 +475,11 @@ async function main() {
 
   console.log('Done. Demo accounts:');
   console.log('  coconut owner           : phone +94771234567');
-  console.log('  coconut broker          : phone +94719876543');
+  console.log('  coconut agent           : phone +94719876543');
+  console.log('  coconut worker          : phone +94765551234');
   console.log('  construction client     : phone +94772223344');
-  console.log('  construction contractor : phone +94773334455');
+  console.log('  construction contractors: phone +94773334455, +94774445566');
+  console.log('  construction worker     : phone +94775556677');
   console.log('  admin (staff)           : niluka.fernando@coconnect.gov.lk / coconnect-admin-demo-pw');
   console.log('  completion PIN (both posters): 1234');
   console.log('  Phone sign-in needs an SMS provider, or these numbers added as test numbers');

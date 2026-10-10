@@ -26,7 +26,7 @@ const asOwner = () => {
 };
 const award = (id: string) => store.getState().awards.find(a => a.id === id)!;
 
-/** award-302 (job-102, broker Kusal Mendis) signed off by its owner, waiting for a payout */
+/** award-302 (job-102, agent Kusal Mendis) signed off by its owner, waiting for a payout */
 const requestRelease = () => {
   asOwner();
   store.confirmCompletion('job-102', '1234');

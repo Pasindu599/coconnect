@@ -40,9 +40,9 @@ const sendCode = async () => {
 const phone = () => document.querySelector<HTMLInputElement>('input[type="tel"]')!;
 
 describe('UnifiedLogin', () => {
-  it('offers the four construction roles', () => {
+  it('offers the three construction roles', () => {
     setup('construction');
-    for (const id of ['client', 'contractor', 'subcontractor', 'worker']) {
+    for (const id of ['client', 'contractor', 'worker']) {
       expect(screen.getByTestId(`login-role-${id}`)).toBeTruthy();
     }
     expect(screen.getByTestId('login-category').textContent).toBe('Construction');
@@ -50,7 +50,7 @@ describe('UnifiedLogin', () => {
 
   it('offers the three coconut roles and no construction ones', () => {
     setup('coconut');
-    expect(screen.getByTestId('login-role-broker')).toBeTruthy();
+    expect(screen.getByTestId('login-role-agent')).toBeTruthy();
     expect(screen.queryByTestId('login-role-contractor')).toBeNull();
   });
 
@@ -83,12 +83,12 @@ describe('UnifiedLogin', () => {
   });
 
   it('registers a new number with the chosen role', async () => {
-    const { onLoginSuccess } = setup('construction', 'subcontractor');
+    const { onLoginSuccess } = setup('construction', 'contractor');
     fireEvent.change(phone(), { target: { value: '+94 70 555 0101' } });
     await sendCode();
     submit();
     await waitFor(() => expect(onLoginSuccess).toHaveBeenCalled());
-    expect(store.getState().currentUser!.memberships).toEqual([{ category: 'construction', role: 'subcontractor' }]);
+    expect(store.getState().currentUser!.memberships).toEqual([{ category: 'construction', role: 'contractor' }]);
   });
 
   it('rejects a bad phone number before sending a code', () => {

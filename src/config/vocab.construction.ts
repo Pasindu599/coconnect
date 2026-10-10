@@ -21,9 +21,9 @@ export const CONSTRUCTION_VOCAB: Vocab = {
     ta: 'இலங்கையின் கட்டுமானத் தொழிலாளர் தளம்',
   },
   hero_subtitle: {
-    en: 'Connecting property owners with verified contractors, subcontractors and skilled tradespeople: masons, carpenters, electricians and more, with every payment held safely in escrow.',
-    si: 'දේපළ හිමිකරුවන් සත්‍යාපිත කොන්ත්‍රාත්කරුවන්, උප කොන්ත්‍රාත්කරුවන් සහ දක්ෂ ශිල්පීන් (වඩුවන්, පෙදරේරුවන්, විදුලි කාර්මිකයන් ආදීන්) සමඟ සම්බන්ධ කරයි. සෑම ගෙවීමක්ම එස්ක්‍රෝ ගිණුමක ආරක්ෂිතව තැන්පත් වේ.',
-    ta: 'சொத்து உரிமையாளர்களை சரிபார்க்கப்பட்ட ஒப்பந்ததாரர்கள், துணை ஒப்பந்ததாரர்கள் மற்றும் திறமையான தொழிலாளர்களுடன் (கொத்தனார், தச்சர், மின்சார பணியாளர் உள்ளிட்டோர்) இணைக்கிறது. ஒவ்வொரு கட்டணமும் எஸ்க்ரோவில் பாதுகாப்பாக வைக்கப்படும்.',
+    en: 'Connecting property owners with verified contractors and skilled tradespeople: masons, carpenters, electricians and more, with every payment held safely in escrow.',
+    si: 'දේපළ හිමිකරුවන් සත්‍යාපිත කොන්ත්‍රාත්කරුවන් සහ දක්ෂ ශිල්පීන් (වඩුවන්, පෙදරේරුවන්, විදුලි කාර්මිකයන් ආදීන්) සමඟ සම්බන්ධ කරයි. සෑම ගෙවීමක්ම එස්ක්‍රෝ ගිණුමක ආරක්ෂිතව තැන්පත් වේ.',
+    ta: 'சொத்து உரிமையாளர்களை சரிபார்க்கப்பட்ட ஒப்பந்ததாரர்கள் மற்றும் திறமையான தொழிலாளர்களுடன் (கொத்தனார், தச்சர், மின்சார பணியாளர் உள்ளிட்டோர்) இணைக்கிறது. ஒவ்வொரு கட்டணமும் எஸ்க்ரோவில் பாதுகாப்பாக வைக்கப்படும்.',
   },
   hero_cta_secondary: {
     en: 'Explore Construction Sites Map',
@@ -114,11 +114,7 @@ export const CONSTRUCTION_VOCAB: Vocab = {
   },
   landowner_label: { en: 'Client', si: 'ගනුදෙනුකරු', ta: 'வாடிக்கையாளர்' },
   owner_verified_label: { en: 'Client verified', si: 'ගනුදෙනුකරු තහවුරු කළා', ta: 'வாடிக்கையாளர் உறுதிசெய்தார்' },
-  supervisor: {
-    en: 'Contractor / Subcontractor',
-    si: 'කොන්ත්‍රාත්කරු / උප කොන්ත්‍රාත්කරු',
-    ta: 'ஒப்பந்ததாரர் / துணை ஒப்பந்ததாரர்',
-  },
+  supervisor: { en: 'Contractor', si: 'කොන්ත්‍රාත්කරු', ta: 'ஒப்பந்ததாரர்' },
   supervisor_label: { en: 'Contractor', si: 'කොන්ත්‍රාත්කරු', ta: 'ஒப்பந்ததாரர்' },
   supervisor_logged: { en: 'Contractor logged', si: 'කොන්ත්‍රාත්කරු සටහන් කළා', ta: 'ஒப்பந்ததாரர் பதிவு செய்தார்' },
   supervisor_contact: { en: 'Contractor Contact', si: 'කොන්ත්‍රාත්කරුගේ සම්බන්ධතා', ta: 'ஒப்பந்ததாரர் தொடர்பு' },
@@ -130,11 +126,7 @@ export const CONSTRUCTION_VOCAB: Vocab = {
     si: 'කොන්ත්‍රාත්කරු නිමාව සහ වැටුප් ඉදිරිපත් කළා',
     ta: 'ஒப்பந்ததாரர் முடிவு மற்றும் கூலியைச் சமர்ப்பித்தார்',
   },
-  sup_portal_title: {
-    en: 'Contractor & Subcontractor Portal',
-    si: 'කොන්ත්‍රාත්කරු සහ උප කොන්ත්‍රාත්කරු පිවිසුම',
-    ta: 'ஒப்பந்ததாரர் மற்றும் துணை ஒப்பந்ததாரர் தளம்',
-  },
+  sup_portal_title: { en: 'Contractor Portal', si: 'කොන්ත්‍රාත්කරු පිවිසුම', ta: 'ஒப்பந்ததாரர் தளம்' },
   sup_licensed_badge: { en: 'Verified Contractor', si: 'සත්‍යාපිත කොන්ත්‍රාත්කරු', ta: 'சரிபார்க்கப்பட்ட ஒப்பந்ததாரர்' },
   owner_budget: { en: 'Client Budget', si: 'ගනුදෙනුකරුගේ අයවැය', ta: 'வாடிக்கையாளர் பட்ஜெட்' },
   owner_hub_title: {

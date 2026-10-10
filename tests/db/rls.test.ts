@@ -50,7 +50,7 @@ describe('users', () => {
   it('a client cannot grant itself a membership, admin, or verify its own NIC', async () => {
     const me = await poster();
     for (const patch of [
-      { memberships: [{ category: 'coconut', role: 'broker' }] },
+      { memberships: [{ category: 'coconut', role: 'agent' }] },
       { is_admin: true },
       { nic_status: 'verified' },
       { trust_score: 5 },

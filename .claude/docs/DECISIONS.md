@@ -94,3 +94,13 @@ A third finding — `workers`' read rule (`isSignedIn()` only) lets any authenti
 - Google sign-in for the Drive page uses Supabase's Google provider (team choice over Google Identity Services): it is a redirect, and it replaces the user's phone session. The Google token is kept in memory only (KNOWN_ISSUES #30).
 - Tests: `tests/db/` (RLS, functions, storage) run against a real dev project with `npm run test:db`, replacing the emulator suites.
 
+## ADR-015: Coconut "Broker/Supervisor" becomes "Agent"; Construction drops "Subcontractor" (2026-10-10)
+**Decision:** The coconut bidder role is renamed from `broker` (shown as "Labour Broker" / "Supervisor") to `agent` (shown as "Agent", si නියෝජිත, ta முகவர்). Construction has only Client, Contractor and Tradesperson: the `subcontractor` role is removed, and existing subcontractors become contractors.
+**Why:** Product decision by the team. "Agent" is the term coconut users understand. Subcontractors did exactly what contractors do in the MVP, so a separate role only added a choice to sign-in.
+**Consequences:**
+- `CategoryRoleId` (CONTRACTS C1) is `'owner' | 'agent' | 'client' | 'contractor' | 'worker'`. The legacy `Role` `supervisor` and the column names (`supervisor_id`, `supervisor_fee`, ...) are unchanged (ADR-007).
+- Migration `20261010000001_agent_role.sql` rewrites `users.memberships` (broker -> agent, subcontractor -> contractor, deduplicated) and replaces `private.is_valid_category_role` / `private.is_bidder`. `add_membership` now rejects `broker` and `subcontractor`. Run `npm run db:push` on every project.
+- The demo store upgrades memberships saved in the browser with `upgradeMemberships()` (`src/config/categories.ts`).
+- The base i18n text (coconut wording) says Agent; construction keeps its Contractor vocab. The category-agnostic role labels (`tRole`, `tRoleLong`) say "Agent / Contractor".
+- Seed record ids (`user-subcontractor-1`, ...) are kept so references stay valid; that user is now a second contractor. The new Sinhala and Tamil wording needs a native-speaker review like the rest (KNOWN_ISSUES).
+

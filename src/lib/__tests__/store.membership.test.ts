@@ -92,7 +92,7 @@ describe('addMembership', () => {
   it('adds the role, switches to it, and records an audit entry', () => {
     store.verifyOtp('+94700000007', '123456', undefined, { category: 'coconut', role: 'worker' });
     const before = store.getState().auditLogs.length;
-    expect(store.addMembership({ category: 'construction', role: 'subcontractor' }).success).toBe(true);
+    expect(store.addMembership({ category: 'construction', role: 'contractor' }).success).toBe(true);
     expect(current()!.active_role).toBe('supervisor');
     expect(current()!.active_category).toBe('construction');
     expect(current()!.roles).toEqual(expect.arrayContaining(['worker', 'supervisor']));

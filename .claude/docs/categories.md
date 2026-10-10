@@ -18,7 +18,7 @@ Every role maps to one **capability**, which is what the job engine checks:
 | Role | Capability | Registers workers |
 |---|---|---|
 | Land owner | `poster` | no |
-| Broker (supervisor) | `bidder` | yes |
+| Agent (legacy `supervisor`; was "Broker", ADR-015) | `bidder` | yes |
 | Worker | `crew` | no |
 
 **Task types:** Coconut Harvesting & Bunch Lowering, Fertilizer Ring Application & Mulching, Dry Frond Trimming & Crown Cleaning, Nut Husking & Copra Drying Batch, Undergrowth Tractor Clearing
@@ -38,10 +38,9 @@ Every role maps to one **capability**, which is what the job engine checks:
 |---|---|---|
 | Client (property / site owner) | `poster` | no |
 | Contractor | `bidder` | yes |
-| Subcontractor | `bidder` | yes |
 | Worker (tradesperson) | `crew` | no |
 
-In the MVP, subcontractors bid directly to clients just like contractors. Contractors hiring subcontractors (nested jobs) comes after the 2 weeks.
+Contractor is the only bidder role. The Subcontractor role was removed (ADR-015); specialist crews such as electricians register as contractors.
 
 **Trades / skills:** Mason, Carpenter, Electrician, Plumber, Painter, Tiler, Steel Fixer, Helper (Labourer)
 

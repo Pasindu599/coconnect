@@ -16,7 +16,8 @@ describe('getCategoryT', () => {
     const t = getCategoryT('en', 'construction');
     expect(t.my_lands).toBe('My Construction Sites');
     expect(t.owner_hub_title).toBe('Client Operations Hub');
-    expect(t.sup_portal_title).toBe('Contractor & Subcontractor Portal');
+    expect(t.sup_portal_title).toBe('Contractor Portal');
+    expect(getT('en').sup_portal_title).toBe('Agent Portal');
     expect(getT('en').my_lands).toContain('Coconut');
   });
 

@@ -30,12 +30,12 @@ describe('HomePage category picker', () => {
   it('lists who each category is for', () => {
     setup();
     const construction = within(screen.getByTestId('category-card-construction'));
-    for (const role of ['Client', 'Contractor', 'Subcontractor', 'Tradesperson']) {
+    for (const role of ['Client', 'Contractor', 'Tradesperson']) {
       expect(construction.getByText(role)).toBeTruthy();
     }
     const coconut = within(screen.getByTestId('category-card-coconut'));
     expect(coconut.getByText('Landowner')).toBeTruthy();
-    expect(coconut.getByText('Labour Broker')).toBeTruthy();
+    expect(coconut.getByText('Agent')).toBeTruthy();
   });
 
   it('uses generic wording, not coconut wording', () => {

@@ -138,20 +138,20 @@ const COCONUT: CategoryConfig = {
       },
     },
     {
-      id: 'broker',
-      label: { en: 'Labour Broker', si: 'ශ්‍රම තැරැව්කරු', ta: 'தொழிலாளர் தரகர்' },
+      id: 'agent',
+      label: { en: 'Agent', si: 'නියෝජිත', ta: 'முகவர்' },
       capability: 'bidder',
       canRegisterWorkers: true,
       legacyRole: 'supervisor',
       card: {
-        title: { en: 'For Supervisors & Brokers', si: 'අධීක්ෂකයින් සහ තැරැව්කරුවන් සඳහා', ta: 'மேற்பார்வையாளர்கள் மற்றும் தரகர்களுக்கு' },
+        title: { en: 'For Agents', si: 'නියෝජිතයින් සඳහා', ta: 'முகவர்களுக்கு' },
         desc: { en: 'Manage climber and harvester rosters, bid on high-value estate jobs, mark daily field attendance, and collect guaranteed commission with no wage withholding.', si: 'ගස් නගින්නන් සහ කම්කරුවන් සංවිධානය කර, විශාල රැකියා සඳහා ලංසු ඉදිරිපත් කර, දෛනික පැමිණීම සටහන් කර සහතික කල කොමිස් මුදල් ලබාගන්න.', ta: 'மரம் ஏறுபவர்கள் மற்றும் தொழிலாளர் பட்டியலை நிர்வகித்து, ஏலங்களை வென்று, தினசரி வருகையை பதிவு செய்து உத்தரவாதமான கமிஷனைப் பெறுங்கள்.' },
         bullets: [
           { en: 'Manage climber crew roster', si: 'ගස් නගින්නන්ගේ කණ්ඩායම කළමනාකරණය', ta: 'மரம் ஏறுபவர்கள் குழுவை நிர்வகித்தல்' },
           { en: 'Bid on coconut plucking contracts', si: 'පොල් කැඩීමේ කොන්ත්‍රාත් සඳහා ලංසු ඉදිරිපත් කිරීම', ta: 'தேங்காய் பறிக்கும் ஒப்பந்தங்களுக்கு ஏலம் கோருதல்' },
           { en: 'Offline field attendance & wage tracking', si: 'නොබැඳි පැමිණීම සහ වැටුප් නිරීක්ෂණය', ta: 'இணையமில்லா வருகை மற்றும் கூலி கண்காணிப்பு' },
         ],
-        action: { en: 'Enter as Supervisor →', si: 'අධීක්ෂක ලෙස පිවිසෙන්න →', ta: 'மேற்பார்வையாளராக உள்நுழைக →' },
+        action: { en: 'Enter as Agent →', si: 'නියෝජිත ලෙස පිවිසෙන්න →', ta: 'முகவராக உள்நுழைக →' },
       },
     },
     {
@@ -249,9 +249,9 @@ const CONSTRUCTION: CategoryConfig = {
     ta: 'உங்கள் கட்டுமான இடத்திற்கு சரிபார்க்கப்பட்ட தொழிலாளர்களை அமர்த்துங்கள்.',
   },
   description: {
-    en: 'Masons, carpenters, electricians and more from verified contractors and subcontractors, with every payment held safely in escrow until the work is signed off.',
-    si: 'සත්‍යාපිත කොන්ත්‍රාත්කරුවන් සහ උප කොන්ත්‍රාත්කරුවන්ගෙන් පෙදරේරුවන්, වඩුවන්, විදුලි කාර්මිකයන් සහ තවත් අය. වැඩ අනුමත කරන තුරු සෑම ගෙවීමක්ම එස්ක්‍රෝ ගිණුමක ආරක්ෂිතව තැන්පත් වේ.',
-    ta: 'சரிபார்க்கப்பட்ட ஒப்பந்ததாரர்கள் மற்றும் துணை ஒப்பந்ததாரர்களிடமிருந்து கொத்தனார், தச்சர், மின்சார பணியாளர் மற்றும் பலர். வேலை ஒப்புக்கொள்ளப்படும் வரை ஒவ்வொரு கட்டணமும் எஸ்க்ரோவில் பாதுகாப்பாக இருக்கும்.',
+    en: 'Masons, carpenters, electricians and more from verified contractors, with every payment held safely in escrow until the work is signed off.',
+    si: 'සත්‍යාපිත කොන්ත්‍රාත්කරුවන්ගෙන් පෙදරේරුවන්, වඩුවන්, විදුලි කාර්මිකයන් සහ තවත් අය. වැඩ අනුමත කරන තුරු සෑම ගෙවීමක්ම එස්ක්‍රෝ ගිණුමක ආරක්ෂිතව තැන්පත් වේ.',
+    ta: 'சரிபார்க்கப்பட்ட ஒப்பந்ததாரர்களிடமிருந்து கொத்தனார், தச்சர், மின்சார பணியாளர் மற்றும் பலர். வேலை ஒப்புக்கொள்ளப்படும் வரை ஒவ்வொரு கட்டணமும் எஸ்க்ரோவில் பாதுகாப்பாக இருக்கும்.',
   },
   icon: 'building',
   accent: 'sky',
@@ -298,27 +298,6 @@ const CONSTRUCTION: CategoryConfig = {
           { en: 'Offline attendance & wage tracking', si: 'නොබැඳි පැමිණීම සහ වැටුප් නිරීක්ෂණය', ta: 'இணையமில்லா வருகை மற்றும் கூலி கண்காணிப்பு' },
         ],
         action: { en: 'Enter as Contractor →', si: 'කොන්ත්‍රාත්කරු ලෙස පිවිසෙන්න →', ta: 'ஒப்பந்ததாரராக உள்நுழைக →' },
-      },
-    },
-    {
-      id: 'subcontractor',
-      label: { en: 'Subcontractor', si: 'උප කොන්ත්‍රාත්කරු', ta: 'துணை ஒப்பந்ததாரர்' },
-      capability: 'bidder',
-      canRegisterWorkers: true,
-      legacyRole: 'supervisor',
-      card: {
-        title: { en: 'For Subcontractors & Specialist Trades', si: 'උප කොන්ත්‍රාත්කරුවන් සහ විශේෂඥ ශිල්පීන් සඳහා', ta: 'துணை ஒப்பந்ததாரர்கள் மற்றும் சிறப்புத் தொழிலாளர்களுக்கு' },
-        desc: {
-          en: 'Specialist crews such as electricians, plumbers, tilers and painters can bid directly on client jobs and get paid securely through escrow.',
-          si: 'විදුලි කාර්මිකයන්, ජල නළ කාර්මිකයන්, ටයිල් කරුවන් සහ තීන්ත ආලේපකයන් වැනි විශේෂඥ කණ්ඩායම්වලට ගනුදෙනුකරුවන්ගේ රැකියා සඳහා කෙලින්ම ලංසු තබා එස්ක්‍රෝ හරහා ආරක්ෂිතව ගෙවීම් ලබා ගත හැක.',
-          ta: 'மின்சாரம், குழாய், ஓடு மற்றும் வண்ணம் பூசும் சிறப்புக் குழுக்கள் வாடிக்கையாளர் வேலைகளுக்கு நேரடியாக ஏலமிட்டு எஸ்க்ரோ மூலம் பாதுகாப்பாக கட்டணம் பெறலாம்.',
-        },
-        bullets: [
-          { en: 'Showcase your specialist trade', si: 'ඔබේ විශේෂඥ ශිල්පය ප්‍රදර්ශනය කරන්න', ta: 'உங்கள் சிறப்புத் தொழிலைக் காட்டுங்கள்' },
-          { en: 'Bid directly on client jobs', si: 'ගනුදෙනුකරුවන්ගේ රැකියා සඳහා කෙලින්ම ලංසු තබන්න', ta: 'வாடிக்கையாளர் வேலைகளுக்கு நேரடியாக ஏலமிடுங்கள்' },
-          { en: 'Escrow-protected payment', si: 'එස්ක්‍රෝ ආරක්ෂිත ගෙවීම', ta: 'எஸ்க்ரோ பாதுகாப்பான கட்டணம்' },
-        ],
-        action: { en: 'Enter as Subcontractor →', si: 'උප කොන්ත්‍රාත්කරු ලෙස පිවිසෙන්න →', ta: 'துணை ஒப்பந்ததாரராக உள்நுழைக →' },
       },
     },
     {
@@ -453,8 +432,21 @@ export const canRegisterWorkers = (membership: Membership): boolean =>
 
 const LEGACY_TO_COCONUT_ROLE: Record<LegacyRole, CategoryRoleId> = {
   owner: 'owner',
-  supervisor: 'broker',
+  supervisor: 'agent',
   worker: 'worker',
+};
+
+/** Role ids that were renamed or merged (ADR-015): coconut `broker` became `agent`; construction `subcontractor` folded into `contractor`. */
+const RETIRED_ROLES: Record<string, CategoryRoleId> = { broker: 'agent', subcontractor: 'contractor' };
+
+/** Rewrites retired role ids in saved memberships and drops the duplicates that leaves. */
+export const upgradeMemberships = (memberships: Membership[]): Membership[] => {
+  const upgraded: Membership[] = [];
+  for (const m of memberships) {
+    const role = RETIRED_ROLES[m.role] ?? m.role;
+    if (!upgraded.some(u => u.category === m.category && u.role === role)) upgraded.push({ category: m.category, role });
+  }
+  return upgraded;
 };
 
 /**

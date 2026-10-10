@@ -20,7 +20,7 @@ import {
 } from '../types';
 import type { CategoryId, Membership } from '../types/category';
 import { constructionSeed } from './seed/construction';
-import { getRole, membershipsOf } from '../config/categories';
+import { getRole, membershipsOf, upgradeMemberships } from '../config/categories';
 import { contactsUnlocked } from '../config/escrow';
 import { getSampleSriLankaNicCard, validateAndParseSriLankanNic } from './nicValidator';
 import { backendMode, getAuthUserId, isSupabaseConfigured, supabase } from './supabase';
@@ -56,7 +56,7 @@ const initialUsers: User[] = [
     phone: '+94771234567',
     roles: ['owner', 'supervisor'],
     active_role: 'owner',
-    memberships: [{ category: 'coconut', role: 'owner' }, { category: 'coconut', role: 'broker' }],
+    memberships: [{ category: 'coconut', role: 'owner' }, { category: 'coconut', role: 'agent' }],
     active_category: 'coconut',
     nic_status: 'verified',
     nic_number: '197418204921',
@@ -72,7 +72,7 @@ const initialUsers: User[] = [
     phone: '+94719876543',
     roles: ['supervisor'],
     active_role: 'supervisor',
-    memberships: [{ category: 'coconut', role: 'broker' }],
+    memberships: [{ category: 'coconut', role: 'agent' }],
     active_category: 'coconut',
     nic_status: 'verified',
     nic_number: '198223901928',
@@ -749,6 +749,8 @@ function loadInitialState(): AppState {
       const seedAdmin = initialUsers.find(u => u.id === 'user-admin-1');
       parsed.users?.forEach((u: User) => {
         if (seedAdmin && u.id === seedAdmin.id && !u.email) u.email = seedAdmin.email;
+        // Saved before ADR-015 renamed `broker` to `agent` and folded `subcontractor` into `contractor`.
+        u.memberships = upgradeMemberships(u.memberships ?? []);
       });
       if (!parsed.nicSubmissions) {
         parsed.nicSubmissions = initialNicSubmissions;

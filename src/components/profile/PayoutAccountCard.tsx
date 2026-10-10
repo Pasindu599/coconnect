@@ -12,7 +12,7 @@ interface PayoutAccountCardProps {
   user: User;
 }
 
-/** Where a contractor / broker is paid once a client confirms completion. An admin sends the payout here. */
+/** Where a contractor / agent is paid once a client confirms completion. An admin sends the payout here. */
 export const PayoutAccountCard: React.FC<PayoutAccountCardProps> = ({ currentLang, user }) => {
   const t = useT(currentLang);
   const parsed = parseBankRef(user.payout_bank_ref);

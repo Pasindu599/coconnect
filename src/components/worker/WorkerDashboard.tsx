@@ -6,7 +6,7 @@ import { categoryOf } from '../../config/categories';
 import { WorkerPayoutCard } from './WorkerPayoutCard';
 import { Worker } from '../../types';
 import { store, AppState } from '../../lib/store';
-import { Language, tJobStatus, tEscrowStatus, tSkill, tTaskType, tParty } from '../../lib/i18n';
+import { Language, tJobStatus, tEscrowStatus, tSkill, tTaskType } from '../../lib/i18n';
 import { 
   UserCheck, 
   Calendar, 
@@ -35,7 +35,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
   const user = state.currentUser;
   const [activeTab, setActiveTab] = useState<'assignments' | 'attendance' | 'wages'>('assignments');
 
-  // The worker record a contractor/broker registered for this user in the active category.
+  // The worker record a contractor/agent registered for this user in the active category.
   // A worker nobody has registered yet sees an empty dashboard, never someone else's data.
   const noWorkerRecord: Worker = {
     id: 'no-worker-record',
@@ -284,7 +284,7 @@ export const WorkerDashboard: React.FC<WorkerDashboardProps> = ({
                     <div>
                       <div className="font-semibold text-white">{tTaskType(job?.task_type, currentLang)}</div>
                       <div className="text-[11px] text-slate-400">
-                        {t.work_date}: <span className="font-mono text-slate-300">{day?.work_date}</span> • {t.recorded_by} {tParty(entry.party, currentLang)}
+                        {t.work_date}: <span className="font-mono text-slate-300">{day?.work_date}</span> • {t.recorded_by} {entry.party === 'owner' ? t.landowner_label : t.supervisor_label}
                       </div>
                       {entry.notes && (
                         <p className="text-[11px] text-slate-500 mt-1">{entry.notes}</p>

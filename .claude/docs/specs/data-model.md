@@ -79,7 +79,7 @@ Generalizes `LabourJob`.
 | Field | Type | Notes |
 |---|---|---|
 | `category` | | |
-| `supervisor_id` | string (uid) | the broker/contractor/subcontractor who registered this worker — `Worker`'s existing field name, kept for every category (ADR-007) |
+| `supervisor_id` | string (uid) | the agent/contractor who registered this worker — `Worker`'s existing field name, kept for every category (ADR-007) |
 | `name`, `phone`, `skills`, `nic_ref`, `bank_ref` | | |
 | `consent_captured_at`, `consent_method` | | KNOWN_ISSUES #16 — UI for this lands in week 2 day 8; schema exists now |
 | `rating`, `jobs_completed`, `active` | | `rating`/`jobs_completed` **Functions only** (derived from completions/ratings) |
@@ -155,7 +155,7 @@ Unchanged shape (`AuditLogEntry`). Every money-moving Function appends one entry
 
 ## Role → collection write matrix
 
-| Collection | poster (owner/client) | bidder (broker/contractor/subcontractor) | crew (worker) | admin | Functions |
+| Collection | poster (owner/client) | bidder (agent/contractor) | crew (worker) | admin | Functions |
 |---|---|---|---|---|---|
 | `users` (own doc, non-protected fields) | ✓ | ✓ | ✓ | ✓ | `memberships`, `nic_status`, `trust_score` |
 | `estates` | ✓ (own) | — | — | — | — |

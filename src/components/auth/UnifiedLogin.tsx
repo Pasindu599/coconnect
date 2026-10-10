@@ -28,11 +28,10 @@ interface UnifiedLoginProps {
 
 // Demo phone numbers of the seeded users, so each role can be tried without typing (mock OTP).
 const DEMO_PHONES: Record<CategoryId, Partial<Record<CategoryRoleId, string>>> = {
-  coconut: { owner: '+94 77 123 4567', broker: '+94 71 987 6543', worker: '+94 76 555 1234' },
+  coconut: { owner: '+94 77 123 4567', agent: '+94 71 987 6543', worker: '+94 76 555 1234' },
   construction: {
     client: '+94 77 200 0001',
     contractor: '+94 77 200 0002',
-    subcontractor: '+94 77 200 0003',
     worker: '+94 77 200 0004',
   },
 };

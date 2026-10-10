@@ -9,13 +9,13 @@ File: `src/types/category.ts` (already in `main`; owned by nobody, changed only 
 ```ts
 export type CategoryId = 'coconut' | 'construction';
 export type Capability = 'poster' | 'bidder' | 'crew';
-export type CategoryRoleId = 'owner' | 'broker' | 'client' | 'contractor' | 'subcontractor' | 'worker';
+export type CategoryRoleId = 'owner' | 'agent' | 'client' | 'contractor' | 'worker';
 export interface Membership { category: CategoryId; role: CategoryRoleId; }
 ```
 
 - S2 builds `src/config/categories.ts` on these types.
 - S1 uses `Membership` and `CategoryId` in the data model, rules and Functions.
-- The legacy `Role` type in `src/types/index.ts` (`owner | supervisor | worker | admin`) stays until S1-07 migrates the data. Coconut `broker` = legacy `supervisor`.
+- The legacy `Role` type in `src/types/index.ts` (`owner | supervisor | worker | admin`) stays until S1-07 migrates the data. Coconut `agent` = legacy `supervisor` (was `broker`; `subcontractor` was removed, ADR-015).
 
 ## C2. Store facade (S1 owns the inside, S2 calls the outside)
 

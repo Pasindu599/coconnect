@@ -56,7 +56,7 @@ type CategoryId = 'coconut' | 'construction';
 type Capability = 'poster' | 'bidder' | 'crew';
 
 interface CategoryRole {
-  id: string;                 // 'owner' | 'broker' | 'client' | 'contractor' | 'subcontractor' | 'worker'
+  id: string;                 // 'owner' | 'agent' | 'client' | 'contractor' | 'worker'
   label: { en: string; si: string; ta: string };
   capability: Capability;
   canRegisterWorkers: boolean;

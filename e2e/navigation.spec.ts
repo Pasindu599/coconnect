@@ -8,7 +8,7 @@ test('the home page offers both categories and each opens its own landing page',
 
   await page.getByTestId('category-card-construction').click();
   await expect(page).toHaveURL(/#\/construction$/);
-  await expect(page.getByTestId(/^role-card-/)).toHaveCount(4);
+  await expect(page.getByTestId(/^role-card-/)).toHaveCount(3);
   await expect(page.getByTestId('navbar-category')).toBeVisible();
 
   await page.getByTestId('navbar-category').click(); // back to the picker
@@ -19,9 +19,9 @@ test('the home page offers both categories and each opens its own landing page',
 
 test('a role card goes to sign-in with that role selected', async ({ page }) => {
   await page.goto('/#/construction');
-  await page.getByTestId('role-card-subcontractor').getByRole('button').click();
+  await page.getByTestId('role-card-contractor').getByRole('button').click();
   await expect(page).toHaveURL(/#\/construction\/login$/);
-  await expect(page.getByTestId('login-role-subcontractor')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('login-role-contractor')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('deep links and the back button work', async ({ page }) => {

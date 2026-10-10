@@ -21,7 +21,7 @@ interface SupervisorDashboardProps {
   currentLang: Language;
 }
 
-/** Bidder dashboard (broker / contractor / subcontractor): crew, open jobs, attendance and contracts for the active category. */
+/** Bidder dashboard (agent / contractor): crew, open jobs, attendance and contracts for the active category. */
 export const SupervisorDashboard: React.FC<SupervisorDashboardProps> = ({
   state,
   currentLang,

@@ -70,7 +70,7 @@ export async function createTestUser(opts: { memberships?: Membership[]; isAdmin
 export const poster = (category: 'coconut' | 'construction' = 'coconut') =>
   createTestUser({ memberships: [{ category, role: category === 'coconut' ? 'owner' : 'client' }] });
 export const bidder = (category: 'coconut' | 'construction' = 'coconut') =>
-  createTestUser({ memberships: [{ category, role: category === 'coconut' ? 'broker' : 'contractor' }] });
+  createTestUser({ memberships: [{ category, role: category === 'coconut' ? 'agent' : 'contractor' }] });
 
 export function estateRow(ownerId: string, overrides: Record<string, unknown> = {}) {
   return { id: uid('est'), category: 'coconut', owner_id: ownerId, name: 'Test Estate', area_acres: 1, location: 'Test', tree_count: 10, ...overrides };

@@ -15,7 +15,7 @@ beforeEach(async () => {
 });
 
 const OWNER = '+94771234567'; // user-owner-1, owns job-102
-const BROKER = '+94719876543'; // user-sup-1, the supervisor on award-302
+const AGENT = '+94719876543'; // user-sup-1, the agent on award-302
 const HELD_AWARD = 'award-302'; // job-102, escrow held
 const award = (id: string) => store.getState().awards.find(a => a.id === id)!;
 const dispute = (awardId = HELD_AWARD, description = 'Three of the five workers never turned up on site.') =>
@@ -36,7 +36,7 @@ describe('openDispute', () => {
   });
 
   it('lets the supervisor on the award open one too', () => {
-    store.verifyOtp(BROKER, '123456', 'supervisor');
+    store.verifyOtp(AGENT, '123456', 'supervisor');
     expect(dispute().success).toBe(true);
     expect(award(HELD_AWARD).escrow_status).toBe('disputed');
   });
@@ -99,7 +99,7 @@ describe('a dispute freezes the money', () => {
 
 describe('confirmCompletion guards', () => {
   it('only lets the job owner confirm', () => {
-    store.verifyOtp(BROKER, '123456', 'supervisor');
+    store.verifyOtp(AGENT, '123456', 'supervisor');
     const res = store.confirmCompletion('job-102', '2244');
     expect(res.success).toBe(false);
     expect(res.error).toMatch(/owner/i);
@@ -136,7 +136,7 @@ describe('payEscrow guard', () => {
 
 describe('bank updates', () => {
   it('lets a supervisor change the bank details of their own worker only', () => {
-    store.verifyOtp(BROKER, '123456', 'supervisor');
+    store.verifyOtp(AGENT, '123456', 'supervisor');
     expect(store.updateWorkerBank('worker-1', 'SAM 11112222')).toEqual({ success: true });
     expect(store.getState().workers.find(w => w.id === 'worker-1')!.bank_ref).toBe('SAM 11112222');
 
@@ -149,7 +149,7 @@ describe('bank updates', () => {
 
   it('keeps a person payout account on their own record', () => {
     expect(store.updatePayoutBank('BOC 123456')).toEqual({ success: false, error: 'unauthorized' });
-    store.verifyOtp(BROKER, '123456', 'supervisor');
+    store.verifyOtp(AGENT, '123456', 'supervisor');
     expect(store.updatePayoutBank('COM 55556666')).toEqual({ success: true });
     expect(store.getState().currentUser!.payout_bank_ref).toBe('COM 55556666');
   });

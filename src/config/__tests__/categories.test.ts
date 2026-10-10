@@ -17,6 +17,7 @@ import {
   rolesWithCapability,
   siteFormDefaults,
   siteTotals,
+  upgradeMemberships,
 } from '../categories';
 import { tReviewTag, tSkill, tTaskType, translations } from '../../lib/i18n';
 import type { Language } from '../../lib/i18n';
@@ -135,9 +136,8 @@ describe('roles and capabilities', () => {
 
   it('knows which roles register workers', () => {
     expect(canRegisterWorkers({ category: 'construction', role: 'contractor' })).toBe(true);
-    expect(canRegisterWorkers({ category: 'construction', role: 'subcontractor' })).toBe(true);
     expect(canRegisterWorkers({ category: 'construction', role: 'client' })).toBe(false);
-    expect(canRegisterWorkers({ category: 'coconut', role: 'broker' })).toBe(true);
+    expect(canRegisterWorkers({ category: 'coconut', role: 'agent' })).toBe(true);
   });
 
   it('does not offer a role in a category that does not define it', () => {
@@ -151,7 +151,20 @@ describe('memberships', () => {
     const u = user({ roles: ['owner', 'supervisor'] });
     expect(membershipsOf(u)).toEqual([
       { category: 'coconut', role: 'owner' },
-      { category: 'coconut', role: 'broker' },
+      { category: 'coconut', role: 'agent' },
+    ]);
+  });
+
+  it('upgrades the retired broker and subcontractor roles, dropping duplicates', () => {
+    expect(
+      upgradeMemberships([
+        { category: 'construction', role: 'contractor' },
+        { category: 'coconut', role: 'broker' as never },
+        { category: 'construction', role: 'subcontractor' as never },
+      ])
+    ).toEqual([
+      { category: 'construction', role: 'contractor' },
+      { category: 'coconut', role: 'agent' },
     ]);
   });
 

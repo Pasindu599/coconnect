@@ -45,7 +45,7 @@ describe('JoinCategory', () => {
       </CategoryProvider>
     );
     expect(screen.getByTestId('join-role-owner')).toBeTruthy();
-    expect(screen.getByTestId('join-role-broker')).toBeTruthy();
+    expect(screen.getByTestId('join-role-agent')).toBeTruthy();
     expect(screen.queryByTestId('join-role-contractor')).toBeNull();
   });
 });

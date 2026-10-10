@@ -6,7 +6,7 @@ export type CategoryId = 'coconut' | 'construction';
 // What a role is allowed to do in the job engine. Code checks capabilities, never role ids.
 export type Capability = 'poster' | 'bidder' | 'crew';
 
-export type CategoryRoleId = 'owner' | 'broker' | 'client' | 'contractor' | 'subcontractor' | 'worker';
+export type CategoryRoleId = 'owner' | 'agent' | 'client' | 'contractor' | 'worker';
 
 export interface Membership {
   category: CategoryId;

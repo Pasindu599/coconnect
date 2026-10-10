@@ -1,6 +1,6 @@
 # Coconnect
 
-Labour-hiring marketplace for Sri Lanka. People who need work done (land owners, construction clients) post jobs. Brokers/contractors bid and supply crews of workers they have registered. The owner's payment is **held in escrow until the work is confirmed complete**, then released.
+Labour-hiring marketplace for Sri Lanka. People who need work done (land owners, construction clients) post jobs. Agents (coconut) and contractors (construction) bid and supply crews of workers they have registered. The owner's payment is **held in escrow until the work is confirmed complete**, then released.
 
 The product is expanding from coconut-only into a **multi-category platform**. The first two categories are **Coconut** and **Construction**. The user picks a category on the home page and continues into that category's flow.
 
