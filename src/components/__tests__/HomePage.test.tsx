@@ -1,7 +1,26 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { HomePage } from '../home/HomePage';
+
+// jsdom has no IntersectionObserver; the page's scroll-in animations (motion `whileInView`) need one.
+// This stub reports every element as on screen.
+beforeAll(() => {
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        this.callback([{ target, isIntersecting: true, intersectionRatio: 1 } as IntersectionObserverEntry], this as never);
+      }
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    }
+  );
+});
 
 afterEach(cleanup);
 

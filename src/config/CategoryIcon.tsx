@@ -12,7 +12,16 @@ export const CategoryIcon: React.FC<{ icon: CategoryConfig['icon']; className?: 
  */
 export const ACCENT: Record<
   CategoryConfig['accent'],
-  { text: string; border: string; hoverBorder: string; chip: string; button: string; glow: string }
+  {
+    text: string;
+    border: string;
+    hoverBorder: string;
+    chip: string;
+    button: string;
+    glow: string;
+    /** CSS colour for the pointer-following spotlight on the home page cards. */
+    spotlight: string;
+  }
 > = {
   emerald: {
     text: 'text-emerald-400',
@@ -21,6 +30,7 @@ export const ACCENT: Record<
     chip: 'bg-emerald-950 text-emerald-300 border-emerald-800',
     button: 'bg-emerald-600 hover:bg-emerald-500',
     glow: 'bg-emerald-900/20',
+    spotlight: 'rgba(16, 185, 129, 0.16)',
   },
   sky: {
     text: 'text-sky-400',
@@ -29,5 +39,6 @@ export const ACCENT: Record<
     chip: 'bg-sky-950 text-sky-300 border-sky-800',
     button: 'bg-sky-600 hover:bg-sky-500',
     glow: 'bg-sky-900/20',
+    spotlight: 'rgba(14, 165, 233, 0.16)',
   },
 };
